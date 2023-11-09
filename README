@@ -1,0 +1,50 @@
+// ******************************************************************
+// ----------------- TECHNICAL UNIVERSITY OF KOSICE -----------------
+// ---Department of Electronics and Multimedia Telecommunications ---
+// -------- FACULTY OF ELECTRICAL ENGINEERING AND INFORMATICS -------
+// ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
+// ------------------------- Master thesis --------------------------
+// -----------------Patrik Zelenak & Milos Drutarovsky --------------
+// ---------------------------version 0.0.1 -------------------------
+// --------------------------- 11-10-2023 ---------------------------
+// ******************************************************************
+
+README k opaque!
+
+
+Nejake uzitocne linky:
+
+1) high-level overview of curve25519 and modular inversion:
+
+https://research.nccgroup.com/2020/09/28/faster-modular-inversion-and-legendre-symbol-and-an-x25519-speed-record/
+
+2) math behind x25519:
+
+https://asecuritysite.com/ecc/eddsa2
+
+3) Barret reducion algo used in monocypher
+https://www.nayuki.io/page/barrett-reduction-algorithm
+https://handwiki.org/wiki/Barrett_reduction
+
+Opaque in rust - viacmenej 'dobre' citatelny kod:
+https://github.com/gustin/opaque/blob/master/src/lib.rs#L44
+
+ristretto255:draft:
+https://www.ietf.org/archive/id/draft-irtf-cfrg-ristretto255-00.html
+
+
+opaque- draft:
+
+
+
+Opaque C- impl. dobre citatelna/mozno..
+https://github.com/aldenml/ecc/blob/master/src/ristretto255.h
+
+
+
+IN OPRF.C DONT  FORGET TO PERFORM MEMORY CLEANUP!
+
+
+HASH_TO_SCALAR:
+https://github.com/cfrg/draft-irtf-cfrg-voprf/blob/main/poc/groups.sage
+https://github.com/cfrg/draft-irtf-cfrg-hash-to-curve/blob/6d40f9890a5eb63ebfa0da9e49678e140e11f755/poc/hash_to_field.py
