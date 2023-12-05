@@ -20,6 +20,8 @@
 
 #include "oprf.h"
 #include "opaque.h"
+#include "rnd.h"
+
 
 
 /**
@@ -65,6 +67,7 @@ static void printDigest(uint8_t in[SHA512HashSize]){
 // }
 
 int main(){
+  srand(1234);
 
   // -----------------------------------         
   // ------------- TESTING OF ----------
@@ -245,15 +248,15 @@ int main(){
   // --------------- OPAQUE ------------
   // -----------------------------------   
 
-#if 0
-  struct Envelope envelope;
+#if 1
+  Envelope envelope;
   uint8_t randomized_password[64] = {0xaa,0xc4,0x8c,0x25,0xab,0x03,0x6e,0x30,0x75,0x08,0x39,0xd3,0x1d,0x6e,0x73,0x00,0x73,0x44,0xcb,0x11,0x55,0x28,0x9f,0xb7,0xd3,0x29,0xbe,0xb9,0x32,0xe9,0xad,0xee,0xa7,0x3d,0x5d,0x5c,0x22,0xa0,0xce,0x19,0x52,0xf8,0xab,0xa6,0xd6,0x60,0x07,0x61,0x5c,0xd1,0x69,0x8d,0x4a,0xc8,0x5e,0xf1,0xfc,0xf1,0x50,0x03,0x1d,0x14,0x35,0xd9};
   int randomized_password_len = 64;
   uint8_t server_public_key[Npk] = {0xb2,0xfe,0x7a,0xf9,0xf4,0x8c,0xc5,0x02,0xd0,0x16,0x72,0x9d,0x2f,0xe2,0x5c,0xdd,0x43,0x3f,0x2c,0x4b,0xc9,0x04,0x66,0x0b,0x2a,0x38,0x2c,0x9b,0x79,0xdf,0x1a,0x78};
-  uint8_t server_identity[1] = {0x00};
-  int server_identity_len = 1;
-  uint8_t client_identity[1] = {0x00};
-  int client_identity_len=1;
+  uint8_t server_identity[0] = {};
+  int server_identity_len = 0;
+  uint8_t client_identity[0] = {};
+  int client_identity_len=0;
 
 
   uint8_t client_public_key[Npk];
@@ -277,10 +280,214 @@ int main(){
   //"masking_key": "1ac5844383c7708077dea41cbefe2fa15724f449e535dd7dd562e66f5ecfb95864eadddec9db5874959905117dad40a4524111849799281fefe3c51fa82785c5",
 
 
-  print_32(client_public_key);
+  print_32(envelope.nonce);
+  print_32(envelope.auth_tag);
+
+
+printf("\n RECOVER!!\n");
+
+  uint8_t client_private_key[Npk];
+  CleartextCredentials cleartext_credentials;
+  uint8_t export_key_2[Nh];
+
+  Recover(
+    client_private_key,
+    &cleartext_credentials,
+    export_key_2,
+
+    randomized_password, randomized_password_len,
+    server_public_key,
+    &envelope, 
+    server_identity, server_identity_len,
+    client_identity, client_identity_len
+  );
+
+  printf("client_private_key:\n");
+  print_32(client_private_key);
+
+  printf("export_key:\n");
+  print_32(export_key_2);
+
+  // "export_key": "1ef15b4fa99e8a852412450ab78713aad30d21fa6966c9b8c9fb3262a970dc62950d4dd4ed62598229b1b72794fc0335199d9f7fcc6eaedde92cc04870e63f16",
+
+  uint8_t oprf_seed[Nh] = {0xf4, 0x33, 0xd0, 0x22, 0x7b, 0x0b, 0x9d, 0xd5, 0x4f, 0x7c, 0x44, 0x22, 0xb6, 0x00, 0xe7, 0x64, 0xe4, 0x7f, 0xb5, 0x03, 0xf1, 0xf9, 0xa0, 0xf0, 0xa4, 0x7c, 0x66, 0x06, 0xb0, 0x54, 0xa7, 0xfd, 0xc6, 0x53, 0x47, 0xf1, 0xa0, 0x8f, 0x27, 0x7e, 0x22, 0x35, 0x8b, 0xba, 0xbe, 0x26, 0xf8, 0x23, 0xfc, 0xa8, 0x2c, 0x78, 0x48, 0xe9, 0xa7, 0x56, 0x61, 0xf4, 0xec, 0x5d, 0x5c, 0x19, 0x89, 0xef};
+  uint8_t password[25] = {0x43, 0x6f, 0x72, 0x72, 0x65, 0x63, 0x74, 0x48, 0x6f, 0x72, 0x73, 0x65, 0x42, 0x61, 0x74, 0x74, 0x65, 0x72, 0x79, 0x53, 0x74, 0x61, 0x70, 0x6c, 0x65};
+  int password_len = 25;
+  uint8_t blind_registration[32] = {0x76, 0xcf, 0xbf, 0xe7, 0x58, 0xdb, 0x88, 0x4b, 0xeb, 0xb3, 0x35, 0x82, 0x33, 0x1b, 0xa9, 0xf1, 0x59, 0x72, 0x0c, 0xa8, 0x78, 0x4a, 0x2a, 0x07, 0x0a, 0x26, 0x5d, 0x9c, 0x2d, 0x6a, 0xbe, 0x01};
+  RegistrationRequest request;
+  CreateRegistrationRequestWithBlind( 
+    blind_registration, 
+    &request, 
+    password, password_len
+  );
+
+  printf("\n CreateRegistrationRequest!!!\n");
+
+  printf("blind:\n");
+  print_32(blind_registration);
+
+  printf("request.blinded_message:\n");
+  print_32(request.blinded_message);
+
+
+  printf("CreateRegistrationResponse:\n");
+
+  uint8_t credential_identifier[4] = {0x31, 0x32, 0x33,0x34};
+  RegistrationResponse response;
+  CreateRegistrationResponse(
+    &response,
+    &request,
+    server_public_key,
+    credential_identifier, 4,
+    oprf_seed
+  );
+
+  printf("\nresponse.evaluated\n");
+  print_32(response.evaluated_message);
   #endif
-	return 0;
+
+
+  RegistrationRecord record;
+  uint8_t export_key3[Nh];
+
+  FinalizeRegistrationRequest(
+   &record,
+   export_key3,
+   password, password_len,
+   blind_registration,
+   &response,
+   server_identity, server_identity_len,
+   client_identity, client_identity_len
+  );
+
+  printf("\nexport_key3:\n");
+  print_32(export_key3);
+  print_32(record.client_public_key);
+  print_32(record.masking_key);
+  print_32(record.envelope.nonce);
+  print_32(record.envelope.auth_tag);
+
+  //////////////////////////
+  //  AKE1
+  //////
+
+  KE1 ke1;
+  ClientState state;
+  uint8_t client_nonce[32] = {0xda, 0x7e, 0x07, 0x37, 0x6d, 0x6d, 0x6f, 0x03, 0x4c, 0xfa, 0x9b, 0xb5, 0x37, 0xd1, 0x1b, 0x8c, 0x6b, 0x42, 0x38, 0xc3, 0x34, 0x33, 0x3d, 0x1f, 0x0a, 0xeb, 0xb3, 0x80, 0xca, 0xe6, 0xa6, 0xcc};
+  uint8_t blind_login[32] = {0x6e, 0xcc, 0x10, 0x2d, 0x2e, 0x7a, 0x7c, 0xf4, 0x96, 0x17, 0xaa, 0xd7, 0xbb, 0xe1, 0x88, 0x55, 0x67, 0x92, 0xd4, 0xac, 0xd6, 0x0a, 0x1a, 0x8a, 0x8d, 0x2b, 0x65, 0xd4, 0xb0, 0x79, 0x03, 0x08};
+  uint8_t client_keyshare_seed[32]=  {0x82, 0x85, 0x0a, 0x69, 0x7b, 0x42, 0xa5, 0x05, 0xf5, 0xb6, 0x8f, 0xcd, 0xaf, 0xce, 0x8c, 0x31, 0xf0, 0xaf, 0x2b, 0x58, 0x1f, 0x06, 0x3c, 0xf1, 0x09, 0x19, 0x33, 0x54, 0x19, 0x36, 0x30, 0x4b};
+
+  printf("\nKE1:\n");
+  GenerateKE1(
+    &ke1, &state,
+    password, password_len,
+    blind_login,
+    client_nonce,
+    client_keyshare_seed
+    );
+
+  print_32(ke1.credential_request.blinded_message);
+  print_32(ke1.auth_request.client_nonce);
+  // 6e29bee50701498605b2c085d7b241ca15ba5c32027dd21ba420b94ce60da326
+  print_32(ke1.auth_request.client_public_keyshare);
+	
+
+
+  printf("\nKE2\n");
+  KE2 ke2_raw;
+  ServerState state_raw;
+  uint8_t server_private_key[32] = {0x47, 0x45, 0x1a, 0x85, 0x37, 0x2f, 0x8b, 0x35, 0x37, 0xe2, 0x49, 0xd7, 0xb5, 0x41, 0x88, 0x09, 0x1f, 0xb1, 0x8e, 0xdd, 0xe7, 0x80, 0x94, 0xb4, 0x3e, 0x2b, 0xa4, 0x2b, 0x5e, 0xb8, 0x9f, 0x0d};
+  uint8_t context[10] = {0x4f, 0x50, 0x41, 0x51, 0x55, 0x45, 0x2d, 0x50, 0x4f, 0x43};
+  uint8_t masking_nonce[32] = {0x38, 0xfe, 0x59, 0xaf, 0x0d, 0xf2, 0xc7, 0x9f, 0x57, 0xb8, 0x78, 0x02, 0x78, 0xf5, 0xae, 0x47, 0x35, 0x5f, 0xe1, 0xf8, 0x17, 0x11, 0x90, 0x41, 0x95, 0x1c, 0x80, 0xf6, 0x12, 0xfd, 0xfc, 0x6d}; 
+  uint8_t server_nonce[32] = {0x71, 0xcd, 0x99, 0x60, 0xec, 0xef, 0x2f, 0xe0, 0xd0, 0xf7, 0x49, 0x49, 0x86, 0xfa, 0x3d, 0x8b, 0x2b, 0xb0, 0x19, 0x63, 0x53, 0x7e, 0x60, 0xef, 0xb1, 0x39, 0x81, 0xe1, 0x38, 0xe3, 0xd4, 0xa1};
+  uint8_t server_keyshare_seed[32] = {0x05, 0xa4, 0xf5, 0x42, 0x06, 0xee, 0xf1, 0xba, 0x2f, 0x61, 0x5b, 0xc0, 0xaa, 0x28, 0x5c, 0xb2, 0x2f, 0x26, 0xd1, 0x15, 0x3b, 0x5b, 0x40, 0xa1, 0xe8, 0x5f, 0xf8, 0x0d, 0xa1, 0x2f, 0x98, 0x2f};
+  
+  ecc_opaque_ristretto255_sha512_GenerateKE2WithSeed(
+    &ke2_raw,
+    &state_raw,
+    server_identity, server_identity_len,
+    server_private_key,
+    server_public_key,
+    &record,
+    credential_identifier, 4,
+    oprf_seed,
+    &ke1,
+    client_identity, client_identity_len,
+    context, 10,
+    masking_nonce,
+    server_nonce,
+    server_keyshare_seed
+  );
+
+  // 7e308140890bcde30cbcea28b01ea1ecfbd077cff62c4def8efa075aabcbb471
+  printf("KE2 credential_response evaluated_message:\n");
+  print_32(ke2_raw.credential_response.evaluated_message);
+
+  // 38fe59af0df2c79f57b8780278f5ae47355fe1f817119041951c80f612fdfc6d
+  printf("KE2 credential_response masking_nonce:\n");
+  print_32(ke2_raw.credential_response.masking_nonce);
+
+  // d6ec60bcdb26dc455ddf3e718f1020490c192d70dfc7e403981179d8073d1146a4f9aa1ced4e4cd984c657eb3b54ced3848326f70331953d91b02535af44d9fedc80188ca46743c52786e0382f95ad85c08f6afcd1ccfbff95e2bdeb015b166c6b20b92f832cc6df01e0b86a7efd92c1c804ff865781fa93f2f20b446c8371b6
+  printf("KE2 credential_response masked_response:\n");
+  print_32(ke2_raw.credential_response.masked_response);
+
+
+  // 71cd9960ecef2fe0d0f7494986fa3d8b2bb01963537e60efb13981e138e3d4a1
+  printf("KE2 auth_response server_nonce:\n");
+  print_32(ke2_raw.auth_response.server_nonce);
+
+  // c4f62198a9d6fa9170c42c3c71f1971b29eb1d5d0bd733e40816c91f7912cc4a
+  printf("KE2 auth_response server_public_keyshare:\n");
+  print_32(ke2_raw.auth_response.server_public_keyshare);
+
+  // 660c48dae03e57aaa38f3d0cffcfc21852ebc8b405d15bd6744945ba1a93438a162b6111699d98a16bb55b7bdddfe0fc5608b23da246e7bd73b47369169c5c90
+  printf("KE2 auth_response server_mac:\n");
+  print_32(ke2_raw.auth_response.server_mac);
+
+
+
+
+  printf("\n GenerateKE3\n");
+
+  KE3 ke3_raw;
+  uint8_t client_session_key[64];
+  uint8_t export_key4[64];
+  ecc_opaque_ristretto255_sha512_GenerateKE3(
+    &ke3_raw,
+    client_session_key,
+    export_key4, // 64
+    &state, // from KE1
+    client_identity, client_identity_len,
+    server_identity, server_identity_len,
+    &ke2_raw, // from ke2_raw
+    context, 10
+  );
+
+  printf("KE3 client_mac:\n");
+  print_32(ke3_raw.client_mac);
+  printf("client_session_key\n");
+  print_32(client_session_key);
+  printf("export_key4\n");
+  print_32(export_key4);
+
+
+  printf("ServerFinish\n");
+  uint8_t session_key[Nx];
+  ecc_opaque_ristretto255_sha512_ServerFinish(
+    session_key,
+    &state_raw, //server state from KE2
+    &ke3_raw
+  );
+
+  printf("ServerFinish, session_key\n");
+  print_32(session_key);
+  print_32(&session_key[32]);
+
+
+
+  return 0;
+
 }
 
 
-// BUGGGGGG serializeCleartextCredentials
+

@@ -9,6 +9,13 @@
 // --------------------------- 11-10-2023 ---------------------------
 // ******************************************************************
 
+
+
+
+5.12.2023 decouple code (server/client)
+
+
+
 README k opaque!
 
 
@@ -48,3 +55,4 @@ IN OPRF.C DONT  FORGET TO PERFORM MEMORY CLEANUP!
 HASH_TO_SCALAR:
 https://github.com/cfrg/draft-irtf-cfrg-voprf/blob/main/poc/groups.sage
 https://github.com/cfrg/draft-irtf-cfrg-hash-to-curve/blob/6d40f9890a5eb63ebfa0da9e49678e140e11f755/poc/hash_to_field.py
+

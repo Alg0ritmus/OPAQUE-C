@@ -5,6 +5,6 @@
 #include <stdlib.h> 
 #include <stdint.h>
 
-void rnd(uint8_t out[32],uint8_t seed);
+void rnd(uint8_t out[32],int size);
 
 #endif //_RND_H

@@ -34,6 +34,8 @@
 #define Nsk 32 // key size
 #define Nh 64 //hash digest size
  
+extern const uint8_t RISTRETTO255_BASEPOINT_OPRF[32];
+
 int DeterministicDeriveKeyPair(uint8_t skS[Nsk], uint8_t pkS[Npk],uint8_t seed[Nseed], uint8_t *info, int infoLen);
 int DeriveKeyPair(uint8_t skS[Nsk], uint8_t pkS[Npk]);
 int ecc_voprf_ristretto255_sha512_Blind(uint8_t *blind,uint8_t *blindedElement,uint8_t *input, int inputLen);
@@ -41,10 +43,20 @@ int ecc_voprf_ristretto255_sha512_BlindWithScalar(uint8_t *blindedElement, uint8
 void BlindEvaluate(uint8_t evaluatedElement[32], uint8_t skS[Nsk], uint8_t blindedElement[32]);
 void ScalarMult_(uint8_t outputElement[32], uint8_t scalar[32], uint8_t inputElement[32]);
 void Finalize(uint8_t output[Nh],uint8_t* input, int inputLen,uint8_t blind[32], uint8_t evaluatedElement[32]);
+
+int cmp(const uint8_t *a, const uint8_t *b, int size);// returns 1 if they are eq, otherwise 0
 void ecc_concat2(
     uint8_t *out,
     const uint8_t *a1, const int a1_len,
     const uint8_t *a2, const int a2_len
+);
+
+
+void ecc_concat3(
+    uint8_t *out,
+    const uint8_t *a1, const int a1_len,
+    const uint8_t *a2, const int a2_len,
+    const uint8_t *a3, const int a3_len
 );
 
 int expand_message_xmd_sha512(
@@ -53,4 +65,10 @@ int expand_message_xmd_sha512(
     uint8_t *DST, int dstLen,
     int len_in_bytes
   );
+
+void ecc_strxor(uint8_t *out, const uint8_t *a, const uint8_t *b, const int len);
+
+void ecc_I2OSP(uint8_t *out, uint64_t x, const int xLen);
+
+
 #endif // _OPRF_H

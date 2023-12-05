@@ -37,8 +37,9 @@ WHAT DO I NEED FROM OPRF in OPAQUE???
 		BlindEvaluate(k, blinded_element) -> scalarMult -> ristretto255
 		DeriveKeyPair(seed, info) -> HashToScalar (SHA512("HashToScalar-" || contextString)) + scalarMult -> ristrettpo255
 	client&server:
-		SerializeElement(element) -> ristretto255_encode
-		DeserializeElement(buf) -> ristretto255_decode + check if output!=identity 
+		SerializeElement(element) -> ristretto255_encode ->bytes
+
+		DeserializeElement(buf) -> ristretto255_decode + check if output!=identity  -> element
 		Noe/Nok -> velkosti nejakych dat
 
 2) KDF:

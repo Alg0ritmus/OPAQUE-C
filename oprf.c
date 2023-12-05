@@ -21,11 +21,15 @@
 #include "oprf.h"
 #include "rnd.h"
 
+
+
 #define MAXINFOSIZE 1024*5
 
 #define ecc_h2c_expand_message_xmd_sha512_MAXSIZE 16320
 
 #define ecc_h2c_expand_message_xmd_sha512_DSTMAXSIZE 255
+
+#define RNG_SEED 1234 // seed to random generator (rnd.h)
 
 const uint8_t ZERO_OPRF[32] = {
     0,0,0,0,0,0,0,0,
@@ -142,9 +146,21 @@ void ecc_concat2(
 }
 
 
+void ecc_concat3(
+    uint8_t *out,
+    const uint8_t *a1, const int a1_len,
+    const uint8_t *a2, const int a2_len,
+    const uint8_t *a3, const int a3_len
+) {
+    memcpy(out, a1, (size_t) a1_len); out += a1_len;
+    memcpy(out, a2, (size_t) a2_len); out += a2_len;
+    memcpy(out, a3, (size_t) a3_len);
+}
+
+
 // compare 2 arrays of same size
 // returns 1 if they are eq, otherwise 0
-static int cmp(const uint8_t *a, const uint8_t *b, int size){
+int cmp(const uint8_t *a, const uint8_t *b, int size){
   int result = 1;
   for (int i = 0; i < size; ++i) {
     result &= a[i] == b[i];
@@ -442,7 +458,7 @@ int DeterministicDeriveKeyPair(
 
 int DeriveKeyPair(uint8_t skS[Nsk], uint8_t pkS[Npk]){
   
-  rnd(skS,57);
+  rnd(skS,32);
 
   ScalarMult_(pkS,skS,(uint8_t*)RISTRETTO255_BASEPOINT_OPRF);
   return 1;
@@ -466,7 +482,7 @@ int ecc_voprf_ristretto255_sha512_BlindWithScalar(
     // stack memory cleanup
 
 
-    return 0;
+    return 1;
 }
 
 int ecc_voprf_ristretto255_sha512_Blind(
@@ -474,7 +490,7 @@ int ecc_voprf_ristretto255_sha512_Blind(
     uint8_t *blindedElement,
     uint8_t *input, int inputLen
 ) {
-    rnd(blind,0x00);
+    rnd(blind,32);
     return ecc_voprf_ristretto255_sha512_BlindWithScalar(
         blindedElement,
         input, inputLen,
