@@ -722,6 +722,7 @@ void GenerateKE1(
   
 
   memcpy(state->password,password,password_len);
+  // random blind
   CreateCredentialRequest(password,password_len,&request,blind);
   memcpy(state->blind,blind,32);
 
@@ -729,7 +730,7 @@ void GenerateKE1(
   print_32(request.blinded_message);
   state->password_len = password_len;
   //ke1 = AuthClientStart(request) -> 3DH-ristretto
-  
+  // random client nonce
   ecc_opaque_ristretto255_sha512_3DH_StartWithSeed(
         ke1, state, &request,
         client_nonce,

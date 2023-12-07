@@ -77,14 +77,14 @@ static int I2OSP(char *output, uint64_t x, int xLen) {
     printf("\n---IN I2OSP\n");
     // Step 1: Check if x >= 256^xLen
     if (x >= (1ULL << (8 * xLen))) { // toto nejak vymysli
-        fprintf(stderr, "Error: Integer (%lli) too large \n",x);
+        //fprintf(stderr, "Error: Integer (%lli) too large \n",x);
         return -1;
     }
 
     // Step 2: Write the integer x in its unique xLen-digit base-256 representation
     for (int i = xLen - 1; i >= 0; i--) {
         printf("I2OSP: ");
-        printf("%02llx \n", x & 0xFF);
+        //printf("%02llx \n", x & 0xFF);
         output[i] = (char)(x & 0xFF);
         x >>= 8;
     }
@@ -241,8 +241,12 @@ int expand_message_xmd_sha512(
   SHA512Context mySha512;
   
   // 1. ell = ceil(len_in_bytes / b_in_bytes)
-  const double ellf = ceil((double) len_in_bytes / b_in_bytes);
-  const int ell = (int) ellf;
+  //const int ellf = ceil((double) len_in_bytes / b_in_bytes);
+  //const int ell = (int) ellf;
+  int ellf = len_in_bytes / b_in_bytes;
+  if ((len_in_bytes % b_in_bytes)>0){ellf+=1;}
+  const int ell = ellf;
+  
 
   // 2.
   if (ell>255 || len_in_bytes > 65535 || dstLen>255) {
