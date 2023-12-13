@@ -69,7 +69,7 @@ void ClientRegistrationRequest(
     RegistrationRequest *request, 
     uint8_t* password, int password_len
   ) {
-  rnd(blind, 32);
+  rnd(blind, 32); // TODO this sould be < L 
 
   CreateRegistrationRequestWithBlind(blind, request, password, password_len);
 }
@@ -189,7 +189,7 @@ void ClientGenerateKE1(
   uint8_t client_nonce[32];
   uint8_t seed[Nseed];
 
-  rnd(blind,32);
+  rnd(blind,32);  // TODO: replace with rnd< L
   rnd(client_nonce,32);
   rnd(seed,Nseed);
 

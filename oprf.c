@@ -370,7 +370,7 @@ static void ecc_voprf_ristretto255_sha512_HashToScalarWithDST(
     uint32_t tmp[16];
     // tmp <- expand_message
 
-    memcpy(tmp, expand_message, 64); // NOTE, is it working ?
+    memcpy(tmp, expand_message, 64); 
 
     mod_l(out, tmp);
 
@@ -460,9 +460,48 @@ int DeterministicDeriveKeyPair(
 }
 
 
+
+// generate random Scalar < L in constant time
+// inspired by: https://github.com/facebook/ristretto255-js/blob/main/src/ristretto255.js
+// NOTE that this approach is potentially faster than approach "generate random scalar 
+// and reduce (mod L)"
+
+static void getRandomScalar(uint8_t r[32]){
+    // using staticm just to store value outside stack
+    static const  uint8_t L[32] = { // L - 2, where L = 2**252+27742317777372353535851937790883648493
+        0xed, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58,
+        0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde, 0x14,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10,
+    };
+    uint8_t c;
+
+    while (1) {
+        rnd(r,32); 
+        r[31] &= 0x1f;
+
+        // Constant-time check for r < L, if so break and return r
+        int i = 32;
+        c = 0;
+        uint8_t n = 1;
+
+        while (i != 0) {
+            i--;
+            c |= ((r[i] - L[i]) >> 8) & n;
+            n &= ((r[i] ^ L[i]) - 1) >> 8;
+        }
+
+        if (c != 0) {
+            // Just break the loop
+            return;
+        }
+    }
+}
+}
+
 int DeriveKeyPair(uint8_t skS[Nsk], uint8_t pkS[Npk]){
   
-  rnd(skS,32);
+  getRandomScalar(skS,32); 
 
   ScalarMult_(pkS,skS,(uint8_t*)RISTRETTO255_BASEPOINT_OPRF);
   return 1;
@@ -494,7 +533,7 @@ int ecc_voprf_ristretto255_sha512_Blind(
     uint8_t *blindedElement,
     uint8_t *input, int inputLen
 ) {
-    rnd(blind,32);
+    getRandomScalar(blind,32);
     return ecc_voprf_ristretto255_sha512_BlindWithScalar(
         blindedElement,
         input, inputLen,
@@ -541,7 +580,7 @@ void Finalize(
   //N = G.ScalarInverse(blind) * evaluatedElement
   ScalarMult_(N, blind_inverse, evaluatedElement);
 
-  //unblindedElement = G.SerializeElement(N) // ristretto ristretto255_encode
+  //unblindedElement = G.SerializeElement(N) // ristretto ristretto255_encode // TODO: I think this can be skipped due to decode/encode inside ScalarMult_() function
   ristretto255_decode(out_rist, N);
   ristretto255_encode(unblindedElement, out_rist);
   

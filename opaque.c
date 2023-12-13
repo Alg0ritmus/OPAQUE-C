@@ -1272,9 +1272,9 @@ void ecc_opaque_ristretto255_sha512_GenerateKE2WithSeed(
         masking_nonce
     );
 
-    printf("\n skuska response:\n");
-    print_32(response.evaluated_message);
-    printf("\n ---\n");
+    // printf("\n skuska response:\n");
+    // print_32(response.evaluated_message);
+    // printf("\n ---\n");
 
     ecc_opaque_ristretto255_sha512_3DH_ResponseWithSeed(
         ke2_raw,
@@ -1374,7 +1374,7 @@ int ecc_opaque_ristretto255_sha512_RecoverCredentials(
         client_private_key,
         &ignore,
         export_key,
-        randomized_pwd, Nh, // asi???
+        randomized_pwd, Nh,
         server_public_key,
         &envelope,
         (uint8_t *)server_identity, server_identity_len,

@@ -138,7 +138,7 @@ void ServerGenerateKE2(
     uint8_t server_nonce[Nn];
     uint8_t server_keyshare_seed[Nseed];
 
-    rnd(masking_nonce,Nn);
+    rnd(masking_nonce,Nn); // NOTE this should be random but < L
     rnd(server_nonce,Nn);
     rnd(server_keyshare_seed,Nseed);
 
