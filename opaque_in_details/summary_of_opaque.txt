@@ -1,0 +1,131 @@
+This file servers as a high-level, math-based summary of
+OPAQUE protocol. This can be esspecially helpfull for readers
+who dont want to get really deep into implementation details
+but rather want to know core process of OPAQUE protocol. This
+file suppose to give answers to these questions:
+  - What is OPAQUE (and it's purpose)?
+  - What protocols OPAQUE consists of (and math behind)?
+  - How OPAQUE works - summary?
+
+
+1) What is OPAQUE (and it's purpose)?
+-------------------------------------
+
+This document describes the OPAQUE protocol, a secure asymmetric 
+password-authenticated key exchange (aPAKE) that supports mutual 
+authentication in a client-server setting without reliance on PKI 
+and with security against pre-computation attacks upon server 
+compromise. In addition, the protocol provides forward secrecy 
+and the ability to hide the password from the server, even during
+password registration. Basically server knows nothing about clinet's
+password, does not store any client's password etc.
+
+
+2) What protocols OPAQUE consists of (and math behind)?
+-------------------------------------------------------
+OPAQUE consists of two stages: registration and authenticated
+key exchange. In the first stage, a client registers its password
+with the server and stores information used to recover 
+authentication credentials on the server. Recovering these 
+credentials can only be done with knowledge of the client password. 
+In the second stage, a client uses its password to recover those 
+credentials and subsequently uses them as input to an AKE protocol. 
+This stage has additional mechanisms to prevent an active attacker 
+from interacting with the server to guess or confirm clients 
+registered via the first phase.
+
+
+2.1) Oblivious Pseudorandom Function (OPRF)
+--------------------------------------------
+An Oblivious Pseudorandom Function (OPRF) is a two-party protocol 
+between client and server for computing a PRF, where the PRF key 
+is held by the server and the input to the function is provided 
+by the client. The client does not learn anything about the PRF 
+other than the obtained output and the server learns nothing about 
+the client's input or the function output.
+
+
+2.2) Math behinf OPRF
+----------------------
+Basically math used in OPAQUE for OPRF is pretty simple:
+
+  0)  Client hold input 't' (this could be password), 
+      Server holds secret key 'x'
+  
+  1)  Client generates random 'blind' value, 
+  which is just a random number from GF (Galois Field)           
+                                             
+  2)  Client computes T = H_1(t) and then blinds it by computing rT      
+                                             
+  3)  Client sends M = rT to Server, note that M is known
+  as blinded_element in our case
+
+  4)  Server computes Z = xM and returns Z to Clinet
+  
+  5)  Clinet computes (1/r)*Z = xT = N and stores the pair (t,N) 
+  for some point in the future
+
+Why do we acctually need OPRF and what is it's purpose in OPAQUE?
+Well, whole registration stage is pretty much OPRF protocol with 
+some additional tweaks. Let's recall OPAQUE's registration diagram:
+
+    creds                                   parameters
+      |               (step 0)                  |
+      v                                         v
+    Client                                    Server
+    ------------------------------------------------
+          registration request (steps 1,2,3)
+             ------------------------->
+          registration response (step 4)
+             <-------------------------
+                    record (step 5)
+             ------------------------->
+   ------------------------------------------------
+      |                                         |
+      v                                         v
+  export_key                                 record
+
+As you can see in diagram above, steps 1-3 are used during
+construction of registration request. In process of creation
+registration response, step 4 takes place. Lastly, construction
+of record includes step 5. Note that OPRF steps is core of registration
+stage. Registration stage contains non-OPRF steps and additional tweaks
+like creation of envelope, etc. Envelope is a special structure 
+created by client (subsequently send to server). Server then stores
+just an envelope (no client password, no salt etc.). Now back to questions
+"What is it's purpose of OPRF in OPAQUE?". As show in diagram above
+Client uses it's password to later compute 'N' (oprf_output) 
+from cliet's 'Z'. This oprf_output is then used to create so called
+'randomized_password' using hkdfExtract function. Based on randomized_password
+client generates an envelope, client_public_key, masking_key and export_key.
+
+    envelope - client' structure, that contains envelope_nonce, auth_tag 
+    client_private_key - the encoded client private key for the AKE protocol
+    masking_key - an encryption key used by the server with the sole purpose
+    of defending against client enumeration attacks
+    export_key - additional clinet key for application specific purposes e.g.
+    remote encrypted storage as discussed in online_login_step_4.c
+
+Client's envelope with other values discussed above is generated using
+Store() function during offline registration and recover later (using function 
+Recover()) later during online login stage. These functions will be covered
+later in this file.
+
+** HMAC-based Extract-and-Expand Key Derivation Function (HKDF) - A Key 
+Derivation Function (KDF) is a function that takes some source of initial 
+keying material and uses it to derive one or more cryptographically 
+strong keys. In OPAQUE, there are 2 main function used from HKDF(for 
+sha512 in case of our implementation) Extract() and Expand().
+
+Extract - a pseudorandom key of fixed length Nx bytes from input 
+keying material ikm and an optional byte string salt.
+
+Expand - a pseudorandom key prk using the optional string info 
+into L bytes of output keying material.
+
+[https://www.rfc-editor.org/rfc/rfc5869]
+
+
+2.3 AKE #TODO
+
+2.4 Store() & Recover() #TODO

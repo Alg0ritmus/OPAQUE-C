@@ -162,7 +162,7 @@ int main()
   uint8_t server_private_key[Nsk]; // 32 bytes
   uint8_t server_public_key[Npk];  // 32 bytes
 
-  // server's private and public keys can be genearted
+  // server's private and public keys can be generated
   // using DeriveKeyPair()
   DeriveKeyPair(server_private_key,server_public_key);
 

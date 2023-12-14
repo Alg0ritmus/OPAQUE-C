@@ -12,7 +12,7 @@
 //  - uint8_t blind[Nn];
 //  - RegistrationResponse response;
 
-// Variables that the server generates in this phase:
+// Variables that the clinet generates in this phase:
 //  - RegistrationRecord record;
 //  - uint8_t export_key[Nh];
 
@@ -66,25 +66,30 @@ int main()
   *  return (record, export_key)
 
   * As you can see in "FinalizeRegistrationRequest" pseudocode, Client starts with
-  *  deserializing evaluated element received from Server. Since, we already did this step
-  *  (client already has a byte-array ristretto255 element) we can skip this step.
-  *  After that we use OPRF function called "Finalize()", which is essentially computing
-  *  unblindedElement = (1/r)*Z. In other words it performs: blind^-1 * evaluatedElement. 
-  *  There's one more step not mentioned previously and that is to create hash digest from (1/r)*Z,
-  *  which can be written as:
-  *    H_( len(t) || t || len(unblindedElement) || unblindedElement || "Finalize")
+  * deserializing evaluated element received from Server. Since, we already did this step
+  * (client already has a byte-array ristretto255 element) we can skip this step.
+  * After that we use OPRF function called "Finalize()", which is essentially computing
+  * unblindedElement = (1/r)*Z. In other words it performs: blind^-1 * evaluatedElement. 
+  * There's one more step not mentioned previously and that is to create hash digest from (1/r)*Z,
+  * which can be written as:
+  *   H_( len(t) || t || len(unblindedElement) || unblindedElement || "Finalize")
      
-  *  Note that 't' is client input mentioned previously in step 0. 
-  *  In real-world this is usually client's password. More information about 
-  *  OPRF (version 0x00) can be found in official draft 
-  *  [ https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-voprf-21 ].
+  * Note that 't' is client input mentioned previously in step 0. 
+  * In real-world this is usually client's password. More information about 
+  * OPRF (version 0x00) can be found in official draft 
+  * [ https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-voprf-21 ].
 
-  *  This is all from OPRF side, but OPAQUE does not stop here yet. 
-  *  In process of OPAQUE offline registration there's one more step, an Envelope creation.
-  *  OPAQUE makes use of a structure called Envelope to manage client credentials. 
-  *  The client creates its Envelope (using function called "Store()") on registration 
-  *  and sends it to the server for storage. On every login, the server sends this Envelope 
-  *  to the client so it can recover its key material for use in the AKE (Authenticated Key Exchange). 
+  * This is all from OPRF side, but OPAQUE does not stop here yet. 
+  * In process of OPAQUE offline registration there's one more step, an Envelope creation.
+  * OPAQUE makes use of a structure called Envelope to manage client credentials. 
+  * The client creates its Envelope (using function called "Store()") on registration 
+  * and sends it to the server for storage. On every login, the server sends this Envelope 
+  * to the client so it can recover its key material for use in the AKE (Authenticated Key Exchange). 
+  
+  * Note that server stores only envelope (created and secured by clients authentification 
+  * key "expanded" (using hkdfExpand function) from randomized password).
+  * This is core of OPAQUE protocol, servers learn nothing about
+  * client's credential. Recover of envelope is perform later in login stage (AKE3 message).
 
   *  The key recovery mechanism defines its Envelope as follows:
 
