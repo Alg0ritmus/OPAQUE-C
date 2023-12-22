@@ -11,10 +11,26 @@
 
 
 
+22.12 TODO:
+buffer-cleaning, 
+clinet-server na WIN,
+podavat konstanty kde treba, 
+vyhodit nepotrebne subory,
+vytvorit kniznicu,
+check grammar
+
+
+14.12 DONE:
+registration detailed description
+following text to login phase
+dokoncit login phase description
+summary_of_opaque - registration stage
++ summary_of_opaque - login stage
+
 14.12 TODO:
 buffer-cleaning, 
 clinet-server na WIN,
-podavat konstanty kde treba,
+podavat konstanty kde treba, 
 lepsia dokumentacia kodu,
 vyhodit nepotrebne subory,
 vytvorit kniznicu,

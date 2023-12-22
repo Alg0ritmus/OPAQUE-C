@@ -126,6 +126,285 @@ into L bytes of output keying material.
 [https://www.rfc-editor.org/rfc/rfc5869]
 
 
-2.3 AKE #TODO
+2.3 AKE 
+
+Online login stage is a bit more complicated. Login consists of two parts,
+OPRF and AKE. In this stage, a client uses its password to recover those 
+credentials(OPRF part) and subsequently uses them as input to an AKE protocol.
+AKE protocol is used to generate session_key. Note that after session_key differ
+from login to login. In other words every time, user login to a server, new session_key
+will be generated to encrypt communication. Not only session_key is generated but 
+also export_key. Note that export_key is not unique for every communication, it stays
+the same (same export_key as generated it was generated during registration stage).
+This export_key can be used for application specific purposes (disscussed above) or
+not used at all.
+
+One thing, that was not mentioned so far is presence of multiple private and public keys.
+To make things clear, we will explain magic behind those keys.
+First of we'll talk about "general" public and private keys. Server generate it's 
+private and public general keys using DeriveKeyPair(server_private_key,server_public_key)
+function, before communication. On the other hand, clinet generates it's general public 
+(client_public_key) key during registration phase, using function Store() when he creates
+registration request. Note that client's general private key (client_private_key) is not
+generated so far (cleared from stack in our implementation). Client private key will be
+safetly restored later. Client and server also generate so called AKE public and private
+keys. Client generates AKE keys (client_public_keyshare,client_secret-private AKE key)
+during first AKE message. Server also generates AKE keys (server_public_keyshare
+server_secret - private AKE key). This is done in AKE- part of login when Server
+constructs second AKE message. Note that when talking about AKE and KE in this
+document, we talk about same thing and we will be using those two terms interchangably.
+
+We can see flow of login stage in diagram below:
+
+     creds                             (parameters, record)
+        |                                         |
+        v                                         v
+      Client                                    Server
+      ------------------------------------------------
+                     AKE message 1
+               ------------------------->
+                     AKE message 2
+               <-------------------------
+                     AKE message 3
+               ------------------------->
+     ------------------------------------------------
+        |                                         |
+        v                                         v
+  (export_key, session_key)                  session_key
+
+
+
+2.3.1 First AKE message
+-----------------------
+
+Login stage is initiated by client. Client needs to generate
+KE1 message and send it to server. KE1 message consists of CredentialRequest
+and AuthRequest structures. In other words, client needs to generate blinded 
+message (OPRF phase, same as during registration). This is stored in CredentialRequest
+structure. In AuthRequest structure are stored client's public informations like
+client's publick AKE key and public nonce (public nonce will be disscussed later).
+Client alse create it's own structure to hold private informations like password, 
+blind (random scalar - OPRF phase), AKE private key (client_secret) and also copy
+of KE1 message. See figure below:
+
+CLIENT'S OUTPUT - AKE 1:
+------------------------
+
+ClienState  --> password
+            --> blind // OPRF part (random scalar r)
+            --> ClientAkeState  --> client_secret // AKE private key
+                                --> KE1 // copy of KE1 message
+
+KE1 --> CredentialRequest --> blinded_msg // OPRF part (M = rT)
+    --> AuthRequest --> public_nonce // used later in preamble
+                    --> client_public_keyshare // AKE public key
+
+
+
+2.3.2 Second AKE message
+------------------------
+When server receives KE1 message from client, it calculates
+evaluated_message, which is OPRF step on server-side. This 
+is the same as registration step 4 disscussed previeusly. Besides
+that, server also generates masking_nonce (from rng) and calculates
+masked_response. Masked response is calculated in very specific manner:
+
+  masked_response = (credential_response_pad) XOR (server_public_key) || envelope),
+
+where server_public_key is server's "general" public key and envelope. 
+Note that envelope is structure that was created during registration
+and it is stored in Server's database. One missing piece from formula
+above is credential_response_pad which is a value expanded (using hkdfExpand) from masking_key,
+masking_nonce and some credetial response label, which is defined array of bytes
+in OPAQUE protocol specification. These values ​​form CredentialResponse structure.
+Note that masked_response is later used by client to recover its credentials-envelope (AKE3). # MAYBE???
+
+In KE2 message is present also AuthResponse structure which server needs to form
+and it consists of server_nonce (from rng), server_public_keyshare (AKE key) 
+and server_mac. We will get more deep in a bit, but first quick summary.
+
+We can divide forming of second AKE message into to steps. First step is 
+to create evaluated_msg (OPRF step 4), generate masking_key and masked_response.
+Next step is logic behind actual AKE.
+
+Now let's talk about AKE logic. In this particular implementation we use 3DH protocol,
+a 3-message AKE which satisfies the forward secrecy. Basically idea behind 3DH is to 
+create ikm (input key material) by combining "general" and AKE priavte server keys with
+client's general and AKE public keys (on server-side). Later when forming AKE3 message,
+client will generate ikm from "general" and AKE priavte client keys with
+server's general and AKE public keys.
+
+When forming AKE2 on server-side, ikm looks like this:
+
+  ikm = server_secret(AKE) * client_public_keyshare(AKE) ||
+        server_private_key * client_public_keyshare(AKE) ||
+        server_secret(AKE) * client_public_key
+
+where '||' denotes byte-concatination.
+
+Why do we acctually need ikm? 
+From ikm, server can generate three things, km2, km3 and session_key. 
+As mentioned above 3DH provides the forward secrecy,
+because on every login, there are new AKE keys generated.
+Key material km2 is then used to form server_mac and km3 to form expected_client_mac.
+Those mac (message-authetification-code) messages are used to verify client/server respectivelly.
+Server sends its mac to client and client (in AKE3 step) generates expected_server_mac. Those must
+match (verification step). On the other hand client also sends its client_mac (in AKE3 msg) to server
+which already calculates (in AKE2 step) expected_client_mac, if they match, they use session_key for
+encrypted communication (this is known as finalization phase of AKE).
+
+* Note that to form km2, km3 and session_key we need to construct preamble, which
+is just byte-concatenation of client_identity, ke1, server_identity and ke2 (without server_mac).
+
+See diagam below to understand better what will server
+hold/generate when forming AKE2.
+
+SERVER'S OUTPUT - AKE 2:
+------------------------
+
+ServerState --> expected_client_mac
+            --> session_key
+
+KE2 --> CredentialResponse  --> evaluated_msg // OPRF (step 4)
+                            --> masking_nonce // from rng
+                            --> masking_response  // (cred_response_pad) 
+                                                  // XOR (server_public_key || envelope)
+    
+    --> AuthResponse  --> server_nonce // from rng
+                      --> server_public_keyshare // AKE key
+                      --> server_mac
+
+
+
+
+
+
+2.3.3 Third AKE message
+------------------------
+
+In this step, client gets KE2 message from server but also holds a copy of KE1,
+message in it's state (ClienState->ClientAkeState->KE1) along with other private 
+values. Now client is ready t form KE3 message. This can be divided into 2 steps,
+RecoverCredentials and 3DH finalization.
+
+First, let's discuss RecoverCredentials stage. This is last step of OPRF protocol,
+where client needs to perform oprf finalization step, which is to calculate 
+(1/r)*Z = xT = N. Recall OPRF step from registration stage of OPAQUE protocol.
+Next step is to retrieve client's envelope which is stored on server. To do so
+client needs to use HKDF function for extraction/expansion of randomized_password.
+
+A randomized_password is just a concatination of hash(N), which is
+speciffically hashed oprf output N, and hardened hash(N).
+It may look like this:
+
+  oprf_output // hash(N);
+  randomized_password = hkdfExtract(oprf_output || Harden(oprf_output)),
+
+  where function Harden could be any KSF (Key Stretching Function).
+  In this case it is identity, which is same as in OPAQUE specification.
+  Identity is function that returns same value on output as input.
+  In other word msg = Identity(msg), which could be simply memcpy.
+  So in our case randomized_password would look like this:
+
+  oprf_output // hash(N);
+  randomized_password = hkdfExtract(oprf_output || oprf_output)
+
+Now, when client has it's randomized_password, he can expand masking_key
+(using hkdfExpand) from randomized_password. Client also recreate credential_response_pad
+(recall credential_response_pad from AKE2), which is same process as it was on server-side
+and it also results in same value. It roughtly looks like this:
+  
+    credential_response_pad = credential_response_pad = Expand(masking_key, (masking_nonce || "CredentialResponsePad"))
+
+    *Note that while client can generate masking_key, server needs to get it during 
+    registration step (in client's record response message).
+
+
+So far, client retrieved randomized_password and credential_response_pad from it. But 
+why he acctually needs credential_response_pad? It is simple, recall that server sends
+masked_response in KE2 to client, which means that at this point, client already has 
+KE2->CredentialResponse->masked_response.
+
+Server calculates masked_response as:
+
+  masked_response = (credential_response_pad) XOR (server_public_key) || envelope),
+
+since client recreated credential_response_pad, it is easy for 
+him to get server_public_key and envelope. ALl he needs to do 
+is to xor credential_response_pad and masked_response.
+
+
+1.) (server_public_key) || envelope) = masked_response XOR credential_response_pad
+    
+                                  ...
+
+   (credential_response_pad) XOR (server_public_key) || envelope) XOR credential_response_pad
+
+
+Now client can retrieve client_private_key and export key using Recover() function.
+Where input values are randomized_password, server_public_key, envelope, server_identity
+and client_identity.
+
+
+  /**
+    * Server's identity is also something publicly known. 
+    * This is typically a domain name, e.g., example.com. 
+    * If not specified, it defaults to the server's public 
+    * key. Server also needs to generate it's primary public
+    * and private key. Server also chooses a seed (oprf_seed)
+    * of Nh bytes for the OPRF. The server can use server private
+    * key and server_public_key with multiple clients. The server
+    * can also opt to use different seeds for each client,
+    * so long as they are maintained across the registration and online
+    * AKE stages, and kept consistent for each client (since 
+    * an inconsistent mapping of clients to seeds could leak information.
+  **/
+
+Function Recover() internally recreate auth_tag and verify against auth_tag
+that from envelope.
+
+        expected_tag == envelope.auth_tag
+
+If those are not the same, error will occur. This is prevention againts attackers
+because only server that client is registrated on has valid envelope. Recall that
+registration is made out-of-band or using PKI so we assume that registration is 
+done safely.
+
+This is end of RecoverCredentials part of AKE3.
+
+
+Secod part is 3DH finalization step. This is acctually pretty streight forward
+as we already disscussed most of the concept previeusly. Client generates ikm, which
+is very similar to what server did in AKE2, instead now ikm forming is on
+client-side and looks like this:
+
+
+ikm = client_secret(AKE) * server_public_keyshare(AKE)   ||
+        client_secret(AKE) * server_public_key           ||
+        client_private_key * server_public_keyshare(AKE) 
+
+where '||' denotes byte-concatination.
+
+After server generates ikm, he also needs to construct preamble (similar 
+to what server did in AKE2). Now, client is able to generate its km2, km3 and session_key.
+He can get expected_server_mac from km2, which in then compared to server_mac that comes 
+form server in KE2 message. He also create client_mac from km3 and sends it to Server.
+
+Note that server already holds expected_client_mac, which he calculates during
+KE2 formation.
+
+Last step of whole OPAQUE protocol is on server-side. Server needs to verify
+if client_mac (in KE3 message) is identical to expected_client_mac, if so
+client and server can use session_key to encrypt their conversation. 
+
+
+
+
+
+
+
+Paralelne sa vykonava OPRF s rozdielom ze envelope recovery (ale naco mi obalku vlastne?)
+A nasledne aPAKE cast (nwm ako funguje ale na generovanie shared_session_key, 
+
 
 2.4 Store() & Recover() #TODO

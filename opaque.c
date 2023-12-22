@@ -726,8 +726,8 @@ void GenerateKE1(
   CreateCredentialRequest(password,password_len,&request,blind);
   memcpy(state->blind,blind,32);
 
-  printf("\nrequest....\n");
-  print_32(request.blinded_message);
+  //printf("\nrequest....\n");
+  //print_32(request.blinded_message);
   state->password_len = password_len;
   //ke1 = AuthClientStart(request) -> 3DH-ristretto
   // random client nonce
