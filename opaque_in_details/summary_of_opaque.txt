@@ -398,13 +398,4 @@ if client_mac (in KE3 message) is identical to expected_client_mac, if so
 client and server can use session_key to encrypt their conversation. 
 
 
-
-
-
-
-
-Paralelne sa vykonava OPRF s rozdielom ze envelope recovery (ale naco mi obalku vlastne?)
-A nasledne aPAKE cast (nwm ako funguje ale na generovanie shared_session_key, 
-
-
 2.4 Store() & Recover() #TODO
