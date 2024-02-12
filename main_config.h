@@ -14,8 +14,11 @@
   * Empty for now.
 **/
 
-#ifndef _CONFIG_H
-#define _CONFIG_H
+#ifndef _MAIN_CONFIG_H
+#define _MAIN_CONFIG_H
 
 
-#endif // _CONFIG_H
+// set some flags when performing tests in Store()
+#define TESTING_ENVELOPE_NONCE 
+
+#endif // _MAIN_CONFIG_H

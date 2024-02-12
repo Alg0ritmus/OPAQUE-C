@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "rnd.h": "c",
+        "client_side.h": "c"
+    }
+}

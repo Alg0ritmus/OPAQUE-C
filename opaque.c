@@ -78,7 +78,8 @@
 #include "ristretto255/modl.h"
 #include "oprf.h"
 #include "rnd.h"
-#include "opaque.h"
+#include "main_config.h"
+
 
 /**
   * OPAQUE CONFIGURATION D.1.2.1
@@ -149,7 +150,6 @@ void CreateCleartextCredentials(
 // https://github.com/aldenml/ecc/blob/fedffd5624db6d90c659864c21be0c530484c925/src/opaque.c#L194C1-L211C2
 static int serializeCleartextCredentials(uint8_t *out, CleartextCredentials *credentials) {
     const int len = Npk + 2 + credentials->server_identity_len + 2 + credentials->client_identity_len;
-    printf("1.)idzeee: server_identity_len:%d | client_identity_len:%d\n",credentials->server_identity_len,credentials->client_identity_len);
 
     int offset = 0;
     memcpy(&out[offset], credentials->server_public_key, Npk);
@@ -163,7 +163,6 @@ static int serializeCleartextCredentials(uint8_t *out, CleartextCredentials *cre
     out[offset + 1] = credentials->client_identity_len & 0xff;
     offset += 2;
     memcpy(&out[offset], credentials->client_identity, credentials->client_identity_len);
-    printf("2.)idzeee\n");
     return len;
 }
 
@@ -214,14 +213,16 @@ void Store(
 
 
 
-    CleartextCredentials clear_cred; // QUESTION: Can I do it in 1 line?
-    CleartextCredentials *cleartext_credentials = &clear_cred; // Do I need this line?
+    CleartextCredentials clear_cred; 
+    CleartextCredentials *cleartext_credentials = &clear_cred;
 
-
-    // QUESTION: we need to use TRNG multiple time here,
-    // do we wanna use Cyclone? e.g.
-    // https://github.com/Oryx-Embedded/CycloneCRYPTO/blob/master/hardware/ra2/ra2_crypto_trng.c#L51C9-L51C56 
-    uint8_t envelope_nonce[Nn] = {0xac, 0x13, 0x17, 0x1b, 0x2f, 0x17, 0xbc, 0x2c, 0x74, 0x99, 0x7f, 0x0f, 0xce, 0x1e, 0x1f, 0x35, 0xbe, 0xc6, 0xb9, 0x1f, 0xe2, 0xe1, 0x2d, 0xbd, 0x32, 0x3d, 0x23, 0xba, 0x7a, 0x38, 0xdf, 0xec};
+    // QUESTION: we need to use TRNG multiple time here
+    #ifdef TESTING_ENVELOPE_NONCE
+        uint8_t envelope_nonce[Nn] = {0xac, 0x13, 0x17, 0x1b, 0x2f, 0x17, 0xbc, 0x2c, 0x74, 0x99, 0x7f, 0x0f, 0xce, 0x1e, 0x1f, 0x35, 0xbe, 0xc6, 0xb9, 0x1f, 0xe2, 0xe1, 0x2d, 0xbd, 0x32, 0x3d, 0x23, 0xba, 0x7a, 0x38, 0xdf, 0xec};
+    #else
+        uint8_t envelope_nonce[Nn];
+        rnd(envelope_nonce,Nn);
+    #endif
     
     //rnd(envelope_nonce,0x00);    // envelope_nonce = random(Nn)
 
@@ -287,6 +288,15 @@ void Store(
 
     hmac(SHA512, auth_tag_mac_input, Nn+cleartext_creds_len, auth_key, Nh, envelope->auth_tag);
     memcpy(envelope->nonce, envelope_nonce, Nn);
+
+    crypto_wipe(auth_key, sizeof auth_key); 
+    crypto_wipe(auth_key_info, sizeof auth_key_info); 
+    crypto_wipe(export_key_info, sizeof export_key_info);
+    crypto_wipe(seed, sizeof seed);
+    crypto_wipe(seed_info, sizeof seed_info);
+    crypto_wipe(skS, sizeof skS);
+    crypto_wipe(cleartext_creds_buf, sizeof cleartext_creds_buf); 
+    crypto_wipe(auth_tag_mac_input, sizeof auth_tag_mac_input);
 }
 
 
@@ -375,13 +385,22 @@ int Recover(
     );
 
     hmac(SHA512, expected_tag, Nn+cleartext_creds_len, auth_key, Nh, envelope->auth_tag);
+
+    crypto_wipe(auth_key, sizeof auth_key);
+    crypto_wipe(auth_key_info, sizeof auth_key_info);
+    crypto_wipe(export_key_info, sizeof export_key_info);
+    crypto_wipe(seed, sizeof seed);
+    crypto_wipe(seed_info, sizeof seed_info);  
+    crypto_wipe(client_public_key, sizeof client_public_key);
+    crypto_wipe(cleartext_creds_buf, sizeof cleartext_creds_buf); 
     
     //If !ct_equal(envelope.auth_tag, expected_tag)
     if (cmp(envelope->auth_tag,expected_tag,Nn+cleartext_creds_len)){
       fprintf(stderr, "Error: auth_tag is not valid! \n");
+      crypto_wipe(expected_tag, sizeof expected_tag); 
       return -1;
     }
-
+    crypto_wipe(expected_tag, sizeof expected_tag); 
     return 1;
 }
 
@@ -420,6 +439,8 @@ void CreateRegistrationRequestWithBlind(
 
   // RegistrationRequest();
   memcpy(request->blinded_message,blinded_message,32);
+
+  crypto_wipe(blinded_message, sizeof blinded_message);
 
 }
 
@@ -494,7 +515,10 @@ void CreateRegistrationResponse(
     // NOTE that serialization is not needed, it is already made it in BlindEvaluate
     memcpy(response->server_public_key, server_public_key, Npk);
 
-
+    crypto_wipe(seed_info, sizeof seed_info);
+    crypto_wipe(seed, sizeof seed);
+    crypto_wipe(oprf_key, sizeof oprf_key);
+    crypto_wipe(ignore, sizeof ignore);
     
 }
 
@@ -566,6 +590,9 @@ void FinalizeRegistrationRequest(
       client_identity, client_identity_len
     );
 
+  crypto_wipe(oprf_output, sizeof oprf_output); 
+  crypto_wipe(password_info, sizeof password_info);
+  crypto_wipe(randomized_password, sizeof randomized_password);
 
 }
 
@@ -683,6 +710,8 @@ void ecc_opaque_ristretto255_sha512_3DH_StartWithSeed(
     memcpy(state->client_ake_state.client_secret, client_secret, 32);
     // save KE1 in the client state
     memcpy(&state->client_ake_state.ke1, ke1, sizeof(KE1));
+    crypto_wipe(client_secret, sizeof client_secret);
+    crypto_wipe(client_keyshare, sizeof client_keyshare);
 }
 
 
@@ -735,9 +764,10 @@ void GenerateKE1(
         ke1, state, &request,
         client_nonce,
         seed
-    );
+  );
+ 
 
-
+  crypto_wipe(&request, sizeof(CredentialRequest));
 
 }
 
@@ -879,15 +909,15 @@ void ecc_opaque_ristretto255_sha512_CreateCredentialResponseWithMasking(
     memcpy(response_raw->masked_response, masked_response, sizeof masked_response);
 
     // cleanup stack memory
-    // ecc_memzero(seed_info, sizeof seed_info);
-    // ecc_memzero(seed, sizeof seed);
-    // ecc_memzero(oprf_key, sizeof oprf_key);
-    // ecc_memzero(ignore, sizeof ignore);
-    // ecc_memzero(Z, sizeof Z);
-    // ecc_memzero(credential_response_pad_info, sizeof credential_response_pad_info);
-    // ecc_memzero(credential_response_pad, sizeof credential_response_pad);
-    // ecc_memzero(masked_response_xor, sizeof masked_response_xor);
-    // ecc_memzero(masked_response, sizeof masked_response);
+    WIPE_BUFFER(seed_info);
+    WIPE_BUFFER(seed);
+    WIPE_BUFFER(oprf_key);
+    WIPE_BUFFER(ignore);
+    WIPE_BUFFER(Z);
+    WIPE_BUFFER(credential_response_pad_info);
+    WIPE_BUFFER(credential_response_pad);
+    WIPE_BUFFER(masked_response_xor);
+    WIPE_BUFFER(masked_response);
 }
 
 
@@ -986,9 +1016,9 @@ void ecc_opaque_ristretto255_sha512_3DH_TripleDHIKM(
     );
 
     // cleanup stack memory
-    //ecc_memzero(dh1, sizeof dh1);
-    //ecc_memzero(dh2, sizeof dh2);
-    //ecc_memzero(dh3, sizeof dh3);
+    crypto_wipe(dh1, sizeof dh1);
+    crypto_wipe(dh2, sizeof dh2);
+    crypto_wipe(dh3, sizeof dh3);
 }
 
 
@@ -1030,8 +1060,8 @@ void ecc_opaque_ristretto255_sha512_3DH_Expand_Label(
     hkdfExpand(SHA512,secret,Nh,info, n, out, length);
 
 
-    // cleanup stack memory
-    //ecc_memzero(info, sizeof info);
+    //cleanup stack memory
+    crypto_wipe(info, sizeof info);
 }
 
 
@@ -1102,9 +1132,9 @@ void ecc_opaque_ristretto255_sha512_3DH_DeriveKeys(
     );
 
     // cleanup stack memory
-    //ecc_memzero(prk, sizeof prk);
-    //ecc_memzero(preamble_hash, sizeof preamble_hash);
-    //ecc_memzero(handshake_secret, sizeof handshake_secret);
+    crypto_wipe(prk, sizeof prk);
+    crypto_wipe(preamble_hash, sizeof preamble_hash);
+    crypto_wipe(handshake_secret, sizeof handshake_secret);
 }
 
 
@@ -1225,16 +1255,16 @@ void ecc_opaque_ristretto255_sha512_3DH_ResponseWithSeed(
     memcpy(ke2->auth_response.server_mac, server_mac, sizeof server_mac);
 
     // cleanup stack memory
-    // ecc_memzero(preamble, sizeof preamble);
-    // ecc_memzero(ikm, sizeof ikm);
-    // ecc_memzero(km2, sizeof km2);
-    // ecc_memzero(km3, sizeof km3);
-    // ecc_memzero(session_key, sizeof session_key);
-    // ecc_memzero(preamble_hash, sizeof preamble_hash);
-    // ecc_memzero(server_mac, sizeof server_mac);
-    // ecc_memzero(expected_client_mac_input, sizeof expected_client_mac_input);
-    // ecc_memzero(expected_client_mac, sizeof expected_client_mac);
-    // ecc_memzero((uint8_t *) &hst, sizeof hst);
+    crypto_wipe(preamble, sizeof preamble);
+    crypto_wipe(ikm, sizeof ikm);
+    crypto_wipe(km2, sizeof km2);
+    crypto_wipe(km3, sizeof km3);
+    crypto_wipe(session_key, sizeof session_key);
+    crypto_wipe(preamble_hash, sizeof preamble_hash);
+    crypto_wipe(server_mac, sizeof server_mac);
+    crypto_wipe(expected_client_mac_input, sizeof expected_client_mac_input);
+    crypto_wipe(expected_client_mac, sizeof expected_client_mac);
+    crypto_wipe((uint8_t *) &hst, sizeof hst);
 }
 
 
@@ -1382,13 +1412,13 @@ int ecc_opaque_ristretto255_sha512_RecoverCredentials(
     );
 
     // cleanup stack memory
-    // ecc_memzero(y, sizeof y);
-    // ecc_memzero(randomized_pwd, sizeof randomized_pwd);
-    // ecc_memzero(masking_key, sizeof masking_key);
-    // ecc_memzero(credential_response_pad_info, sizeof credential_response_pad_info);
-    // ecc_memzero(credential_response_pad, sizeof credential_response_pad);
-    // ecc_memzero(xor_result, sizeof xor_result);
-    // ecc_memzero(envelope, sizeof envelope);
+    crypto_wipe(y, sizeof y);
+    crypto_wipe(randomized_pwd, sizeof randomized_pwd);
+    crypto_wipe(masking_key, sizeof masking_key);
+    crypto_wipe(credential_response_pad_info, sizeof credential_response_pad_info);
+    crypto_wipe(credential_response_pad, sizeof credential_response_pad);
+    crypto_wipe(xor_result, sizeof xor_result);
+    crypto_wipe(&envelope, sizeof envelope);
 
     // 7. Output (client_private_key, response.server_public_key, export_key)
     return ret;
@@ -1478,12 +1508,12 @@ int ecc_opaque_ristretto255_sha512_3DH_ClientFinalize(
     //      raise HandshakeError
     if (!cmp(ke2->auth_response.server_mac, expected_server_mac, Nh)) {
         // cleanup stack memory
-        // ecc_memzero(ikm, sizeof ikm);
-        // ecc_memzero(preamble, sizeof preamble);
-        // ecc_memzero(km2, sizeof km2);
-        // ecc_memzero(km3, sizeof km3);
-        // ecc_memzero(preamble_hash, sizeof preamble_hash);
-        // ecc_memzero(expected_server_mac, sizeof expected_server_mac);
+        crypto_wipe(ikm, sizeof ikm);
+        crypto_wipe(preamble, sizeof preamble);
+        crypto_wipe(km2, sizeof km2);
+        crypto_wipe(km3, sizeof km3);
+        crypto_wipe(preamble_hash, sizeof preamble_hash);
+        crypto_wipe(expected_server_mac, sizeof expected_server_mac);
         return -1;
     }
 
@@ -1508,15 +1538,14 @@ int ecc_opaque_ristretto255_sha512_3DH_ClientFinalize(
     memcpy(ke3_raw->client_mac, client_mac, sizeof client_mac);
 
     // cleanup stack memory
-    // ecc_memzero(ikm, sizeof ikm);
-    // ecc_memzero(preamble, sizeof preamble);
-    // ecc_memzero(km2, sizeof km2);
-    // ecc_memzero(km3, sizeof km3);
-    // ecc_memzero(preamble_hash, sizeof preamble_hash);
-    // ecc_memzero(expected_server_mac, sizeof expected_server_mac);
-    // ecc_memzero(client_mac_input, sizeof client_mac_input);
-    // ecc_memzero(client_mac, sizeof client_mac);
-    // ecc_memzero((byte_t *) &hst, sizeof hst);
+    crypto_wipe(ikm, sizeof ikm);
+    crypto_wipe(preamble, sizeof preamble);
+    crypto_wipe(km2, sizeof km2);
+    crypto_wipe(km3, sizeof km3);
+    crypto_wipe(preamble_hash, sizeof preamble_hash);
+    crypto_wipe(expected_server_mac, sizeof expected_server_mac);
+    crypto_wipe(client_mac_input, sizeof client_mac_input);
+    crypto_wipe(client_mac, sizeof client_mac);
 
     return 0;
 }
@@ -1580,8 +1609,8 @@ int ecc_opaque_ristretto255_sha512_GenerateKE3(
 
 
     // cleanup stack memory
-    //ecc_memzero(client_private_key, sizeof client_private_key);
-    //ecc_memzero(server_public_key, sizeof server_public_key);
+    crypto_wipe(client_private_key, sizeof client_private_key);
+    crypto_wipe(server_public_key, sizeof server_public_key);
 //
     // 3. Output (ke3, session_key)
     if (recover_ret == 0 && finalize_ret == 0)
@@ -1605,6 +1634,5 @@ int ecc_opaque_ristretto255_sha512_ServerFinish(
         return -1;
 
     memcpy(session_key, state->session_key, 64);
-
     return 0;
 }

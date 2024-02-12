@@ -22,7 +22,7 @@
 #include "opaque.h"
 #include "rnd.h"
 
-#include "main_config.h"
+
 
 /**
   * This file, serves for internal testing purposes.

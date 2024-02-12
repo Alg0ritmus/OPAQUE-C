@@ -467,7 +467,7 @@ int DeterministicDeriveKeyPair(
 // and reduce (mod L)"
 
 static void getRandomScalar(uint8_t r[32]){
-    // using staticm just to store value outside stack
+    // using static just to store value outside stack
     static const  uint8_t L[32] = { // L - 2, where L = 2**252+27742317777372353535851937790883648493
         0xed, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58,
         0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde, 0x14,
@@ -497,11 +497,11 @@ static void getRandomScalar(uint8_t r[32]){
         }
     }
 }
-}
+
 
 int DeriveKeyPair(uint8_t skS[Nsk], uint8_t pkS[Npk]){
   
-  getRandomScalar(skS,32); 
+  getRandomScalar(skS); 
 
   ScalarMult_(pkS,skS,(uint8_t*)RISTRETTO255_BASEPOINT_OPRF);
   return 1;
@@ -533,7 +533,7 @@ int ecc_voprf_ristretto255_sha512_Blind(
     uint8_t *blindedElement,
     uint8_t *input, int inputLen
 ) {
-    getRandomScalar(blind,32);
+    getRandomScalar(blind);
     return ecc_voprf_ristretto255_sha512_BlindWithScalar(
         blindedElement,
         input, inputLen,

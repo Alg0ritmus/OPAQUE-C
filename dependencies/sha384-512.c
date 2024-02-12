@@ -317,11 +317,7 @@ static int SHA384_512ResultN(SHA512Context *context,
   uint8_t Message_Digest[ ], int HashSize);
 
 /* Initial Hash Values: FIPS 180-3 sections 5.3.4 and 5.3.5 */
-static uint64_t SHA384_H0[ ] = {
-    0xCBBB9D5DC1059ED8ll, 0x629A292A367CD507ll, 0x9159015A3070DD17ll,
-    0x152FECD8F70E5939ll, 0x67332667FFC00B31ll, 0x8EB44A8768581511ll,
-    0xDB0C2E0D64F98FA7ll, 0x47B5481DBEFA4FA4ll
-};
+
 static uint64_t SHA512_H0[ ] = {
     0x6A09E667F3BCC908ll, 0xBB67AE8584CAA73Bll, 0x3C6EF372FE94F82Bll,
     0xA54FF53A5F1D36F1ll, 0x510E527FADE682D1ll, 0x9B05688C2B3E6C1Fll,
@@ -329,104 +325,6 @@ static uint64_t SHA512_H0[ ] = {
 };
 
 #endif /* USE_32BIT_ONLY */
-
-/*
- * SHA384Reset
- *
- * Description:
- *   This function will initialize the SHA384Context in preparation
- *   for computing a new SHA384 message digest.
- *
- * Parameters:
- *   context: [in/out]
- *     The context to reset.
- *
- * Returns:
- *   sha Error Code.
- *
- */
-int SHA384Reset(SHA384Context *context)
-{
-  return SHA384_512Reset(context, SHA384_H0);
-}
-
-/*
- * SHA384Input
- *
- * Description:
- *   This function accepts an array of octets as the next portion
- *   of the message.
- *
- * Parameters:
- *   context: [in/out]
- *     The SHA context to update.
- *   message_array[ ]: [in]
- *     An array of octets representing the next portion of
- *     the message.
- *   length: [in]
- *     The length of the message in message_array.
- *
- * Returns:
- *   sha Error Code.
- *
- */
-int SHA384Input(SHA384Context *context,
-    const uint8_t *message_array, unsigned int length)
-{
-  return SHA512Input(context, message_array, length);
-}
-
-/*
- * SHA384FinalBits
- *
- * Description:
- *   This function will add in any final bits of the message.
- *
- * Parameters:
- *   context: [in/out]
- *     The SHA context to update.
- *   message_bits: [in]
- *     The final bits of the message, in the upper portion of the
- *     byte.  (Use 0b###00000 instead of 0b00000### to input the
- *     three bits ###.)
- *   length: [in]
- *     The number of bits in message_bits, between 1 and 7.
- *
- * Returns:
- *   sha Error Code.
- *
- */
-int SHA384FinalBits(SHA384Context *context,
-                    uint8_t message_bits, unsigned int length)
-{
-  return SHA512FinalBits(context, message_bits, length);
-}
-
-/*
- * SHA384Result
- *
- * Description:
- *   This function will return the 384-bit message digest
- *   into the Message_Digest array provided by the caller.
- *   NOTE:
- *    The first octet of hash is stored in the element with index 0,
- *    the last octet of hash in the element with index 47.
- *
- * Parameters:
- *   context: [in/out]
- *     The context to use to calculate the SHA hash.
- *   Message_Digest[ ]: [out]
- *     Where the digest is returned.
- *
- * Returns:
- *   sha Error Code.
- *
- */
-int SHA384Result(SHA384Context *context,
-    uint8_t Message_Digest[SHA384HashSize])
-{
-  return SHA384_512ResultN(context, Message_Digest, SHA384HashSize);
-}
 
 /*
  * SHA512Reset

@@ -14,4 +14,8 @@
 #include "../opaque.h"
 #include "../rnd.h"
 
+#include "../client_side.h"
+#include "../server_side.h"
+
+
 #endif // IMPORTER
