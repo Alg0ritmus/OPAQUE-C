@@ -5,12 +5,12 @@
 // ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
-// ---------------------------version 0.0.1 -------------------------
-// --------------------------- 11-10-2023 ---------------------------
+// ---------------------------version 0.0.2 -------------------------
+// --------------------------- 12-02-2023 ---------------------------
 // ******************************************************************
 
 
-11.2 DONE:
+11-12.2 DONE:
 Teraz mozeme skompilovat main.c alebo test.c,
 co zavisi od `make all` / `make test` prikazu.<br>
 buffer-cleaning, <br>
@@ -18,10 +18,12 @@ v nejakej funckii je nepouzity rng... toto zmen cez define napr. resp sa kukni c
 clien-server simulacia<br>
 vyhodit nepotrebne subory,<br>
 
+TODO:
 urob lepsie testy, ako v ristertte255<br>
 vytvorit kniznicu,<br>
 check grammar,<br>
 lepsie popisat subory<br>
+update hlaviciek, mozno script na update hlaviciek? <br>
 
 
 22.12 TODO:
