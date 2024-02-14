@@ -71,44 +71,24 @@ const uint8_t RISTRETTO255_BASEPOINT_OPRF[32] = {
   *
 **/
 
-// pouzi toto:
-// https://github.com/aldenml/ecc/blob/fedffd5624db6d90c659864c21be0c530484c925/src/util.c#L67
-static int I2OSP(char *output, uint64_t x, int xLen) {
-    printf("\n---IN I2OSP\n");
-    // Step 1: Check if x >= 256^xLen
-    if (x >= (1ULL << (8 * xLen))) { // toto nejak vymysli
-        //fprintf(stderr, "Error: Integer (%lli) too large \n",x);
-        return -1;
-    }
-
-    // Step 2: Write the integer x in its unique xLen-digit base-256 representation
-    for (int i = xLen - 1; i >= 0; i--) {
-        printf("I2OSP: ");
-        //printf("%02llx \n", x & 0xFF);
-        output[i] = (char)(x & 0xFF);
-        x >>= 8;
-    }
-    return 1;
-}
-
 // https://github.com/aldenml/ecc/blob/fedffd5624db6d90c659864c21be0c530484c925/src/voprf.c#L34
-void ecc_I2OSP(uint8_t *out, uint64_t x, const int xLen) {
-    for (int i = xLen - 1; i >= 0; i--) {
+void ecc_I2OSP(uint8_t *out, uint64_t x, const int32_t xLen) {
+    for (int32_t i = xLen - 1; i >= 0; i--) {
         out[i] = x & 0xff;
         x = x >> 8;
     }
 }
 
 
-void ecc_strxor(uint8_t *out, const uint8_t *a, const uint8_t *b, const int len) {
-    for (int i = 0; i < len; i++) {
+void ecc_strxor(uint8_t *out, const uint8_t *a, const uint8_t *b, const int32_t len) {
+    for (int32_t i = 0; i < len; i++) {
         out[i] = a[i] ^ b[i];
     }
 }
 
 
 static void printDigest(uint8_t in[SHA512HashSize]){
-  for (int i = 0; i < SHA512HashSize; ++i)
+  for (uint32_t i = 0; i < SHA512HashSize; ++i)
   {
     if (i%16==0){
       printf("\n");
@@ -119,7 +99,7 @@ static void printDigest(uint8_t in[SHA512HashSize]){
 }
 
 
-static int secure_concat(uint8_t* result, const uint8_t* array1, size_t len1, const uint8_t* array2, size_t len2) {
+static uint32_t secure_concat(uint8_t* result, const uint8_t* array1, size_t len1, const uint8_t* array2, size_t len2) {
     result = (uint8_t*)malloc(len1 + len2);
 
     if (result == NULL) {
@@ -138,8 +118,8 @@ static int secure_concat(uint8_t* result, const uint8_t* array1, size_t len1, co
 
 void ecc_concat2(
     uint8_t *out,
-    const uint8_t *a1, const int a1_len,
-    const uint8_t *a2, const int a2_len
+    const uint8_t *a1, const uint32_t a1_len,
+    const uint8_t *a2, const uint32_t a2_len
 ) {
     memcpy(out, a1, (size_t) a1_len); out += a1_len;
     memcpy(out, a2, (size_t) a2_len);
@@ -148,9 +128,9 @@ void ecc_concat2(
 
 void ecc_concat3(
     uint8_t *out,
-    const uint8_t *a1, const int a1_len,
-    const uint8_t *a2, const int a2_len,
-    const uint8_t *a3, const int a3_len
+    const uint8_t *a1, const uint32_t a1_len,
+    const uint8_t *a2, const uint32_t a2_len,
+    const uint8_t *a3, const uint32_t a3_len
 ) {
     memcpy(out, a1, (size_t) a1_len); out += a1_len;
     memcpy(out, a2, (size_t) a2_len); out += a2_len;
@@ -160,9 +140,9 @@ void ecc_concat3(
 
 // compare 2 arrays of same size
 // returns 1 if they are eq, otherwise 0
-int cmp(const uint8_t *a, const uint8_t *b, int size){
-  int result = 1;
-  for (int i = 0; i < size; ++i) {
+uint32_t cmp(const uint8_t *a, const uint8_t *b, uint32_t size){
+  uint32_t result = 1;
+  for (uint32_t i = 0; i < size; ++i) {
     result &= a[i] == b[i];
   }
   return result;
@@ -171,11 +151,11 @@ int cmp(const uint8_t *a, const uint8_t *b, int size){
 
 // STATIC FUNC
 
-static int createContextString(
+static uint32_t createContextString(
     uint8_t *contextString,
-    const int mode,
+    const uint32_t mode,
     const uint8_t *prefix,
-    const int prefixLen
+    const uint32_t prefixLen
 ) {
     // contextString = "OPRFV1-" || I2OSP(mode, 1) || "-" || identifier
 
@@ -215,11 +195,11 @@ static int createContextString(
 // https://github.com/aldenml/ecc/blob/fedffd5624db6d90c659864c21be0c530484c925/test/data/h2c/expand_message_xmd_sha512.json
 
 
-int expand_message_xmd_sha512(
+uint32_t expand_message_xmd_sha512(
     uint8_t *out,
-    uint8_t *msg, int msgLen,
-    uint8_t *DST, int dstLen,
-    int len_in_bytes
+    uint8_t *msg, uint32_t msgLen,
+    uint8_t *DST, uint32_t dstLen,
+    uint32_t len_in_bytes
   ) {
   // Steps:
   //  1.  ell = ceil(len_in_bytes / b_in_bytes)
@@ -235,17 +215,17 @@ int expand_message_xmd_sha512(
   //  11. uniform_bytes = b_1 || ... || b_ell
   //  12. return substr(uniform_bytes, 0, len_in_bytes)
 
-  const int b_in_bytes = 64; // output of Hash function in bytes SHA512 -> 64 bytes
-  const int s_in_bytes = 128;
+  const uint32_t b_in_bytes = 64; // output of Hash function in bytes SHA512 -> 64 bytes
+  const uint32_t s_in_bytes = 128;
   uint8_t tmp[1];
   SHA512Context mySha512;
   
   // 1. ell = ceil(len_in_bytes / b_in_bytes)
   //const int ellf = ceil((double) len_in_bytes / b_in_bytes);
   //const int ell = (int) ellf;
-  int ellf = len_in_bytes / b_in_bytes;
+  uint32_t ellf = len_in_bytes / b_in_bytes;
   if ((len_in_bytes % b_in_bytes)>0){ellf+=1;}
-  const int ell = ellf;
+  const uint32_t ell = ellf;
   
 
   // 2.
@@ -299,7 +279,7 @@ int expand_message_xmd_sha512(
   // buffer to avoid stack growth by using nested Hash.
 
   memcpy(uniform_bytes, b_1, 64);
-  for (int i = 2; i <= ell; i++) {
+  for (uint32_t i = 2; i <= ell; i++) {
       uint8_t *b_prev = &uniform_bytes[(i - 2) * 64]; // b_(i - 1)
       uint8_t *b_curr = &uniform_bytes[(i - 1) * 64]; // b_i
       SHA512Reset(&mySha512);
@@ -330,8 +310,8 @@ int expand_message_xmd_sha512(
 
 static void ecc_voprf_ristretto255_sha512_HashToGroupWithDST(
     uint8_t *out,
-    const uint8_t *input, const int inputLen,
-    const uint8_t *dst, const int dstLen
+    const uint8_t *input, const uint32_t inputLen,
+    const uint8_t *dst, const uint32_t dstLen
 ) {
     uint8_t expand_message[64];
     expand_message_xmd_sha512(expand_message, (uint8_t*) input, inputLen, (uint8_t*) dst, dstLen, 64);
@@ -345,11 +325,11 @@ static void ecc_voprf_ristretto255_sha512_HashToGroupWithDST(
 
 static void ecc_voprf_ristretto255_sha512_HashToGroup(
     uint8_t *out,
-    const uint8_t *input, const int inputLen
+    const uint8_t *input, const uint32_t inputLen
 ) {
     uint8_t DST[100];
     uint8_t DSTPrefix[12] = "HashToGroup-";
-    const int DSTLen = createContextString(
+    const uint32_t DSTLen = createContextString(
         DST, 0,
         DSTPrefix, sizeof DSTPrefix
     );
@@ -360,8 +340,8 @@ static void ecc_voprf_ristretto255_sha512_HashToGroup(
 
 static void ecc_voprf_ristretto255_sha512_HashToScalarWithDST(
     uint8_t *out,
-    const uint8_t *input, const int inputLen,
-    const uint8_t *dst, const int dstLen
+    const uint8_t *input, const uint32_t inputLen,
+    const uint8_t *dst, const uint32_t dstLen
 ) {
     uint8_t expand_message[64];
     expand_message_xmd_sha512(expand_message, (uint8_t*) input, inputLen, (uint8_t*) dst, dstLen, 64);
@@ -381,11 +361,11 @@ static void ecc_voprf_ristretto255_sha512_HashToScalarWithDST(
 
 static void ecc_voprf_ristretto255_sha512_HashToScalar(
     uint8_t *out,
-    const uint8_t *input, const int inputLen
+    const uint8_t *input, const uint32_t inputLen
 ) {
     uint8_t DST[100];
     uint8_t DSTPrefix[13] = "HashToScalar-";
-    const int DSTsize = createContextString(
+    const uint32_t DSTsize = createContextString(
         DST, 0,
         DSTPrefix, sizeof DSTPrefix
     );
@@ -398,9 +378,9 @@ static void ecc_voprf_ristretto255_sha512_HashToScalar(
 
 #if 1 // test
 // https://www.ietf.org/archive/id/draft-irtf-cfrg-voprf-21.html#section-3.2.1
-int DeterministicDeriveKeyPair(
+uint32_t DeterministicDeriveKeyPair(
     uint8_t skS[Nsk], uint8_t pkS[Npk],
-    uint8_t seed[Nseed], uint8_t *info, int infoLen
+    uint8_t seed[Nseed], uint8_t *info, uint32_t infoLen
   ) {
 
   // add infoLen constrain
@@ -416,7 +396,7 @@ int DeterministicDeriveKeyPair(
   // elements that we insert into 'deriveInput' and then insert
   // another element by pointing to another address in the
   // 'deriveInput' buffer.
-  int deriveInputLen = 0;
+  uint8_t deriveInputLen = 0;
   ecc_concat2(&deriveInput[deriveInputLen], seed, Nseed, NULL, 0);
   deriveInputLen += Nseed;
   ecc_I2OSP(&deriveInput[deriveInputLen], infoLen, 2);
@@ -424,12 +404,12 @@ int DeterministicDeriveKeyPair(
   ecc_concat2(&deriveInput[deriveInputLen], info, infoLen, NULL, 0);
   deriveInputLen += infoLen;
 
-  int counter = 0; //possibly uint8_t or size_t
+  uint32_t counter = 0; //possibly uint8_t or size_t
   //sKs = 0
   memset(skS, 0, Nsk);
   uint8_t DST[100];
   uint8_t DSTPrefix[13] = "DeriveKeyPair";
-  const int DSTsize = createContextString(
+  const uint8_t DSTsize = createContextString(
       DST,
       0,
       DSTPrefix, sizeof DSTPrefix
@@ -441,7 +421,7 @@ int DeterministicDeriveKeyPair(
     if (counter > 255){return -1;}; //DeriveKeyPairError
       
     //hash to scalar -> hashToGroup in ristretto255 mod L
-    int inputLen = 0;
+    uint8_t inputLen = 0;
     ecc_concat2(&input[inputLen], deriveInput, deriveInputLen, NULL, 0);
     inputLen += deriveInputLen;
     ecc_I2OSP(&input[inputLen], counter, 1);
@@ -481,7 +461,7 @@ static void getRandomScalar(uint8_t r[32]){
         r[31] &= 0x1f;
 
         // Constant-time check for r < L, if so break and return r
-        int i = 32;
+        uint8_t i = 32;
         c = 0;
         uint8_t n = 1;
 
@@ -499,7 +479,7 @@ static void getRandomScalar(uint8_t r[32]){
 }
 
 
-int DeriveKeyPair(uint8_t skS[Nsk], uint8_t pkS[Npk]){
+size_t DeriveKeyPair(uint8_t skS[Nsk], uint8_t pkS[Npk]){
   
   getRandomScalar(skS); 
 
@@ -512,10 +492,10 @@ int DeriveKeyPair(uint8_t skS[Nsk], uint8_t pkS[Npk]){
 
 #endif // test
 // https://www.ietf.org/archive/id/draft-irtf-cfrg-voprf-21.html#name-oprf-protocol
-int ecc_voprf_ristretto255_sha512_BlindWithScalar(
+size_t ecc_voprf_ristretto255_sha512_BlindWithScalar(
     uint8_t *blindedElement,
-    uint8_t *input, int inputLen,
-    uint8_t *blind
+    const  uint8_t *input, const uint32_t inputLen,
+    const uint8_t *blind
 ) {
     uint8_t inputElement[32];
     ecc_voprf_ristretto255_sha512_HashToGroup(inputElement, input, inputLen);
@@ -523,15 +503,16 @@ int ecc_voprf_ristretto255_sha512_BlindWithScalar(
     ScalarMult_(blindedElement, blind, inputElement);
 
     // stack memory cleanup
+    crypto_wipe(inputElement, sizeof inputElement);
 
 
     return 1;
 }
 
-int ecc_voprf_ristretto255_sha512_Blind(
+size_t ecc_voprf_ristretto255_sha512_Blind(
     uint8_t *blind,
     uint8_t *blindedElement,
-    uint8_t *input, int inputLen
+    uint8_t *input, uint32_t inputLen
 ) {
     getRandomScalar(blind);
     return ecc_voprf_ristretto255_sha512_BlindWithScalar(
@@ -543,7 +524,7 @@ int ecc_voprf_ristretto255_sha512_Blind(
 
 
 // input/output elem are ristretto255 elems in 32 byte form
-void ScalarMult_(uint8_t outputElement[32], uint8_t scalar[32], uint8_t inputElement[32]){
+void ScalarMult_(uint8_t outputElement[32], const uint8_t scalar[32], const uint8_t inputElement[32]){
   ristretto255_point output_ristretto_point;
   ristretto255_point *out_rist = &output_ristretto_point;
   ristretto255_point output_ristretto_point2;
@@ -554,15 +535,15 @@ void ScalarMult_(uint8_t outputElement[32], uint8_t scalar[32], uint8_t inputEle
   ristretto255_encode(outputElement,out_rist2);
 }
 
-void BlindEvaluate(uint8_t evaluatedElement[32], uint8_t skS[Nsk], uint8_t blindedElement[32]){
+void BlindEvaluate(uint8_t evaluatedElement[32], const uint8_t skS[Nsk], const uint8_t blindedElement[32]){
   ScalarMult_(evaluatedElement,skS,blindedElement);
 }
 
 
 void Finalize(
     uint8_t output[Nh],
-    uint8_t* input, int inputLen,
-    uint8_t blind[32], uint8_t evaluatedElement[32]
+    const uint8_t* input, const uint32_t inputLen,
+    const uint8_t blind[32], const uint8_t evaluatedElement[32]
   ) {
 
   ristretto255_point output_ristretto_point;

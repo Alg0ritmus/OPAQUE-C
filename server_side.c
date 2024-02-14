@@ -73,10 +73,10 @@
 
 void ServerRegistrationResponse(
     RegistrationResponse *response,
-    RegistrationRequest *request,
-    uint8_t server_public_key[Npk],
-    uint8_t *credential_identifier, int credential_identifier_len,
-    uint8_t oprf_seed[Nh]
+    const RegistrationRequest *request,
+    const uint8_t server_public_key[Npk],
+    const uint8_t *credential_identifier, const uint32_t credential_identifier_len,
+    const uint8_t oprf_seed[Nh]
   ) {
 
   CreateRegistrationResponse(
@@ -163,13 +163,13 @@ void ServerGenerateKE2(
 
 // if -1, error occured
 // else 0, success
-int ServerFinish(
+size_t ServerFinish(
     uint8_t session_key[Nx],
-    ServerState *state,
+    const ServerState *state,
     const KE3 *ke3
   ) {
 
-  int result = 0;
+  size_t result = 0;
   result = ecc_opaque_ristretto255_sha512_ServerFinish(
     session_key,
     state, //server state from KE2

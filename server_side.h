@@ -35,10 +35,10 @@
 
 void ServerRegistrationResponse(
     RegistrationResponse *response,
-    RegistrationRequest *request,
-    uint8_t server_public_key[Npk],
-    uint8_t *credential_identifier, int credential_identifier_len,
-    uint8_t oprf_seed[Nh]
+    const RegistrationRequest *request,
+    const uint8_t server_public_key[Npk],
+    const uint8_t *credential_identifier, const uint32_t credential_identifier_len,
+    const uint8_t oprf_seed[Nh]
   );
 
 void ServerGenerateKE2(
@@ -55,9 +55,9 @@ void ServerGenerateKE2(
     const uint8_t *context, const int context_len
   );
 
-int ServerFinish(
+size_t ServerFinish(
     uint8_t session_key[Nx],
-    ServerState *state,
+    const ServerState *state,
     const KE3 *ke3
   );
 #endif // _SERVER_SIDE_H

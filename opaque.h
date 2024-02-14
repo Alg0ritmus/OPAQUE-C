@@ -131,7 +131,7 @@ typedef struct ClientAkeState_t{
 
 typedef struct ClientState_t{
     uint8_t password[512];
-    int password_len;
+    uint32_t password_len;
     uint8_t blind[Nok];
     ClientAkeState client_ake_state;
 } ClientState;
@@ -159,22 +159,22 @@ void Store(
     uint8_t client_public_key[Npk],
     uint8_t masking_key[Nh],
     uint8_t export_key[Nh],
-    uint8_t *randomized_password, int randomized_password_len,
-    uint8_t server_public_key[Npk],
-    uint8_t *server_identity, int server_identity_len,
-    uint8_t *client_identity, int client_identity_len
+    const uint8_t *randomized_password, const uint32_t randomized_password_len,
+    const uint8_t server_public_key[Npk],
+    const uint8_t *server_identity, const uint32_t server_identity_len,
+    const uint8_t *client_identity, const uint32_t client_identity_len
     );
 
-int Recover(
+size_t Recover(
     uint8_t client_private_key[Npk],
     CleartextCredentials *cleartext_credentials,
     uint8_t export_key[Nh],
 
-    uint8_t *randomized_password, int randomized_password_len,
+    uint8_t *randomized_password, uint32_t randomized_password_len,
     uint8_t server_public_key[Npk],
     Envelope *envelope, 
-    uint8_t *server_identity, int server_identity_len,
-    uint8_t *client_identity, int client_identity_len
+    uint8_t *server_identity, uint32_t server_identity_len,
+    uint8_t *client_identity, uint32_t client_identity_len
   );
 
 // High level Functions
@@ -182,27 +182,27 @@ int Recover(
 
 // registratoin 
 void CreateRegistrationRequestWithBlind( 
-    uint8_t blind[32], 
+    const uint8_t blind[32], 
     RegistrationRequest *request, 
-    uint8_t* password, int password_len
+    const uint8_t* password, const uint32_t password_len
   );
 
 void CreateRegistrationResponse(
     RegistrationResponse *response,
-    RegistrationRequest *request,
-    uint8_t server_public_key[Npk],
-    uint8_t *credential_identifier, int credential_identifier_len,
-    uint8_t oprf_seed[Nh]
+    const RegistrationRequest *request,
+    const uint8_t server_public_key[Npk],
+    const uint8_t *credential_identifier, const uint32_t credential_identifier_len,
+    const uint8_t oprf_seed[Nh]
     );
 
 void FinalizeRegistrationRequest(
    RegistrationRecord *record,
    uint8_t export_key[Nh],
-   uint8_t* password, int password_len,
-   uint8_t blind[32],
-   RegistrationResponse *response,
-   uint8_t *server_identity, int server_identity_len,
-   uint8_t *client_identity, int client_identity_len
+   const uint8_t* password, const uint32_t password_len,
+   const uint8_t blind[32],
+   const RegistrationResponse *response,
+   const uint8_t *server_identity, const uint32_t server_identity_len,
+   const uint8_t *client_identity, const uint32_t client_identity_len
   );
 
 
@@ -212,46 +212,46 @@ void GenerateKE1(
   KE1 *ke1,
   ClientState *state,
   
-  uint8_t *password, int password_len,
-  uint8_t blind[32],
-  uint8_t client_nonce[32],
-  uint8_t seed[Nseed]);
+  const uint8_t *password, const uint32_t password_len,
+  const uint8_t blind[32],
+  const uint8_t client_nonce[32],
+  const uint8_t seed[Nseed]);
 
 
 
 void ecc_opaque_ristretto255_sha512_GenerateKE2WithSeed(
     KE2 *ke2_raw,
     ServerState *state_raw,
-    const uint8_t *server_identity, const int server_identity_len,
+    const uint8_t *server_identity, const uint32_t server_identity_len,
     const uint8_t server_private_key[32],
     const uint8_t server_public_key[32],
     const RegistrationRecord *record_raw,
-    const uint8_t *credential_identifier, const int credential_identifier_len,
+    const uint8_t *credential_identifier, const uint32_t credential_identifier_len,
     const uint8_t oprf_seed[Nh],
     const KE1 *ke1_raw,
-    const uint8_t *client_identity, const int client_identity_len,
-    const uint8_t *context, const int context_len,
+    const uint8_t *client_identity, const uint32_t client_identity_len,
+    const uint8_t *context, const uint32_t context_len,
     const uint8_t masking_nonce[Nn],
     const uint8_t server_nonce[Nn],
     const uint8_t seed[Nseed]
 );
 
 
-int ecc_opaque_ristretto255_sha512_GenerateKE3(
+size_t ecc_opaque_ristretto255_sha512_GenerateKE3(
     KE3 *ke3_raw,
     uint8_t session_key[64], // client_session_key
     uint8_t export_key[64], // 64
     ClientState *state,
-    const uint8_t *client_identity, const int client_identity_len,
-    const uint8_t *server_identity, const int server_identity_len,
+    const uint8_t *client_identity, const uint32_t client_identity_len,
+    const uint8_t *server_identity, const uint32_t server_identity_len,
     const KE2 *ke2,
-    const uint8_t *context, const int context_len
+    const uint8_t *context, const uint32_t context_len
 );
 
 
-int ecc_opaque_ristretto255_sha512_ServerFinish(
+size_t ecc_opaque_ristretto255_sha512_ServerFinish(
     uint8_t session_key[Nx],
-    ServerState *state,
+    const ServerState *state,
     const KE3 *ke3
 );
 

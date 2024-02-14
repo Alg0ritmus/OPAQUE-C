@@ -110,12 +110,12 @@
 **/
 
 // "Constructor" of CleartextCredentials structure
-void CreateCleartextCredentials(
+static void CreateCleartextCredentials(
     CleartextCredentials *cleartext_credentials,
-    uint8_t server_public_key[Npk],
-    uint8_t client_public_key[Npk], // QUESTION: how to propperly indent this ?
-    uint8_t server_identity[IDENTITY_BYTE_SIZE], int server_identity_len,
-    uint8_t client_identity[IDENTITY_BYTE_SIZE], int client_identity_len
+    const uint8_t server_public_key[Npk],
+    const uint8_t client_public_key[Npk], // QUESTION: how to propperly indent this ?
+    const uint8_t server_identity[IDENTITY_BYTE_SIZE], uint32_t server_identity_len,
+    const uint8_t client_identity[IDENTITY_BYTE_SIZE], uint32_t client_identity_len
   ) {
 
 
@@ -205,10 +205,10 @@ void Store(
     uint8_t client_public_key[Npk],
     uint8_t masking_key[Nh],
     uint8_t export_key[Nh],
-    uint8_t *randomized_password, int randomized_password_len,
-    uint8_t server_public_key[Npk],
-    uint8_t *server_identity, int server_identity_len,
-    uint8_t *client_identity, int client_identity_len
+    const uint8_t *randomized_password, const uint32_t randomized_password_len,
+    const uint8_t server_public_key[Npk],
+    const uint8_t *server_identity, const uint32_t server_identity_len,
+    const uint8_t *client_identity, const uint32_t client_identity_len
     ) {
 
 
@@ -231,10 +231,11 @@ void Store(
     // NOTE: that Expand/Extract should be taken from HKDF 
     // https://tools.ietf.org/html/rfc5869
 
-    uint8_t masking_key_info[10] = "MaskingKey";
-    uint8_t auth_key_label[7] = "AuthKey";
-    uint8_t export_key_label[9] = "ExportKey";
-    uint8_t seed_label[10] = "PrivateKey";
+    uint8_t masking_key_info[10] = {'M', 'a', 's', 'k', 'i', 'n', 'g', 'K', 'e', 'y'};
+    uint8_t auth_key_label[7] = {'A', 'u', 't', 'h', 'K', 'e', 'y'};
+    uint8_t export_key_label[9] = {'E', 'x', 'p', 'o', 'r', 't', 'K', 'e', 'y'};
+    uint8_t seed_label[10] = {'P', 'r', 'i', 'v', 'a', 't', 'e', 'K', 'e', 'y'};
+
 
     uint8_t auth_key[Nh];
     uint8_t auth_key_info[Nn + 7];
@@ -255,14 +256,14 @@ void Store(
 
     // 
     uint8_t skS[Nsk];
-    uint8_t info[33] = "OPAQUE-DeriveDiffieHellmanKeyPair";
+    uint8_t info[33] = {'O', 'P', 'A', 'Q', 'U', 'E', '-', 'D', 'e', 'r', 'i', 'v', 'e', 'D', 'i', 'f', 'f', 'i', 'e', 'H', 'e', 'l', 'l', 'm', 'a', 'n', 'K', 'e', 'y', 'P', 'a', 'i', 'r'};
     //DeriveDiffieHellmanKeyPair(seed);
 
 
     DeterministicDeriveKeyPair(skS,client_public_key,seed, info, 33);
     // clear skS from stack
 
-    printf("server_identity_len:%d, client_identity_len:%d\n",server_identity_len,client_identity_len );
+    //printf("server_identity_len:%d, client_identity_len:%d\n",server_identity_len,client_identity_len );
     CreateCleartextCredentials(
         cleartext_credentials, 
         server_public_key, 
@@ -312,21 +313,21 @@ void Store(
   * @param[out] -> cleartext_credentials,   ->    a CleartextCredentials structure.
   * @param[out] -> export_key,              ->    an additional client key.
 **/
-int Recover(
+size_t Recover(
     uint8_t client_private_key[Npk],
     CleartextCredentials *cleartext_credentials,
     uint8_t export_key[Nh],
 
-    uint8_t *randomized_password, int randomized_password_len,
+    uint8_t *randomized_password, uint32_t randomized_password_len,
     uint8_t server_public_key[Npk],
     Envelope *envelope, 
-    uint8_t *server_identity, int server_identity_len,
-    uint8_t *client_identity, int client_identity_len
+    uint8_t *server_identity, uint32_t server_identity_len,
+    uint8_t *client_identity, uint32_t client_identity_len
   ) {
   
-    uint8_t auth_key_label[7] = "AuthKey";
-    uint8_t export_key_label[9] = "ExportKey";
-    uint8_t seed_label[10] = "PrivateKey";
+    uint8_t auth_key_label[7] = {'A', 'u', 't', 'h', 'K', 'e', 'y'};
+    uint8_t export_key_label[9] = {'E', 'x', 'p', 'o', 'r', 't', 'K', 'e', 'y'};
+    uint8_t seed_label[10] = {'P', 'r', 'i', 'v', 'a', 't', 'e', 'K', 'e', 'y'};
 
     uint8_t auth_key[Nh];
     uint8_t auth_key_info[Nn + 7];
@@ -348,7 +349,7 @@ int Recover(
 
     //(client_private_key, client_public_key) = DeriveDiffieHellmanKeyPair(seed)
     uint8_t client_public_key[Npk];
-    uint8_t info[33] = "OPAQUE-DeriveDiffieHellmanKeyPair";
+    uint8_t info[33] = {'O', 'P', 'A', 'Q', 'U', 'E', '-', 'D', 'e', 'r', 'i', 'v', 'e', 'D', 'i', 'f', 'f', 'i', 'e', 'H', 'e', 'l', 'l', 'm', 'a', 'n', 'K', 'e', 'y', 'P', 'a', 'i', 'r'};
     int infoLen = 33;
     DeterministicDeriveKeyPair(
         client_private_key,
@@ -425,9 +426,9 @@ int Recover(
   * @param[out]   ->  blind       -> an OPRF scalar value.
 **/
 void CreateRegistrationRequestWithBlind( 
-    uint8_t blind[32], 
+    const uint8_t blind[32], 
     RegistrationRequest *request, 
-    uint8_t* password, int password_len
+    const uint8_t* password, const uint32_t password_len
   ) {
  
   uint8_t blinded_message[32];
@@ -476,10 +477,10 @@ void CreateRegistrationRequestWithBlind(
 
 void CreateRegistrationResponse(
     RegistrationResponse *response,
-    RegistrationRequest *request,
-    uint8_t server_public_key[Npk],
-    uint8_t *credential_identifier, int credential_identifier_len,
-    uint8_t oprf_seed[Nh]
+    const RegistrationRequest *request,
+    const uint8_t server_public_key[Npk],
+    const uint8_t *credential_identifier, const uint32_t credential_identifier_len,
+    const uint8_t oprf_seed[Nh]
     ) {
 
     uint8_t seed_label[7] = {'O','p','r','f','K','e','y'};
@@ -497,7 +498,7 @@ void CreateRegistrationResponse(
     uint8_t ignore[Npk];
 
 
-    uint8_t info[20] = "OPAQUE-DeriveKeyPair";
+    uint8_t info[20] = {'O', 'P', 'A', 'Q', 'U', 'E', '-', 'D', 'e', 'r', 'i', 'v', 'e', 'K', 'e', 'y', 'P', 'a', 'i', 'r'};
     int infoLen = 20;
     DeterministicDeriveKeyPair(
         oprf_key,
@@ -556,11 +557,11 @@ void CreateRegistrationResponse(
 void FinalizeRegistrationRequest(
    RegistrationRecord *record,
    uint8_t export_key[Nh],
-   uint8_t* password, int password_len,
-   uint8_t blind[32],
-   RegistrationResponse *response,
-   uint8_t *server_identity, int server_identity_len,
-   uint8_t *client_identity, int client_identity_len
+   const uint8_t* password, const uint32_t password_len,
+   const uint8_t blind[32],
+   const RegistrationResponse *response,
+   const uint8_t *server_identity, const uint32_t server_identity_len,
+   const uint8_t *client_identity, const uint32_t client_identity_len
   ) {
 
   uint8_t oprf_output[Nh];
@@ -668,7 +669,7 @@ void ecc_opaque_ristretto255_sha512_DeriveDiffieHellmanKeyPair(
     uint8_t private_key[Nsk], uint8_t public_key[Npk],
     uint8_t seed[Nseed]
 ) {
-    uint8_t info[33] = "OPAQUE-DeriveDiffieHellmanKeyPair";
+    uint8_t info[33] = {'O', 'P', 'A', 'Q', 'U', 'E', '-', 'D', 'e', 'r', 'i', 'v', 'e', 'D', 'i', 'f', 'f', 'i', 'e', 'H', 'e', 'l', 'l', 'm', 'a', 'n', 'K', 'e', 'y', 'P', 'a', 'i', 'r'};
     DeterministicDeriveKeyPair(
         private_key,
         public_key,
@@ -741,10 +742,10 @@ void GenerateKE1(
   KE1 *ke1,
   ClientState *state,
   
-  uint8_t *password, int password_len,
-  uint8_t blind[32],
-  uint8_t client_nonce[32],
-  uint8_t seed[Nseed]) {
+  const uint8_t *password, const uint32_t password_len,
+  const uint8_t blind[32],
+  const uint8_t client_nonce[32],
+  const uint8_t seed[Nseed]) {
 
   CredentialRequest request;
   
@@ -752,7 +753,7 @@ void GenerateKE1(
 
   memcpy(state->password,password,password_len);
   // random blind
-  CreateCredentialRequest(password,password_len,&request,blind);
+  CreateCredentialRequest((uint8_t*) password,password_len,&request, (uint8_t*) blind);
   memcpy(state->blind,blind,32);
 
   //printf("\nrequest....\n");
@@ -865,7 +866,7 @@ void ecc_opaque_ristretto255_sha512_CreateCredentialResponseWithMasking(
     uint8_t ignore[Npk];
 
 
-    uint8_t info[20] = "OPAQUE-DeriveKeyPair";
+    uint8_t info[20] = {'O', 'P', 'A', 'Q', 'U', 'E', '-', 'D', 'e', 'r', 'i', 'v', 'e', 'K', 'e', 'y', 'P', 'a', 'i', 'r'};
     int infoLen = 20;
     DeterministicDeriveKeyPair(
         oprf_key,
@@ -886,7 +887,7 @@ void ecc_opaque_ristretto255_sha512_CreateCredentialResponseWithMasking(
 
     // 5. credential_response_pad = Expand(record.masking_key,
     //      concat(masking_nonce, "CredentialResponsePad"), Npk + Ne)
-    uint8_t credential_response_pad_label[21] = "CredentialResponsePad";
+    uint8_t credential_response_pad_label[21] = {'C', 'r', 'e', 'd', 'e', 'n', 't', 'i', 'a', 'l', 'R', 'e', 's', 'p', 'o', 'n', 's', 'e', 'P', 'a', 'd'};
     uint8_t credential_response_pad_info[Nn + 21];
     ecc_concat2(credential_response_pad_info, masking_nonce, Nn, credential_response_pad_label, 21);
     uint8_t credential_response_pad[Npk + Ne];
@@ -942,7 +943,7 @@ int ecc_opaque_ristretto255_sha512_3DH_Preamble(
     // 2. Output preamble
 
 
-    uint8_t preamble_label[9] = "OPAQUEv1-";
+    uint8_t preamble_label[9] = {'O', 'P', 'A', 'Q', 'U', 'E', 'v', '1', '-'};
 
     uint8_t *p = preamble;
     int n = preamble_len;
@@ -1038,7 +1039,7 @@ void ecc_opaque_ristretto255_sha512_3DH_Expand_Label(
     //   uint8 context<0..255> = Context;
     // } CustomLabel;
 
-    uint8_t opaque_prefix[7] = "OPAQUE-";
+    uint8_t opaque_prefix[7] = {'O', 'P', 'A', 'Q', 'U', 'E', '-'};
 
     uint8_t info[512];
     uint8_t *p = &info[0];
@@ -1086,7 +1087,7 @@ void ecc_opaque_ristretto255_sha512_3DH_DeriveKeys(
     hkdfExtract(SHA512,(uint8_t*) NULL,0, ikm, ikm_len, prk);
 
     // 2. handshake_secret = Derive-Secret(prk, "HandshakeSecret", Hash(preamble))
-    uint8_t preamble_secret_label[15] = "HandshakeSecret";
+    uint8_t preamble_secret_label[15] = {'H', 'a', 'n', 'd', 's', 'h', 'a', 'k', 'e', 'S', 'e', 'c', 'r', 'e', 't'};
     uint8_t preamble_hash[64];
 
     SHA512Context mySha512;
@@ -1105,7 +1106,7 @@ void ecc_opaque_ristretto255_sha512_3DH_DeriveKeys(
     );
 
     // 3. session_key = Derive-Secret(prk, "SessionKey", Hash(preamble))
-    uint8_t session_key_label[10] = "SessionKey";
+    uint8_t session_key_label[10] = {'S', 'e', 's', 's', 'i', 'o', 'n', 'K', 'e', 'y'};
     ecc_opaque_ristretto255_sha512_3DH_Expand_Label(
         session_key,
         prk,
@@ -1114,7 +1115,7 @@ void ecc_opaque_ristretto255_sha512_3DH_DeriveKeys(
     );
 
     // 4. Km2 = Derive-Secret(handshake_secret, "ServerMAC", "")
-    uint8_t km2_label[9] = "ServerMAC";
+    uint8_t km2_label[9] = {'S', 'e', 'r', 'v', 'e', 'r', 'M', 'A', 'C'};
     ecc_opaque_ristretto255_sha512_3DH_Expand_Label(
         km2,
         handshake_secret,
@@ -1123,7 +1124,7 @@ void ecc_opaque_ristretto255_sha512_3DH_DeriveKeys(
     );
 
     // 5. Km3 = Derive-Secret(handshake_secret, "ClientMAC", "")
-    uint8_t km3_label[9] = "ClientMAC";
+    uint8_t km3_label[9] = {'C', 'l', 'i', 'e', 'n', 't', 'M', 'A', 'C'};
     ecc_opaque_ristretto255_sha512_3DH_Expand_Label(
         km3,
         handshake_secret,
@@ -1271,15 +1272,15 @@ void ecc_opaque_ristretto255_sha512_3DH_ResponseWithSeed(
 void ecc_opaque_ristretto255_sha512_GenerateKE2WithSeed(
     KE2 *ke2_raw,
     ServerState *state_raw,
-    const uint8_t *server_identity, const int server_identity_len,
+    const uint8_t *server_identity, const uint32_t server_identity_len,
     const uint8_t server_private_key[32],
     const uint8_t server_public_key[32],
     const RegistrationRecord *record_raw,
-    const uint8_t *credential_identifier, const int credential_identifier_len,
+    const uint8_t *credential_identifier, const uint32_t credential_identifier_len,
     const uint8_t oprf_seed[Nh],
     const KE1 *ke1_raw,
-    const uint8_t *client_identity, const int client_identity_len,
-    const uint8_t *context, const int context_len,
+    const uint8_t *client_identity, const uint32_t client_identity_len,
+    const uint8_t *context, const uint32_t context_len,
     const uint8_t masking_nonce[Nn],
     const uint8_t server_nonce[Nn],
     const uint8_t seed[Nseed]
@@ -1371,14 +1372,14 @@ int ecc_opaque_ristretto255_sha512_RecoverCredentials(
 
   
     // 3. masking_key = Expand(randomized_pwd, "MaskingKey", Nh)
-    uint8_t masking_key_info[10] = "MaskingKey";
+    uint8_t masking_key_info[10] = {'M', 'a', 's', 'k', 'i', 'n', 'g', 'K', 'e', 'y'};
     uint8_t masking_key[Nh];
     //ecc_kdf_hkdf_sha512_expand(masking_key, randomized_pwd, masking_key_info, sizeof masking_key_info, Nh);
     hkdfExpand(SHA512,randomized_pwd,Nh,masking_key_info, sizeof masking_key_info, masking_key, Nh);
 
     // 4. credential_response_pad = Expand(masking_key,
     //      concat(response.masking_nonce, "CredentialResponsePad"), Npk + Ne)
-    uint8_t credential_response_pad_label[21] = "CredentialResponsePad";
+    uint8_t credential_response_pad_label[21] = {'C', 'r', 'e', 'd', 'e', 'n', 't', 'i', 'a', 'l', 'R', 'e', 's', 'p', 'o', 'n', 's', 'e', 'P', 'a', 'd'};
     uint8_t credential_response_pad_info[Nn + 21];
     ecc_concat2(credential_response_pad_info, res->masking_nonce, Nn, credential_response_pad_label, 21);
     uint8_t credential_response_pad[Npk + Ne];
@@ -1556,15 +1557,15 @@ int ecc_opaque_ristretto255_sha512_3DH_ClientFinalize(
 // GENERATE KE3
 
 
-int ecc_opaque_ristretto255_sha512_GenerateKE3(
+size_t ecc_opaque_ristretto255_sha512_GenerateKE3(
     KE3 *ke3_raw,
     uint8_t session_key[64], // client_session_key
     uint8_t export_key[64], // 64
     ClientState *state,
-    const uint8_t *client_identity, const int client_identity_len,
-    const uint8_t *server_identity, const int server_identity_len,
+    const uint8_t *client_identity, const uint32_t client_identity_len,
+    const uint8_t *server_identity, const uint32_t server_identity_len,
     const KE2 *ke2,
-    const uint8_t *context, const int context_len
+    const uint8_t *context, const uint32_t context_len
 ) {
     // Steps:
     // 1. (client_private_key, server_public_key, export_key) =
@@ -1620,9 +1621,9 @@ int ecc_opaque_ristretto255_sha512_GenerateKE3(
 }
 
 
-int ecc_opaque_ristretto255_sha512_ServerFinish(
+size_t ecc_opaque_ristretto255_sha512_ServerFinish(
     uint8_t session_key[Nx],
-    ServerState *state,
+    const ServerState *state,
     const KE3 *ke3
 ) {
     // Steps:
