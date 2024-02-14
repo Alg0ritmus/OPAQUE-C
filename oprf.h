@@ -37,7 +37,7 @@
 extern const uint8_t RISTRETTO255_BASEPOINT_OPRF[32];
 
 uint32_t DeterministicDeriveKeyPair(uint8_t skS[Nsk], uint8_t pkS[Npk],uint8_t seed[Nseed], uint8_t *info, uint32_t infoLen);
-uint32_t DeriveKeyPair(uint8_t skS[Nsk], uint8_t pkS[Npk]);
+size_t DeriveKeyPair(uint8_t skS[Nsk], uint8_t pkS[Npk]);
 size_t ecc_voprf_ristretto255_sha512_Blind(
     uint8_t *blind,
     uint8_t *blindedElement,
