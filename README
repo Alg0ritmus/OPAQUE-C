@@ -25,7 +25,7 @@ dat const do params kde to treba<br>
 v aktualnej verzii prekladame kody cez make
 make all: -> prelozi `main.c` kde je viacmenej bordel a sluzi na moje testovanie funkcii zatial <br>
 make test: -> prelozi `test.c` co je test na test. vektoroch <br>
-make simulation: -> prelozi `opaque_in_details/opaque_simulation.c` co je step-by-step simulacia regstracie a prihlasenia. <br>
+make simulation: -> prelozi `opaque_in_details/opaque_simulation.c` co je step-by-step simulacia regstracie a prihlasenia.<br>
 
 TODO:
 vytvorit kniznicu<br>
