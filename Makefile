@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS= -Os -Wall -Werror -Wextra -Wno-unused-function
+CFLAGS= -std=c99 -Os -Wall -Werror -Wextra -Wno-unused-function
 #SRCS := client_app.c 
 SRCS += opaque.c 
 SRCS += oprf.c rnd.c

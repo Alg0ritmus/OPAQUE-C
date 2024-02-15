@@ -184,6 +184,6 @@ int main(){
     print_structure(server_state.expected_client_mac, Nh);
 
 
-    printf("result: %d, if 0, successfully logged in.",r);
+    printf("result: %lld, if 0, successfully logged in.",r);
     return 0;
 }
