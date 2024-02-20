@@ -22,10 +22,10 @@
 #include "ristretto255/ristretto255.h"
 #include "ristretto255/helpers.h"
 #include "ristretto255/utils.h"
+#include "ristretto255/prng.h"
 
 #include "oprf.h"
 #include "opaque.h"
-#include "rnd.h"
 
 
 // inputs
@@ -375,7 +375,7 @@ static uint8_t compare(uint8_t *a, uint8_t *b, size_t count){
 }
 
 int main(){
-  srand(1234);
+  s_rand(1234);
 
   // -----------------------------------         
   // ------------- TESTING OF ----------

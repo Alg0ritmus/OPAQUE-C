@@ -5,8 +5,8 @@
 // ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
-// ---------------------------version 0.1.3 -------------------------
-// --------------------------- 30-09-2023 ---------------------------
+// ---------------------------version T.T.5 -------------------------
+// --------------------------- 08-02-2024 ---------------------------
 // ******************************************************************
 
 /**
@@ -96,7 +96,7 @@ int bytes_eq_32( const u8 a[BYTES_ELEM_SIZE],  const u8 b[BYTES_ELEM_SIZE]);
 void fneg(field_elem out, field_elem in);
 int is_neg(field_elem in);
 int is_neg_bytes(const u8 in[BYTES_ELEM_SIZE]);
-void fabsolute(field_elem out, field_elem in);
+void fabsolute(field_elem io);
 void pack(u8* uint8Array,const u32* uint32ArrayIn);
 void unpack(u32* uint32Array, const u8* uint8Array);
 

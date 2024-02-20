@@ -69,7 +69,7 @@ void ClientRegistrationRequest(
     RegistrationRequest *request, 
     const uint8_t* password, const int password_len
   ) {
-  rnd(blind, 32); // TODO this sould be < L 
+  rand_32_bytes_lower_thanL(blind);
 
   CreateRegistrationRequestWithBlind(blind, request, password, password_len);
 }
@@ -189,9 +189,9 @@ void ClientGenerateKE1(
   uint8_t client_nonce[32];
   uint8_t seed[Nseed];
 
-  rnd(blind,32);  // TODO: replace with rnd< L
-  rnd(client_nonce,32);
-  rnd(seed,Nseed);
+  rand_32_bytes_lower_thanL(blind);
+  rand_32_bytes(client_nonce);
+  rand_32_bytes(seed);
 
   GenerateKE1(
     ke1,

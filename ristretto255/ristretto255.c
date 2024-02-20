@@ -5,8 +5,8 @@
 // ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
-// ---------------------------version 0.1.3 -------------------------
-// --------------------------- 30-09-2023 ---------------------------
+// ---------------------------version T.T.5 -------------------------
+// --------------------------- 05-02-2024 ---------------------------
 // ******************************************************************
 
 /**
@@ -169,6 +169,17 @@ static void wipe_ristretto255_point(ristretto255_point* ristretto_in){
 #define pack25519 pack
 #define unpack25519 unpack
 
+
+static void fe25519_reduce_emil(field_elem in){
+  // this should reduce input that is in modulo 2P repr.
+  // into modulo P repr.
+
+  // just to avoid error: unused parameter 'in',
+  // we assign 'in' to 'in'
+  in = in;
+  return;
+}
+
 /**
   * @brief Negation of field_elem
   * @param[in]   -> in
@@ -179,8 +190,10 @@ static void wipe_ristretto255_point(ristretto255_point* ristretto_in){
 // inspired by: https://github.com/jedisct1/libsodium/blob/master/src/libsodium/include/sodium/private/ed25519_ref10_fe_51.h#L94
 // *** STACKSIZE: u8[32] = 60B + 3size_t  ***
 void fneg(field_elem out, field_elem in){
+    // To make calculation in 2P correctly, 
+    // we need to perform REDC(in) and subsequently perform out = 2^255-19 - in 
     fsub(out, F_MODULUS, in);
-
+    fe25519_reduce_emil(out);
 };
 
 
@@ -197,6 +210,7 @@ void fneg(field_elem out, field_elem in){
 // inspired by: https://github.com/jedisct1/libsodium/blob/master/src/libsodium/include/sodium/private/ed25519_ref10_fe_25_5.h#L302
 // *** STACKSIZE: u8[32] = 32B ***
 int is_neg(field_elem in){
+
     u8 temp[BYTES_ELEM_SIZE];
     pack25519(temp, in);
     return temp[0] & 1;
@@ -220,12 +234,12 @@ int is_neg_bytes(const u8 in[BYTES_ELEM_SIZE]){
 **/
 // fabsolute functions gets absolute value of input in constant time 
 // *** STACKSIZE: 1x field_elem = 92B + 3size_t  ***
-void fabsolute(field_elem out, field_elem in){
+void fabsolute(field_elem io){
     field_elem temp;
-    fcopy(temp,in); // temp=in, so I dont rewrite in
-    fneg(out,temp); // out = ~in
+    fneg(temp,io); // out = ~io
+    fe25519_reduce_emil(io);
     // CT_SWAP if it is neg.
-    swap25519(out,temp,is_neg(in));
+    swap25519(temp,io,is_neg(io));
 
     WIPE_BUFFER(temp);
 }
@@ -311,13 +325,16 @@ static int inv_sqrt(field_elem out,const field_elem a, const field_elem b){
    fmul(c, c, b);
 
    //Conditions:
+   fe25519_reduce_emil(c);
+   fe25519_reduce_emil((u32 *)a);
    correct_sign_sqrt = feq(c, a);
 
-   fneg(v,(uint32_t *)a);
+   fneg(v,(u32 *)a);
    flipped_sign_sqrt = feq(c, v);
 
 
    fmul(v, v, SQRT_M1);
+   fe25519_reduce_emil(v);
    flipped_sign_sqrt_i = feq(c, v);
 
    //Calc v = i*r
@@ -372,7 +389,6 @@ static void MAP(ristretto255_point* ristretto_out, const field_elem t){
     field_elem tmp1, tmp2, tmp3, tmp4, tmp5;
     int was_square, wasnt_square;
 
-    // TODO: dopln 
     #define _r tmp1
     #define out tmp2
     #define c tmp3
@@ -400,7 +416,7 @@ static void MAP(ristretto255_point* ristretto_out, const field_elem t){
     wasnt_square = 1 - was_square;     
 
     fmul(s_prime,s,t);                    // s*t
-    fabsolute(s_prime,s_prime);           // CT_ABS(s*t)
+    fabsolute(s_prime);           // CT_ABS(s*t)
     fneg(s_prime,s_prime);                // -CT_ABS(s*t)
 
     swap25519(s,s_prime,wasnt_square);    // s = CT_SELECT(s IF was_square ELSE s_prime)
@@ -493,6 +509,11 @@ void ristretto255_point_addition(ristretto255_point* r,const ristretto255_point*
     fmul(r->z, g, f);
     fmul(r->t, e, h);
 
+    //fe25519_reduce_emil(r->x);
+    //fe25519_reduce_emil(r->y);
+    //fe25519_reduce_emil(r->z);
+    //fe25519_reduce_emil(r->t);
+
     WIPE_BUFFER(d); WIPE_BUFFER(h); WIPE_BUFFER(g);
     WIPE_BUFFER(f); WIPE_BUFFER(e);
 }
@@ -516,6 +537,12 @@ static void cswap(ristretto255_point* p, ristretto255_point* q,u8 b){
 }
 
 
+static u32 is_Canonical(const u32 in[FIELED_ELEM_SIZE]){
+  u32 temp[FIELED_ELEM_SIZE];
+  carry25519(temp,in);
+  return feq(temp,in);  
+}
+
 
 /**
   * @brief Decode input bytes u8[32] to ristretto255_point
@@ -534,24 +561,21 @@ static void cswap(ristretto255_point* p, ristretto255_point* q,u8 b){
 // *** STACKSIZE: 420B + 5size_t + 3int ***
 int ristretto255_decode(ristretto255_point *ristretto_out, const u8 bytes_in[BYTES_ELEM_SIZE]){
   
-  int was_square, is_canonical, is_negative;
+  uint32_t was_square, is_canonical, is_negative;
 
   field_elem temp1,temp2,temp3,temp4,temp5,temp6;
-
-  u8 checked_bytes[BYTES_ELEM_SIZE];
 
   // Step 1: Check that the encoding of the 
   // field element is canonical
   #define _s temp1
   unpack25519(_s, bytes_in);
-  pack25519(checked_bytes,_s);
-
-  
+ 
 
   // check if bytes_in == checked_bytes, else abort
-  is_canonical = bytes_eq_32(checked_bytes,bytes_in);
+  is_canonical = is_Canonical(_s);
   is_negative = is_neg_bytes(bytes_in);
-
+  
+  //printf("ristretto255_decode: is_canonical=%d, is_negative=%d\n", is_canonical, is_negative);
   if (is_canonical == 0 || is_negative==1){
     #ifdef DEBUG_FLAG
         printf("ristretto255_decode: Bad encoding or neg bytes passed to the ristretto255_decode function! is_canonical=%d, is_negative=%d\n", is_canonical, is_negative);
@@ -579,6 +603,8 @@ int ristretto255_decode(ristretto255_point *ristretto_out, const u8 bytes_in[BYT
   fmul(duu1_positive,EDWARDS_D,uu1);      // D*u1^2
   #define duu1 temp5
   fneg(duu1,duu1_positive);               // -(D * u1^2) 
+  //printf("ristretto255_decode: fneg(duu1,duu1_positive) ==\n  ");
+  //print_32((u8*)duu1);
 
   #define uu2 temp6
   pow2(uu2,u2);                           // u2^2
@@ -599,7 +625,9 @@ int ristretto255_decode(ristretto255_point *ristretto_out, const u8 bytes_in[BYT
   #define sDx temp2
   fmul(sDx,_s,Dx);                        // s*den_x
   fadd(ristretto_out->x,sDx,sDx);         // 2*s*den_x
-  fabsolute(ristretto_out->x,ristretto_out->x); // x = CT_ABS(2 * s * den_x)
+  fabsolute(ristretto_out->x); // x = CT_ABS(2 * s * den_x)
+  //printf("ristretto255_decode: fabsolute(ristretto_out->x) ==\n  ");
+  //print_32((u8*)ristretto_out->x);
 
   #define Dy temp5
   fmul(Dy, _I, Dxv);                      // den_y = invsqrt * den_x * v
@@ -610,21 +638,28 @@ int ristretto255_decode(ristretto255_point *ristretto_out, const u8 bytes_in[BYT
 
   fcopy(ristretto_out->z, F_ONE);         // z is set to 1
 
+  fe25519_reduce_emil(ristretto_out->x);
+  fe25519_reduce_emil(ristretto_out->y);
+  fe25519_reduce_emil(ristretto_out->t);
+
   WIPE_BUFFER(_s); WIPE_BUFFER(sDx); WIPE_BUFFER(u1);
   WIPE_BUFFER(Dxv); WIPE_BUFFER(Dy); WIPE_BUFFER(_I);
 
+  //printf("ristretto255_decode: was_square = inv_sqrt(_I,F_ONE,vuu2) == %d\n\n",was_square);
   if (was_square == 0){
     #ifdef DEBUG_FLAG
       printf("\n\n\n ristretto255_decode: Bad encoding! was_square=%d \n\n\n",was_square);
     #endif
     return 1;
   }
+  //printf("ristretto255_decode: is_neg(ristretto_out->t) == %d\n\n",is_neg(ristretto_out->t));
   if (is_neg(ristretto_out->t)){
     #ifdef DEBUG_FLAG
       printf("\n\n\n ristretto255_decode: Bad encoding! is_neg(t)=%d \n\n\n",is_neg(ristretto_out->t));
     #endif
     return 1;
   }
+  //printf("ristretto255_decode: was_square = feq(ristretto_out->y,F_ZERO) == %d\n\n",feq(ristretto_out->y,F_ZERO));
   if (feq(ristretto_out->y,F_ZERO)){
     #ifdef DEBUG_FLAG
       printf("\n\n\n ristretto255_decode: Bad encoding! feq(y,F_ZERO)=%d \n\n\n",feq(ristretto_out->y,F_ZERO));
@@ -692,6 +727,11 @@ int ristretto255_encode(u8 bytes_out[BYTES_ELEM_SIZE], const ristretto255_point*
   
   // note: we used swap25519 instead of fselect so our logic
   // is little bit different here
+  fe25519_reduce_emil(tZinv);
+  //printf("ristretto255_encode: fe25519_reduce_emil(tZinv) ==\n  ");
+  //print_32((u8*)tZinv);
+
+  //printf("ristretto255_encode: 1-is_neg(tZinv) == %d\n\n",1-is_neg(tZinv));
   int is_tZinv_neg = 1-is_neg(tZinv);     // IS_NEGATIVE(t0 * z_inv)
   #define _X _temp4
   #define _Y _temp5
@@ -710,7 +750,14 @@ int ristretto255_encode(u8 bytes_out[BYTES_ELEM_SIZE], const ristretto255_point*
   fmul(XZ_inv,iY,Zinv);                   // x * z_inv
   #define n_Y _temp2
   fneg(n_Y,iX);                           // -(x * z_inv)
+  //printf("ristretto255_encode: fneg(n_Y,iX) ==\n  ");
+  //print_32((u8*)n_Y);
   fcopy(iX,iX); 
+  fe25519_reduce_emil(XZ_inv);
+  //printf("ristretto255_encode: fe25519_reduce_emil(XZ_inv) ==\n  ");
+  //print_32((u8*)XZ_inv);
+
+  //printf("ristretto255_encode: is_neg(XZ_inv) == %d\n\n",is_neg(XZ_inv));
   swap25519(iX,n_Y,is_neg(XZ_inv));       // y = CT_SELECT(-y IF IS_NEGATIVE(x * z_inv) ELSE y)
 
   #define _Z _temp3
@@ -723,7 +770,9 @@ int ristretto255_encode(u8 bytes_out[BYTES_ELEM_SIZE], const ristretto255_point*
   fmul(temp_s,enchanted_denominator,Z_Y); // den_inv * (z - y)
 
 
-  fabsolute(temp_s,temp_s);               // s = CT_ABS(den_inv * (z - y))
+  fabsolute(temp_s);               // s = CT_ABS(den_inv * (z - y))
+  //printf("ristretto255_encode: fe25519_reduce_emil(XZ_inv) ==\n  ");
+  //print_32((u8*)temp_s);
   
   pack25519(bytes_out,temp_s);
 
@@ -787,6 +836,10 @@ int hash_to_group(u8 bytes_out[BYTES_ELEM_SIZE], const u8 bytes_in[HASH_BYTES_SI
   MAP(b,ft2); // map(ristretto_elligator) second hal
 
   ristretto255_point_addition(r,a,b); // addition of 2 Edward's point
+  fe25519_reduce_emil(r->x);
+  fe25519_reduce_emil(r->y);
+  fe25519_reduce_emil(r->z);
+  fe25519_reduce_emil(r->t);
 
   ristretto255_encode(bytes_out, r);
 
@@ -818,40 +871,9 @@ void ristretto255_scalarmult(ristretto255_point* p, ristretto255_point* q,const 
     ristretto255_point_addition(p,p,p);
     cswap(p,q,b);
   }
+  fe25519_reduce_emil(p->x);
+  fe25519_reduce_emil(p->y);
+  fe25519_reduce_emil(p->z);
+  fe25519_reduce_emil(p->t);
+  
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -5,8 +5,8 @@
 // ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
-// ---------------------------version 0.1.3 -------------------------
-// --------------------------- 30-09-2023 ---------------------------
+// ---------------------------version T.T.5 -------------------------
+// --------------------------- 10-02-2024 ---------------------------
 // ******************************************************************
 
 /**
@@ -47,7 +47,7 @@ void store32_le_buf(u8 *dst, const u32 *src, size_t size) {
 }
 
 // get bit from scalar at position i
-static int scalar_bit(const u8 s[BYTES_ELEM_SIZE], int i){
+static int32_t scalar_bit(const u8 s[BYTES_ELEM_SIZE], int32_t i){
     if (i < 0) { return 0; } // handle -1 for sliding windows
     return (s[i>>3] >> (i&7)) & 1;
 }
@@ -78,7 +78,7 @@ static void multiply(u32 p[16], const u32 a[8], const u32 b[8]){
     }
 }
 
-static int is_above_l(const u32 x[8]){
+int32_t is_above_l(const u32 x[8]){
    size_t i;
     // We work with L directly, in a 2's complement encoding
     // (-L == ~L + 1)
@@ -87,7 +87,7 @@ static int is_above_l(const u32 x[8]){
         carry  += (u64)x[i] + (~L[i] & 0xffffffff);
         carry >>= 32;
     }
-    return (int)carry; // carry is either 0 or 1
+    return (int32_t)carry; // carry is either 0 or 1
 }
 
 // Final reduction modulo L, by conditionally removing L.
@@ -155,6 +155,13 @@ void mod_l(u8 reduced[32], const u32 x[16]){
     store32_le_buf(reduced, xr, 8);
 
     WIPE_BUFFER(xr);
+}
+
+void multiply_mod_l(u32 r[8], const u32 a[8], const u32 b[8]){
+    u32 c[16] = {0};
+    multiply(c, a, b);
+    mod_l((u8*) r, c);
+    WIPE_BUFFER(c);
 }
 
 
@@ -274,7 +281,7 @@ void crypto_x25519_inverse(u8 out[BYTES_ELEM_SIZE], const u8 in[BYTES_ELEM_SIZE]
     u32 product[16];
     
 
-    for (int i = 252; i >= 0; i--) {
+    for (int32_t i = 252; i >= 0; i--) {
         size_t jdx;
         ZERO(jdx, product, 16);
         multiply(product, m_inv, m_inv);
@@ -302,14 +309,6 @@ void crypto_x25519_inverse(u8 out[BYTES_ELEM_SIZE], const u8 in[BYTES_ELEM_SIZE]
 /********************* WARNING ********************************/
 // Functional only on CPU with Little Endian architecture!
 // Feature for Big Endian architecture is not implemented (yet). 
-static void multiply_mod_l(u32 r[8], const u32 a[8], const u32 b[8]){
-    u32 c[16] = {0};
-    multiply(c, a, b);
-    mod_l((u8*) r, c);
-    WIPE_BUFFER(c);
-}
-
-
 // code that uses temporary memory-space on stack
 void inverse_mod_l(u8 out[BYTES_ELEM_SIZE], const u8 in[BYTES_ELEM_SIZE]){
     static u8 Lm2[BYTES_ELEM_SIZE] = { // L - 2
@@ -320,7 +319,7 @@ void inverse_mod_l(u8 out[BYTES_ELEM_SIZE], const u8 in[BYTES_ELEM_SIZE]){
     };
     u32 m_inv [8] = {1};
     // Compute the inverse
-    for (int i = 252; i >= 0; i--) {
+    for (int32_t i = 252; i >= 0; i--) {
         multiply_mod_l(m_inv, m_inv, m_inv);
         if (scalar_bit(Lm2, i)) {
 
@@ -328,7 +327,7 @@ void inverse_mod_l(u8 out[BYTES_ELEM_SIZE], const u8 in[BYTES_ELEM_SIZE]){
 
         }
     }
-    int i;
+    int32_t i;
     COPY(i ,out, (u8*) m_inv, BYTES_ELEM_SIZE);
     WIPE_BUFFER(m_inv);
 }

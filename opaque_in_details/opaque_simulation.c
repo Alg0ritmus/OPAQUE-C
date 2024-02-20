@@ -174,7 +174,7 @@ int main(){
     print_structure(client_session_key,64);
 
     uint8_t server_session_key[Nx];
-    size_t r = ServerFinish( // returns 0 if succes, otherwise -1
+    uint8_t r = ServerFinish( // returns 0 if succes, otherwise -1
         server_session_key,
         &server_state, //server state from KE2
         &ke3
@@ -184,6 +184,6 @@ int main(){
     print_structure(server_state.expected_client_mac, Nh);
 
 
-    printf("result: %lld, if 0, successfully logged in.",r);
+    printf("result: %d, if 0, successfully logged in.",r);
     return 0;
 }

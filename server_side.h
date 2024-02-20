@@ -27,10 +27,10 @@
 #include "ristretto255/ristretto255.h"
 #include "ristretto255/helpers.h"
 #include "ristretto255/utils.h"
+#include "ristretto255/prng.h"
 
 #include "oprf.h"
 #include "opaque.h"
-#include "rnd.h"
 
 
 void ServerRegistrationResponse(
@@ -55,7 +55,7 @@ void ServerGenerateKE2(
     const uint8_t *context, const int context_len
   );
 
-size_t ServerFinish(
+uint8_t ServerFinish(
     uint8_t session_key[Nx],
     const ServerState *state,
     const KE3 *ke3

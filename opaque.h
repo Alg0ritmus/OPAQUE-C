@@ -26,7 +26,6 @@
 #include "ristretto255/utils.h"
 #include "ristretto255/modl.h"
 #include "oprf.h"
-#include "rnd.h"
 
 #define Nh 64
 #define Npk 32

@@ -17,10 +17,10 @@
 #include "ristretto255/ristretto255.h"
 #include "ristretto255/helpers.h"
 #include "ristretto255/utils.h"
+#include "ristretto255/prng.h"
 
 #include "oprf.h"
 #include "opaque.h"
-#include "rnd.h"
 
 #include "main_config.h"
 
@@ -67,7 +67,7 @@ static void printDigest(uint8_t in[SHA512HashSize]){
 // }
 
 int main(){
-  srand(1234);
+  s_rand(1234);
 
   // -----------------------------------         
   // ------------- TESTING OF ----------

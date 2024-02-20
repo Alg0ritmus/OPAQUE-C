@@ -25,10 +25,10 @@
 #include "ristretto255/ristretto255.h"
 #include "ristretto255/helpers.h"
 #include "ristretto255/utils.h"
+#include "ristretto255/prng.h"
 
 #include "oprf.h"
 #include "opaque.h"
-#include "rnd.h"
 
 void ClientRegistrationRequest(
     uint8_t blind[32], 

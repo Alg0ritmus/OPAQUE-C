@@ -18,9 +18,8 @@
 #include "ristretto255/helpers.h"
 #include "ristretto255/utils.h"
 #include "ristretto255/modl.h"
+#include "ristretto255/prng.h"
 #include "oprf.h"
-#include "rnd.h"
-
 
 
 #define MAXINFOSIZE 1024*5
@@ -29,7 +28,7 @@
 
 #define ecc_h2c_expand_message_xmd_sha512_DSTMAXSIZE 255
 
-#define RNG_SEED 1234 // seed to random generator (rnd.h)
+#define RNG_SEED 1234
 
 const uint8_t ZERO_OPRF[32] = {
     0,0,0,0,0,0,0,0,
@@ -97,24 +96,6 @@ static void printDigest(uint8_t in[SHA512HashSize]){
   }
   printf("\n");
 }
-
-
-static uint32_t secure_concat(uint8_t* result, const uint8_t* array1, size_t len1, const uint8_t* array2, size_t len2) {
-    result = (uint8_t*)malloc(len1 + len2);
-
-    if (result == NULL) {
-        // Handle memory allocation error
-        return -1;
-    }
-
-    // Use memmove for secure copying
-    memmove(result, array1, len1);
-    memmove(result + len1, array2, len2);
-
-    return 1;
-}
-
-
 
 void ecc_concat2(
     uint8_t *out,
@@ -447,35 +428,7 @@ uint32_t DeterministicDeriveKeyPair(
 // and reduce (mod L)"
 
 static void getRandomScalar(uint8_t r[32]){
-    // using static just to store value outside stack
-    static const  uint8_t L[32] = { // L - 2, where L = 2**252+27742317777372353535851937790883648493
-        0xed, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58,
-        0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde, 0x14,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10,
-    };
-    uint8_t c;
-
-    while (1) {
-        rnd(r,32); 
-        r[31] &= 0x1f;
-
-        // Constant-time check for r < L, if so break and return r
-        uint8_t i = 32;
-        c = 0;
-        uint8_t n = 1;
-
-        while (i != 0) {
-            i--;
-            c |= ((r[i] - L[i]) >> 8) & n;
-            n &= ((r[i] ^ L[i]) - 1) >> 8;
-        }
-
-        if (c != 0) {
-            // Just break the loop
-            return;
-        }
-    }
+    rand_32_bytes_lower_thanL(r);
 }
 
 

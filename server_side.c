@@ -138,9 +138,9 @@ void ServerGenerateKE2(
     uint8_t server_nonce[Nn];
     uint8_t server_keyshare_seed[Nseed];
 
-    rnd(masking_nonce,Nn); // NOTE this should be random but < L
-    rnd(server_nonce,Nn);
-    rnd(server_keyshare_seed,Nseed);
+    rand_32_bytes_lower_thanL(masking_nonce); // NOTE this should be random but < L
+    rand_32_bytes(server_nonce);
+    rand_32_bytes(server_keyshare_seed);
 
   ecc_opaque_ristretto255_sha512_GenerateKE2WithSeed(
     ke2_raw,
@@ -163,13 +163,13 @@ void ServerGenerateKE2(
 
 // if -1, error occured
 // else 0, success
-size_t ServerFinish(
+uint8_t ServerFinish(
     uint8_t session_key[Nx],
     const ServerState *state,
     const KE3 *ke3
   ) {
 
-  size_t result = 0;
+  uint8_t result = 0;
   result = ecc_opaque_ristretto255_sha512_ServerFinish(
     session_key,
     state, //server state from KE2
