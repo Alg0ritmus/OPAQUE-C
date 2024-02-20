@@ -11,7 +11,8 @@
 
 /*
  * This file serves for testing purposes; it compares the results of 
- * each OPAQUE main function against official test vectors.
+ * AKE1 and AKE3 messages against official test vectors. This test
+ * is suitable for Client-side login stage testing on MCU. 
 */
 
 #include <stdio.h>
@@ -26,7 +27,6 @@
 
 #include "oprf.h"
 #include "opaque.h"
-
 
 // inputs
 
@@ -392,73 +392,6 @@ uint32_t randomized_password_len = 64;
   uint8_t masking_key[Nh];
   uint8_t export_key[Nh];
 
-  Store(
-      &envelope, 
-      client_public_key,
-      masking_key,
-      export_key,
-      randomized_password, randomized_password_len,
-      server_public_key,
-      server_identity, server_identity_len,
-      client_identity, client_identity_len
-      );
-
-  
-  test_result = compare((uint8_t*)&envelope, _envelope,96);
-  if (test_result==0){printf("ERROR: Store->envelope\n");}
-  else {printf("SUCCESS: Store->envelope\n");}
-
-  test_result = compare(export_key,_export_key,64);
-  if (test_result==0){printf("ERROR: Store->export_key\n");}
-  else {printf("SUCCESS: Store->export_key\n");}
-  test_result = compare(client_public_key,_client_public_key,32);
-  if (test_result==0){printf("ERROR: Store->client_public_key\n");}
-  else {printf("SUCCESS: Store->client_public_key\n");}
-  test_result = compare(masking_key,_masking_key,64);
-  if (test_result==0){printf("ERROR: Store->masking_key\n");}
-  else {printf("SUCCESS: Store->masking_key\n");}
-
-  RegistrationRequest request;
-  CreateRegistrationRequestWithBlind( 
-    blind_registration, 
-    &request, 
-    password, password_len
-  );
-
-  test_result = compare(request.blinded_message,_registration_request,32);
-  if (test_result==0){printf("ERROR: CreateRegistrationRequest->blinded_message\n");}
-  else {printf("SUCCESS: CreateRegistrationRequest->blinded_message\n");}
-
-  RegistrationResponse response;
-  CreateRegistrationResponse(
-    &response,
-    &request,
-    server_public_key,
-    credential_identifier, 4,
-    oprf_seed
-  );
-
-  test_result = compare((uint8_t*) &response,_registration_response,64);
-  if (test_result==0){printf("ERROR: CreateRegistrationResponse->response\n");}
-  else {printf("SUCCESS: CreateRegistrationResponse->response\n");}
-
-  RegistrationRecord record;
-  FinalizeRegistrationRequest(
-   &record,
-   export_key,
-   password, password_len,
-   blind_registration,
-   &response,
-   server_identity, server_identity_len,
-   client_identity, client_identity_len
-  );
-
-  test_result = compare(export_key,_export_key,64);
-  if (test_result==0){printf("ERROR: FinalizeRegistrationRequest->export_key\n");}
-  else {printf("SUCCESS: FinalizeRegistrationRequest->export_key\n");}
-  test_result = compare((uint8_t*) &record,_registration_upload,192);
-  if (test_result==0){printf("ERROR: FinalizeRegistrationRequest->record\n");}
-  else {printf("SUCCESS: FinalizeRegistrationRequest->record\n");}
 
   //////////////////////////
   //  AKE1
@@ -489,7 +422,7 @@ uint32_t randomized_password_len = 64;
     server_identity, server_identity_len,
     server_private_key,
     server_public_key,
-    &record,
+    (RegistrationRecord*) _registration_upload,
     credential_identifier, 4,
     oprf_seed,
     &ke1,
@@ -513,7 +446,7 @@ uint32_t randomized_password_len = 64;
     &state, // from KE1
     client_identity, client_identity_len,
     server_identity, server_identity_len,
-    &ke2, // from ke2_raw
+    (KE2*)_KE2, // change to in case u are testing with serverside outúuts also &ke2
     context, 10
   );
 

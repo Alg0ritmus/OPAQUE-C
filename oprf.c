@@ -28,8 +28,6 @@
 
 #define ecc_h2c_expand_message_xmd_sha512_DSTMAXSIZE 255
 
-#define RNG_SEED 1234
-
 const uint8_t ZERO_OPRF[32] = {
     0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0,

@@ -76,9 +76,10 @@
 #include "ristretto255/helpers.h"
 #include "ristretto255/utils.h"
 #include "ristretto255/modl.h"
+#include "ristretto255/prng.h"
 #include "oprf.h"
-#include "main_config.h"
 
+#define TESTING_ENVELOPE_NONCE
 
 /**
   * OPAQUE CONFIGURATION D.1.2.1
