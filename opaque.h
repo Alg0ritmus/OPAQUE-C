@@ -38,7 +38,7 @@
 #define Noe 32
 #define Ne 96
 
-//#define unsigned int uint_t
+//#define unsigned uint32_t uint_t
 #define IDENTITY_BYTE_SIZE 65535 // <1; 2^16-1> // QUESTION, is it correct?, if not change CreateCleartextCredentials()
 
 
@@ -54,9 +54,9 @@
 typedef struct CleartextCredentials_t{
      uint8_t server_public_key[Npk];
      uint8_t server_identity[IDENTITY_BYTE_SIZE];
-     int server_identity_len;
+     uint32_t server_identity_len;
      uint8_t client_identity[IDENTITY_BYTE_SIZE];
-     int client_identity_len;
+     uint32_t client_identity_len;
    }CleartextCredentials;
 
 typedef struct Envelope_t{

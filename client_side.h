@@ -33,7 +33,7 @@
 void ClientRegistrationRequest(
     uint8_t blind[32], 
     RegistrationRequest *request, 
-    const uint8_t* password, const int password_len
+    const uint8_t* password, const uint32_t password_len
   );
 
 void ClientRegistrationRecord(
@@ -57,10 +57,10 @@ void ClientGenerateKE3(
     uint8_t session_key[64], // client_session_key
     uint8_t export_key[64],
     ClientState *state,
-    const uint8_t *client_identity, const int client_identity_len,
-    const uint8_t *server_identity, const int server_identity_len,
+    const uint8_t *client_identity, const uint32_t client_identity_len,
+    const uint8_t *server_identity, const uint32_t server_identity_len,
     const KE2 *ke2,
-    const uint8_t *context, const int context_len
+    const uint8_t *context, const uint32_t context_len
   );
 
 

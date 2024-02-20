@@ -123,15 +123,15 @@ void ServerRegistrationResponse(
 void ServerGenerateKE2(
     KE2 *ke2_raw,
     ServerState *state_raw,
-    const uint8_t *server_identity, const int server_identity_len,
+    const uint8_t *server_identity, const uint32_t server_identity_len,
     const uint8_t server_private_key[32],
     const uint8_t server_public_key[32],
     const RegistrationRecord *record_raw,
-    const uint8_t *credential_identifier, const int credential_identifier_len,
+    const uint8_t *credential_identifier, const uint32_t credential_identifier_len,
     const uint8_t oprf_seed[Nh],
     const KE1 *ke1_raw,
-    const uint8_t *client_identity, const int client_identity_len,
-    const uint8_t *context, const int context_len
+    const uint8_t *client_identity, const uint32_t client_identity_len,
+    const uint8_t *context, const uint32_t context_len
   ) {
 
     uint8_t masking_nonce[Nn];

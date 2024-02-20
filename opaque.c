@@ -147,10 +147,10 @@ static void CreateCleartextCredentials(
 
 
 // https://github.com/aldenml/ecc/blob/fedffd5624db6d90c659864c21be0c530484c925/src/opaque.c#L194C1-L211C2
-static int serializeCleartextCredentials(uint8_t *out, CleartextCredentials *credentials) {
-    const int len = Npk + 2 + credentials->server_identity_len + 2 + credentials->client_identity_len;
+static uint32_t serializeCleartextCredentials(uint8_t *out, CleartextCredentials *credentials) {
+    const uint32_t len = Npk + 2 + credentials->server_identity_len + 2 + credentials->client_identity_len;
 
-    int offset = 0;
+    uint32_t offset = 0;
     memcpy(&out[offset], credentials->server_public_key, Npk);
     offset += Npk;
     out[offset + 0] = (credentials->server_identity_len >> 8) & 0xff;
@@ -273,7 +273,7 @@ void Store(
 
     uint8_t cleartext_creds_buf[512];
 
-    int cleartext_creds_len = serializeCleartextCredentials(
+    uint32_t cleartext_creds_len = serializeCleartextCredentials(
         cleartext_creds_buf,
         cleartext_credentials
     );
@@ -349,7 +349,7 @@ size_t Recover(
     //(client_private_key, client_public_key) = DeriveDiffieHellmanKeyPair(seed)
     uint8_t client_public_key[Npk];
     uint8_t info[33] = {'O', 'P', 'A', 'Q', 'U', 'E', '-', 'D', 'e', 'r', 'i', 'v', 'e', 'D', 'i', 'f', 'f', 'i', 'e', 'H', 'e', 'l', 'l', 'm', 'a', 'n', 'K', 'e', 'y', 'P', 'a', 'i', 'r'};
-    int infoLen = 33;
+    uint32_t infoLen = 33;
     DeterministicDeriveKeyPair(
         client_private_key,
         client_public_key,
@@ -372,7 +372,7 @@ size_t Recover(
     // expected_tag = MAC(auth_key, concat(envelope.nonce, cleartext_credentials))
     uint8_t cleartext_creds_buf[512];
     
-    int cleartext_creds_len = serializeCleartextCredentials(
+    uint32_t cleartext_creds_len = serializeCleartextCredentials(
         cleartext_creds_buf,
         cleartext_credentials
     );
@@ -498,7 +498,7 @@ void CreateRegistrationResponse(
 
 
     uint8_t info[20] = {'O', 'P', 'A', 'Q', 'U', 'E', '-', 'D', 'e', 'r', 'i', 'v', 'e', 'K', 'e', 'y', 'P', 'a', 'i', 'r'};
-    int infoLen = 20;
+    uint32_t infoLen = 20;
     DeterministicDeriveKeyPair(
         oprf_key,
         ignore,
@@ -655,7 +655,7 @@ def CreateCredentialRequest(password):
 
 
 static void CreateCredentialRequest(
-    uint8_t *password, int password_len,
+    uint8_t *password, uint32_t password_len,
     CredentialRequest *request,
     uint8_t blind[32]
   ) {
@@ -811,7 +811,7 @@ void ecc_opaque_ristretto255_sha512_CreateCredentialResponseWithMasking(
     const CredentialRequest *request_raw,
     const uint8_t server_public_key[32],
     const RegistrationRecord *record_raw,
-    const uint8_t *credential_identifier, const int credential_identifier_len,
+    const uint8_t *credential_identifier, const uint32_t credential_identifier_len,
     const uint8_t oprf_seed[Nh],
     const uint8_t masking_nonce[Nn]
 ) {
@@ -833,7 +833,7 @@ void ecc_opaque_ristretto255_sha512_CreateCredentialResponseWithMasking(
 
 
 
-//    const int seed_info_len = credential_identifier_len + 7;
+//    const uint32_t seed_info_len = credential_identifier_len + 7;
 //    uint8_t seed_info[256];
 //    uint8_t oprf_key_label[7] = "OprfKey";
 //    ecc_concat2(seed_info, credential_identifier, credential_identifier_len, oprf_key_label, 7);
@@ -866,7 +866,7 @@ void ecc_opaque_ristretto255_sha512_CreateCredentialResponseWithMasking(
 
 
     uint8_t info[20] = {'O', 'P', 'A', 'Q', 'U', 'E', '-', 'D', 'e', 'r', 'i', 'v', 'e', 'K', 'e', 'y', 'P', 'a', 'i', 'r'};
-    int infoLen = 20;
+    uint32_t infoLen = 20;
     DeterministicDeriveKeyPair(
         oprf_key,
         ignore,
@@ -921,14 +921,14 @@ void ecc_opaque_ristretto255_sha512_CreateCredentialResponseWithMasking(
 }
 
 
-int ecc_opaque_ristretto255_sha512_3DH_Preamble(
+uint32_t ecc_opaque_ristretto255_sha512_3DH_Preamble(
     uint8_t *preamble,
-    const int preamble_len,
-    const uint8_t *context, const int context_len,
-    const uint8_t *client_identity, const int client_identity_len,
+    const uint32_t preamble_len,
+    const uint8_t *context, const uint32_t context_len,
+    const uint8_t *client_identity, const uint32_t client_identity_len,
     const uint8_t *client_public_key,
     const KE1 *ke1,
-    const uint8_t *server_identity, const int server_identity_len,
+    const uint8_t *server_identity, const uint32_t server_identity_len,
     const uint8_t *server_public_key,
     const KE2 *ke2
 ) {
@@ -945,7 +945,7 @@ int ecc_opaque_ristretto255_sha512_3DH_Preamble(
     uint8_t preamble_label[9] = {'O', 'P', 'A', 'Q', 'U', 'E', 'v', '1', '-'};
 
     uint8_t *p = preamble;
-    int n = preamble_len;
+    uint32_t n = preamble_len;
     n = 0;
 
     ecc_concat2(p + n, preamble_label, sizeof preamble_label, NULL, 0);
@@ -1025,9 +1025,9 @@ void ecc_opaque_ristretto255_sha512_3DH_TripleDHIKM(
 void ecc_opaque_ristretto255_sha512_3DH_Expand_Label(
     uint8_t *out, // 64
     const uint8_t *secret,
-    const uint8_t *label, const int label_len,
-    const uint8_t *context, const int context_len,
-    const int length
+    const uint8_t *label, const uint32_t label_len,
+    const uint8_t *context, const uint32_t context_len,
+    const uint32_t length
 ) {
     // Expand-Label(Secret, Label, Context, Length) =
     //     Expand(Secret, CustomLabel, Length)
@@ -1042,7 +1042,7 @@ void ecc_opaque_ristretto255_sha512_3DH_Expand_Label(
 
     uint8_t info[512];
     uint8_t *p = &info[0];
-    int n = 0;
+    uint32_t n = 0;
 
     ecc_I2OSP(p + n, length, 2);
     n += 2;
@@ -1069,8 +1069,8 @@ void ecc_opaque_ristretto255_sha512_3DH_DeriveKeys(
     uint8_t *km2, // 64
     uint8_t *km3, // 64
     uint8_t *session_key, // 64
-    const uint8_t *ikm, const int ikm_len,
-    const uint8_t *preamble, const int preamble_len
+    const uint8_t *ikm, const uint32_t ikm_len,
+    const uint8_t *preamble, const uint32_t preamble_len
 ) {
     // Steps:
     // 1. prk = Extract("", ikm)
@@ -1141,14 +1141,14 @@ void ecc_opaque_ristretto255_sha512_3DH_DeriveKeys(
 void ecc_opaque_ristretto255_sha512_3DH_ResponseWithSeed(
     KE2 *ke2,
     ServerState *state,
-    const uint8_t *server_identity, const int server_identity_len,
+    const uint8_t *server_identity, const uint32_t server_identity_len,
     const uint8_t server_private_key[32],
     const uint8_t server_public_key[32],
-    const uint8_t *client_identity, const int client_identity_len,
+    const uint8_t *client_identity, const uint32_t client_identity_len,
     const uint8_t client_public_key[32],
     const KE1 *ke1,
     const CredentialResponse *credential_response_raw,
-    const uint8_t *context, const int context_len,
+    const uint8_t *context, const uint32_t context_len,
     const uint8_t server_nonce[Nn],
     const uint8_t seed[Nseed]
 ) {
@@ -1178,7 +1178,7 @@ void ecc_opaque_ristretto255_sha512_3DH_ResponseWithSeed(
 
     // 4. preamble = Preamble(client_identity, ke1, server_identity, ike2)
     uint8_t preamble[512];
-    const int preamble_len = ecc_opaque_ristretto255_sha512_3DH_Preamble(
+    const uint32_t preamble_len = ecc_opaque_ristretto255_sha512_3DH_Preamble(
         preamble,
         sizeof preamble,
         context, context_len,
@@ -1324,15 +1324,15 @@ void ecc_opaque_ristretto255_sha512_GenerateKE2WithSeed(
 
 
 
-int ecc_opaque_ristretto255_sha512_RecoverCredentials(
+uint32_t ecc_opaque_ristretto255_sha512_RecoverCredentials(
     uint8_t client_private_key[32],
     uint8_t server_public_key[32],
     uint8_t export_key[64], // 64
-    const uint8_t *password, const int password_len,
+    const uint8_t *password, const uint32_t password_len,
     const uint8_t blind[Nok],
     const CredentialResponse *res,
-    const uint8_t *server_identity, const int server_identity_len,
-    const uint8_t *client_identity, const int client_identity_len
+    const uint8_t *server_identity, const uint32_t server_identity_len,
+    const uint8_t *client_identity, const uint32_t client_identity_len
 ) {
     // Steps:
     // 1. y = Finalize(password, blind, response.data)
@@ -1400,7 +1400,7 @@ int ecc_opaque_ristretto255_sha512_RecoverCredentials(
     //                     server_identity, client_identity)
     
     CleartextCredentials ignore;
-    const int ret = Recover(
+    const uint32_t ret = Recover(
         client_private_key,
         &ignore,
         export_key,
@@ -1427,16 +1427,16 @@ int ecc_opaque_ristretto255_sha512_RecoverCredentials(
 
 
 
-int ecc_opaque_ristretto255_sha512_3DH_ClientFinalize(
+uint32_t ecc_opaque_ristretto255_sha512_3DH_ClientFinalize(
     KE3 *ke3_raw, // 64
     uint8_t session_key[64],
     ClientState *state,
-    const uint8_t *client_identity, const int client_identity_len,
+    const uint8_t *client_identity, const uint32_t client_identity_len,
     const uint8_t client_private_key[32],
-    const uint8_t *server_identity, const int server_identity_len,
+    const uint8_t *server_identity, const uint32_t server_identity_len,
     const uint8_t server_public_key[32],
     const KE2 *ke2,
-    const uint8_t *context, const int context_len
+    const uint8_t *context, const uint32_t context_len
 ) {
     // Steps:
     // 1. ikm = TripleDHIKM(state.client_secret, ke2.server_keyshare,
@@ -1465,7 +1465,7 @@ int ecc_opaque_ristretto255_sha512_3DH_ClientFinalize(
 
     // 2. preamble = Preamble(client_identity, state.ke1, server_identity, ke2.inner_ke2)
     uint8_t preamble[512];
-    const int preamble_len = ecc_opaque_ristretto255_sha512_3DH_Preamble(
+    const uint32_t preamble_len = ecc_opaque_ristretto255_sha512_3DH_Preamble(
         preamble,
         sizeof preamble,
         context, context_len,
@@ -1580,7 +1580,7 @@ size_t ecc_opaque_ristretto255_sha512_GenerateKE3(
     //                        server_identity, client_identity)
     uint8_t client_private_key[32];
     uint8_t server_public_key[32];
-    const int recover_ret = ecc_opaque_ristretto255_sha512_RecoverCredentials(
+    const uint32_t recover_ret = ecc_opaque_ristretto255_sha512_RecoverCredentials(
         client_private_key,
         server_public_key,
         export_key,
@@ -1595,7 +1595,7 @@ size_t ecc_opaque_ristretto255_sha512_GenerateKE3(
     // 2. (ke3, session_key) =
     //     ClientFinalize(client_identity, client_private_key, server_identity,
     //                     server_public_key, ke1, ke2)
-    const int finalize_ret = ecc_opaque_ristretto255_sha512_3DH_ClientFinalize(
+    const uint32_t finalize_ret = ecc_opaque_ristretto255_sha512_3DH_ClientFinalize(
         ke3_raw,
         session_key,
         state,
