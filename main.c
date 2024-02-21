@@ -231,7 +231,7 @@ int main(){
   uint8_t xmdDST[38] = {"QUUX-V01-CS02-with-expander-SHA512-256"};
   uint32_t lenDST = 38;
   char *xmdMSG = {"abcdef0123456789"};
-  uint32_t lenMSG = (int)strlen(xmdMSG);
+  uint32_t lenMSG = (uint32_t)strlen(xmdMSG);
   uint32_t in_bytes = 0x20;
   uint8_t xmd[64];
   expand_message_xmd_sha512(xmd, (uint8_t*)xmdMSG, lenMSG, xmdDST, lenDST, in_bytes);

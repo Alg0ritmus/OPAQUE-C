@@ -540,7 +540,13 @@ uint32_t randomized_password_len = 64;
   else{printf("SUCCESS: ServerFinish->session_key\n");}
 
 
-  printf("TEST RESULT: %d",test_result);
+  if (test_result){
+    printf("TEST RESULT: SUCCESS");
+  }
+  else{
+    printf("TEST RESULT: ERROR");
+  }
+ 
   return 0;
 
 }

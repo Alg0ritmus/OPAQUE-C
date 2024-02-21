@@ -10,6 +10,10 @@
 // ******************************************************************
 
 
+21.2:
+mensie upravy vo vypise + todo -> treba skontrolovat typy premennych
+a zamenit size_t, int tam kde to treba...<br>
+
 11-14.2 DONE:
 Teraz mozeme skompilovat main.c alebo test.c,
 co zavisi od `make all` / `make test` prikazu.<br>
