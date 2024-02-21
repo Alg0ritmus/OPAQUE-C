@@ -28,7 +28,7 @@
  *      sha Error Code.
  *
  */
-int USHAReset(USHAContext *context, enum SHAversion whichSha)
+uint32_t USHAReset(USHAContext *context, enum SHAversion whichSha)
 {
   if (!context) return shaNull;
   context->whichSha = whichSha;
@@ -58,8 +58,8 @@ int USHAReset(USHAContext *context, enum SHAversion whichSha)
  *      sha Error Code.
  *
  */
-int USHAInput(USHAContext *context,
-              const uint8_t *bytes, unsigned int bytecount)
+uint32_t USHAInput(USHAContext *context,
+              const uint8_t *bytes,uint32_t bytecount)
 {
   if (!context) return shaNull;
   switch (context->whichSha) {
@@ -89,8 +89,8 @@ int USHAInput(USHAContext *context,
  * Returns:
  *   sha Error Code.
  */
-int USHAFinalBits(USHAContext *context,
-                  uint8_t bits, unsigned int bit_count)
+uint32_t USHAFinalBits(USHAContext *context,
+                  uint8_t bits,uint32_t bit_count)
 {
   if (!context) return shaNull;
   switch (context->whichSha) {
@@ -120,7 +120,7 @@ int USHAFinalBits(USHAContext *context,
  *   sha Error Code.
  *
  */
-int USHAResult(USHAContext *context,
+uint32_t USHAResult(USHAContext *context,
                uint8_t Message_Digest[USHAMaxHashSize])
 {
   if (!context) return shaNull;
@@ -147,7 +147,7 @@ int USHAResult(USHAContext *context,
  *   block size
  *
  */
-int USHABlockSize()
+uint32_t USHABlockSize()
 {
   return SHA512_Message_Block_Size;
 }
@@ -167,7 +167,7 @@ int USHABlockSize()
  *   hash size
  *
  */
-int USHAHashSize()
+uint32_t USHAHashSize()
 {
   return SHA512HashSize;
   
@@ -188,7 +188,7 @@ int USHAHashSize()
  *   hash size in bits
  *
  */
-int USHAHashSizeBits()
+uint32_t USHAHashSizeBits()
 {
   
   return SHA512HashSizeBits;

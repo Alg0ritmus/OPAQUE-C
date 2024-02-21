@@ -77,7 +77,7 @@ static void SHA1PadMessage(SHA1Context *context, uint8_t Pad_Byte);
  *      sha Error Code.
  *
  */
-int SHA1Reset(SHA1Context *context)
+uint32_t SHA1Reset(SHA1Context *context)
 {
   if (!context) return shaNull;
 
@@ -117,7 +117,7 @@ int SHA1Reset(SHA1Context *context)
  *      sha Error Code.
  *
  */
-int SHA1Input(SHA1Context *context,
+uint32_t SHA1Input(SHA1Context *context,
     const uint8_t *message_array, unsigned length)
 {
   if (!context) return shaNull;
@@ -159,8 +159,8 @@ int SHA1Input(SHA1Context *context,
  * Returns:
  *   sha Error Code.
  */
-int SHA1FinalBits(SHA1Context *context, uint8_t message_bits,
-    unsigned int length)
+uint32_t SHA1FinalBits(SHA1Context *context, uint8_t message_bits,
+   uint32_t length)
 {
   static uint8_t masks[8] = {
       /* 0 0b00000000 */ 0x00, /* 1 0b10000000 */ 0x80,
@@ -209,10 +209,10 @@ int SHA1FinalBits(SHA1Context *context, uint8_t message_bits,
  *   sha Error Code.
  *
  */
-int SHA1Result(SHA1Context *context,
+uint32_t SHA1Result(SHA1Context *context,
     uint8_t Message_Digest[SHA1HashSize])
 {
-  int i;
+  uint32_t i;
 
   if (!context) return shaNull;
   if (!Message_Digest) return shaNull;
@@ -254,7 +254,7 @@ static void SHA1ProcessMessageBlock(SHA1Context *context)
       0x5A827999, 0x6ED9EBA1, 0x8F1BBCDC, 0xCA62C1D6
   };
 
-  int        t;               /* Loop counter */
+  uint32_t        t;               /* Loop counter */
   uint32_t   temp;            /* Temporary word value */
   uint32_t   W[80];           /* Word sequence */
   uint32_t   A, B, C, D, E;   /* Word buffers */
@@ -343,7 +343,7 @@ static void SHA1ProcessMessageBlock(SHA1Context *context)
  */
 static void SHA1Finalize(SHA1Context *context, uint8_t Pad_Byte)
 {
-  int i;
+  uint32_t i;
   SHA1PadMessage(context, Pad_Byte);
   /* message may be sensitive, clear it out */
   for (i = 0; i < SHA1_Message_Block_Size; ++i)

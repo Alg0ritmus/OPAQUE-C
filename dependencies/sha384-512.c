@@ -247,15 +247,15 @@ static uint32_t addTemp[4] = { 0, 0, 0, 0 };
                                       (context)->Corrupted )
 
 /* Local Function Prototypes */
-static int SHA384_512Reset(SHA512Context *context,
+static uint32_t SHA384_512Reset(SHA512Context *context,
                            uint32_t H0[SHA512HashSize/4]);
 static void SHA384_512ProcessMessageBlock(SHA512Context *context);
 static void SHA384_512Finalize(SHA512Context *context,
   uint8_t Pad_Byte);
 static void SHA384_512PadMessage(SHA512Context *context,
   uint8_t Pad_Byte);
-static int SHA384_512ResultN( SHA512Context *context,
-  uint8_t Message_Digest[ ], int HashSize);
+static uint32_t SHA384_512ResultN( SHA512Context *context,
+  uint8_t Message_Digest[ ], uint32_t HashSize);
 
 /* Initial Hash Values: FIPS 180-3 sections 5.3.4 and 5.3.5 */
 static uint32_t SHA384_H0[SHA512HashSize/4] = {
@@ -306,15 +306,15 @@ static uint64_t addTemp;
                                     (context)->Corrupted)
 
 /* Local Function Prototypes */
-static int SHA384_512Reset(SHA512Context *context,
+static uint32_t SHA384_512Reset(SHA512Context *context,
                            uint64_t H0[SHA512HashSize/8]);
 static void SHA384_512ProcessMessageBlock(SHA512Context *context);
 static void SHA384_512Finalize(SHA512Context *context,
   uint8_t Pad_Byte);
 static void SHA384_512PadMessage(SHA512Context *context,
   uint8_t Pad_Byte);
-static int SHA384_512ResultN(SHA512Context *context,
-  uint8_t Message_Digest[ ], int HashSize);
+static uint32_t SHA384_512ResultN(SHA512Context *context,
+  uint8_t Message_Digest[ ], uint32_t HashSize);
 
 /* Initial Hash Values: FIPS 180-3 sections 5.3.4 and 5.3.5 */
 
@@ -341,7 +341,7 @@ static uint64_t SHA512_H0[ ] = {
  *   sha Error Code.
  *
  */
-int SHA512Reset(SHA512Context *context)
+uint32_t SHA512Reset(SHA512Context *context)
 {
   return SHA384_512Reset(context, SHA512_H0);
 }
@@ -366,9 +366,9 @@ int SHA512Reset(SHA512Context *context)
  *   sha Error Code.
  *
  */
-int SHA512Input(SHA512Context *context,
+uint32_t SHA512Input(SHA512Context *context,
         const uint8_t *message_array,
-        unsigned int length)
+       uint32_t length)
 {
   if (!context) return shaNull;
   if (!length) return shaSuccess;
@@ -410,8 +410,8 @@ int SHA512Input(SHA512Context *context,
  *   sha Error Code.
  *
  */
-int SHA512FinalBits(SHA512Context *context,
-                    uint8_t message_bits, unsigned int length)
+uint32_t SHA512FinalBits(SHA512Context *context,
+                    uint8_t message_bits,uint32_t length)
 {
   static uint8_t masks[8] = {
       /* 0 0b00000000 */ 0x00, /* 1 0b10000000 */ 0x80,
@@ -459,7 +459,7 @@ int SHA512FinalBits(SHA512Context *context,
  *   sha Error Code.
  *
  */
-int SHA512Result(SHA512Context *context,
+uint32_t SHA512Result(SHA512Context *context,
     uint8_t Message_Digest[SHA512HashSize])
 {
   return SHA384_512ResultN(context, Message_Digest, SHA512HashSize);
@@ -484,14 +484,14 @@ int SHA512Result(SHA512Context *context,
  *
  */
 #ifdef USE_32BIT_ONLY
-static int SHA384_512Reset(SHA512Context *context,
+static uint32_t SHA384_512Reset(SHA512Context *context,
                            uint32_t H0[SHA512HashSize/4])
 #else /* !USE_32BIT_ONLY */
-static int SHA384_512Reset(SHA512Context *context,
+static uint32_t SHA384_512Reset(SHA512Context *context,
                            uint64_t H0[SHA512HashSize/8])
 #endif /* USE_32BIT_ONLY */
 {
-  int i;
+  uint32_t i;
   if (!context) return shaNull;
   context->Message_Block_Index = 0;
 
@@ -573,7 +573,7 @@ static void SHA384_512ProcessMessageBlock(SHA512Context *context)
       0x431D67C4, 0x9C100D4C, 0x4CC5D4BE, 0xCB3E42B6, 0x597F299C,
       0xFC657E2A, 0x5FCB6FAB, 0x3AD6FAEC, 0x6C44198C, 0x4A475817
   };
-  int     t, t2, t8;                  /* Loop counter */
+  uint32_t     t, t2, t8;                  /* Loop counter */
   uint32_t  temp1[2], temp2[2],       /* Temporary word values */
         temp3[2], temp4[2], temp5[2];
   uint32_t  W[2*80];                  /* Word sequence */
@@ -689,7 +689,7 @@ static void SHA384_512ProcessMessageBlock(SHA512Context *context)
       0x431D67C49C100D4Cll, 0x4CC5D4BECB3E42B6ll, 0x597F299CFC657E2All,
       0x5FCB6FAB3AD6FAECll, 0x6C44198C4A475817ll
   };
-  int        t, t8;                   /* Loop counter */
+  uint32_t        t, t8;                   /* Loop counter */
   uint64_t   temp1, temp2;            /* Temporary word value */
   uint64_t   W[80];                   /* Word sequence */
   uint64_t   A, B, C, D, E, F, G, H;  /* Word buffers */
@@ -893,12 +893,12 @@ static void SHA384_512PadMessage(SHA512Context *context,
  *   sha Error Code.
  *
  */
-static int SHA384_512ResultN(SHA512Context *context,
-    uint8_t Message_Digest[ ], int HashSize)
+static uint32_t SHA384_512ResultN(SHA512Context *context,
+    uint8_t Message_Digest[ ], uint32_t HashSize)
 {
-  int i;
+  uint32_t i;
 #ifdef USE_32BIT_ONLY
-  int i2;
+  uint32_t i2;
 #endif /* USE_32BIT_ONLY */
 
   if (!context) return shaNull;

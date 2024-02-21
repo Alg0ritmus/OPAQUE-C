@@ -53,11 +53,11 @@
  *      sha Error Code.
  *
  */
-int hkdf(SHAversion whichSha,
-    const unsigned char *salt, int salt_len,
-    const unsigned char *ikm, int ikm_len,
-    const unsigned char *info, int info_len,
-    uint8_t okm[ ], int okm_len)
+uint32_t hkdf(SHAversion whichSha,
+    const unsigned char *salt, uint32_t salt_len,
+    const unsigned char *ikm, uint32_t ikm_len,
+    const unsigned char *info, uint32_t info_len,
+    uint8_t okm[ ], uint32_t okm_len)
 {
   uint8_t prk[USHAMaxHashSize];
   return hkdfExtract(whichSha, salt, salt_len, ikm, ikm_len, prk) ||
@@ -92,9 +92,9 @@ int hkdf(SHAversion whichSha,
  *      sha Error Code.
  *
  */
-int hkdfExtract(SHAversion whichSha,
-    const unsigned char *salt, int salt_len,
-    const unsigned char *ikm, int ikm_len,
+uint32_t hkdfExtract(SHAversion whichSha,
+    const unsigned char *salt, int32_t salt_len,
+    const unsigned char *ikm, uint32_t ikm_len,
     uint8_t prk[USHAMaxHashSize])
 {
   unsigned char nullSalt[USHAMaxHashSize];
@@ -141,13 +141,13 @@ int hkdfExtract(SHAversion whichSha,
  *      sha Error Code.
  *
  */
-int hkdfExpand(SHAversion whichSha, const uint8_t prk[ ], int prk_len,
-    const unsigned char *info, int info_len,
-    uint8_t okm[ ], int okm_len)
+uint32_t hkdfExpand(SHAversion whichSha, const uint8_t prk[ ], uint32_t prk_len,
+    const unsigned char *info, int32_t info_len,
+    uint8_t okm[ ], uint32_t okm_len)
 {
-  int hash_len, N;
+  uint32_t hash_len, N;
   unsigned char T[USHAMaxHashSize];
-  int Tlen, where, i;
+  uint32_t Tlen, where, i;
 
   if (info == 0) {
     info = (const unsigned char *)"";
@@ -169,7 +169,7 @@ int hkdfExpand(SHAversion whichSha, const uint8_t prk[ ], int prk_len,
   for (i = 1; i <= N; i++) {
     HMACContext context;
     unsigned char c = i;
-    int ret = hmacReset(&context, whichSha, prk, prk_len) ||
+    uint32_t ret = hmacReset(&context, whichSha, prk, prk_len) ||
               hmacInput(&context, T, Tlen) ||
               hmacInput(&context, info, info_len) ||
               hmacInput(&context, &c, 1) ||
@@ -182,154 +182,3 @@ int hkdfExpand(SHAversion whichSha, const uint8_t prk[ ], int prk_len,
   }
   return shaSuccess;
 }
-
-/*
- *  hkdfReset
- *
- *  Description:
- *      This function will initialize the hkdfContext in preparation
- *      for key derivation using the modular HKDF interface for
- *      arbitrary length inputs.
- *
- *  Parameters:
- *      context: [in/out]
- *          The context to reset.
- *      whichSha: [in]
- *          One of SHA1, SHA224, SHA256, SHA384, SHA512
- *      salt[ ]: [in]
- *          The optional salt value (a non-secret random value);
- *          if not provided (salt == NULL), it is set internally
- *          to a string of HashLen(whichSha) zeros.
- *      salt_len: [in]
- *          The length of the salt value.  (Ignored if salt == NULL.)
- *
- *  Returns:
- *      sha Error Code.
- *
- */
-int hkdfReset(HKDFContext *context, enum SHAversion whichSha,
-              const unsigned char *salt, int salt_len)
-{
-  unsigned char nullSalt[USHAMaxHashSize];
-  if (!context) return shaNull;
-
-  context->whichSha = whichSha;
-  context->hashSize = USHAHashSize(whichSha);
-  if (salt == 0) {
-    salt = nullSalt;
-    salt_len = context->hashSize;
-    memset(nullSalt, '\0', salt_len);
-  }
-
-  return hmacReset(&context->hmacContext, whichSha, salt, salt_len);
-}
-
-/*
- *  hkdfInput
- *
- *  Description:
- *      This function accepts an array of octets as the next portion
- *      of the input keying material.  It may be called multiple times.
- *
- *  Parameters:
- *      context: [in/out]
- *          The HKDF context to update.
- *      ikm[ ]: [in]
- *          An array of octets representing the next portion of
- *          the input keying material.
- *      ikm_len: [in]
- *          The length of ikm.
- *
- *  Returns:
- *      sha Error Code.
- *
- */
-int hkdfInput(HKDFContext *context, const unsigned char *ikm,
-              int ikm_len)
-{
-  if (!context) return shaNull;
-  if (context->Corrupted) return context->Corrupted;
-  if (context->Computed) return context->Corrupted = shaStateError;
-  return hmacInput(&context->hmacContext, ikm, ikm_len);
-}
-
-/*
- * hkdfFinalBits
- *
- * Description:
- *   This function will add in any final bits of the
- *   input keying material.
- *
- * Parameters:
- *   context: [in/out]
- *     The HKDF context to update
- *   ikm_bits: [in]
- *     The final bits of the input keying material, in the upper
- *     portion of the byte.  (Use 0b###00000 instead of 0b00000###
- *     to input the three bits ###.)
- *   ikm_bit_count: [in]
- *     The number of bits in message_bits, between 1 and 7.
- *
- * Returns:
- *   sha Error Code.
- */
-int hkdfFinalBits(HKDFContext *context, uint8_t ikm_bits,
-                  unsigned int ikm_bit_count)
-{
-  if (!context) return shaNull;
-  if (context->Corrupted) return context->Corrupted;
-  if (context->Computed) return context->Corrupted = shaStateError;
-  return hmacFinalBits(&context->hmacContext, ikm_bits, ikm_bit_count);
-}
-
-/*
- * hkdfResult
- *
- * Description:
- *   This function will finish the HKDF extraction and perform the
- *   final HKDF expansion.
- *
- * Parameters:
- *   context: [in/out]
- *     The HKDF context to use to calculate the HKDF hash.
- *   prk[ ]: [out]
- *     An optional location to store the HKDF extraction.
- *     Either NULL, or pointer to a buffer that must be
- *     larger than USHAHashSize(whichSha);
- *   info[ ]: [in]
- *     The optional context and application specific information.
- *     If info == NULL or a zero-length string, it is ignored.
- *   info_len: [in]
- *     The length of the optional context and application specific
- *     information.  (Ignored if info == NULL.)
- *   okm[ ]: [out]
- *     Where the HKDF is to be stored.
- *   okm_len: [in]
- *     The length of the buffer to hold okm.
- *     okm_len must be <= 255 * USHABlockSize(whichSha)
- *
- * Returns:
- *   sha Error Code.
- *
- */
-int hkdfResult(HKDFContext *context,
-               uint8_t prk[USHAMaxHashSize],
-               const unsigned char *info, int info_len,
-               uint8_t okm[USHAMaxHashSize], int okm_len)
-{
-  uint8_t prkbuf[USHAMaxHashSize];
-  int ret;
-
-  if (!context) return shaNull;
-  if (context->Corrupted) return context->Corrupted;
-  if (context->Computed) return context->Corrupted = shaStateError;
-  if (!okm) return context->Corrupted = shaBadParam;
-  if (!prk) prk = prkbuf;
-
-  ret = hmacResult(&context->hmacContext, prk) ||
-        hkdfExpand(context->whichSha, prk, context->hashSize, info,
-                   info_len, okm, okm_len);
-  context->Computed = 1;
-  return context->Corrupted = ret;
-}
-
