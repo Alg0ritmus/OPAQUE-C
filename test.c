@@ -2,15 +2,18 @@
 // ----------------- TECHNICAL UNIVERSITY OF KOSICE -----------------
 // ---Department of Electronics and Multimedia Telecommunications ---
 // -------- FACULTY OF ELECTRICAL ENGINEERING AND INFORMATICS -------
-// ------------ THIS CODE IS A PART OF A MASTERS THESIS ------------
+// ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
-// ---------------------------version 0.0.1 -------------------------
-// --------------------------- 14-10-2023 ---------------------------
+// ---------------------------version T.T.2 -------------------------
+// --------------------------- 21-02-2023 ---------------------------
 // ******************************************************************
 
+// P.Z. A lot of features was removed to use just whats
+// needed for MCU tests.
+
 /*
- * This file serves for testing purposes; it compares the results of 
+ * This file serves for testing purposes; it cmps the results of 
  * AKE1 and AKE3 messages against official test vectors. This test
  * is suitable for Client-side login stage testing on MCU. 
 */
@@ -251,16 +254,6 @@ uint8_t _session_key[64] = {
     0xed, 0xfc, 0xbd, 0xfd, 0xa2, 0x15, 0xb9, 0x6f
 };
 
-
-static uint8_t compare(uint8_t *a, uint8_t *b, size_t count){
-  uint8_t result = 1;
-  for (size_t i = 0; i < count; i++)
-  {
-    result &= a[i] == b[i];
-  }
-  return result;
-}
-
 int main(){
   s_rand(1234);
 
@@ -286,7 +279,7 @@ uint8_t test_result = 1;
     client_keyshare_seed
     );
 
-  test_result = compare((uint8_t*) &ke1,_KE1,96);
+  test_result = cmp((uint8_t*) &ke1,_KE1,96);
   if (test_result==0){printf("ERROR: GenerateKE1->KE1\n");}
   else {printf("SUCCESS: GenerateKE1->KE1\n");}
 	
@@ -304,13 +297,13 @@ uint8_t test_result = 1;
     context, 10
   );
 
-  test_result = compare((uint8_t*) &ke3,_KE3,64);
+  test_result = cmp((uint8_t*) &ke3,_KE3,64);
   if (test_result==0){printf("ERROR: GenerateKE3->KE3\n");}
   else {printf("SUCCESS: GenerateKE3->KE3\n");}
-  test_result = compare(client_session_key,_session_key,64);
+  test_result = cmp(client_session_key,_session_key,64);
   if (test_result==0){printf("ERROR: GenerateKE3->client_session_key\n");}
   {printf("SUCCESS: GenerateKE3->client_session_key\n");}
-  test_result = compare(export_key,_export_key,64);
+  test_result = cmp(export_key,_export_key,64);
   if (test_result==0){printf("ERROR: GenerateKE3->export_key\n");}
   else {printf("SUCCESS: GenerateKE3->export_key\n");}
 

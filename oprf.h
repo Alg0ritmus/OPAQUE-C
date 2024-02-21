@@ -5,9 +5,12 @@
 // ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
-// ---------------------------version 0.0.1 -------------------------
-// --------------------------- 11-10-2023 ---------------------------
+// ---------------------------version T.T.2 -------------------------
+// --------------------------- 21-02-2023 ---------------------------
 // ******************************************************************
+
+// P.Z. A lot of features was removed to use just whats
+// needed for MCU tests.
 
 /**
   * Protocol schema:
@@ -37,18 +40,11 @@
 extern const uint8_t RISTRETTO255_BASEPOINT_OPRF[32];
 
 uint32_t DeterministicDeriveKeyPair(uint8_t skS[Nsk], uint8_t pkS[Npk],uint8_t seed[Nseed], uint8_t *info, uint32_t infoLen);
-size_t DeriveKeyPair(uint8_t skS[Nsk], uint8_t pkS[Npk]);
-size_t ecc_voprf_ristretto255_sha512_Blind(
-    uint8_t *blind,
-    uint8_t *blindedElement,
-    uint8_t *input, uint32_t inputLen
-);
-size_t ecc_voprf_ristretto255_sha512_BlindWithScalar(
+int32_t ecc_voprf_ristretto255_sha512_BlindWithScalar(
     uint8_t *blindedElement,
     const  uint8_t *input, const uint32_t inputLen,
     const uint8_t *blind
 );
-void BlindEvaluate(uint8_t evaluatedElement[32], const uint8_t skS[Nsk], const uint8_t blindedElement[32]);
 void ScalarMult_(uint8_t outputElement[32], const uint8_t scalar[32], const uint8_t inputElement[32]);
 void Finalize(
     uint8_t output[Nh],
@@ -69,13 +65,6 @@ void ecc_concat3(
     const uint8_t *a2, const uint32_t a2_len,
     const uint8_t *a3, const uint32_t a3_len
 );
-
-uint32_t expand_message_xmd_sha512(
-    uint8_t *out,
-    uint8_t *msg, uint32_t msgLen,
-    uint8_t *DST, uint32_t dstLen,
-    uint32_t len_in_bytes
-  );
 
 void ecc_strxor(uint8_t *out, const uint8_t *a, const uint8_t *b, const int32_t len);
 

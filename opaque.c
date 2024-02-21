@@ -5,9 +5,12 @@
 // ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
-// ---------------------------version 0.0.1 -------------------------
-// --------------------------- 11-10-2023 ---------------------------
+// ---------------------------version T.T.2 -------------------------
+// --------------------------- 21-02-2023 ---------------------------
 // ******************************************************************
+
+// P.Z. A lot of features was removed to use just whats
+// needed for MCU tests.
 
 
 /**
@@ -70,7 +73,6 @@
 #include <stdio.h>
 #include <stddef.h>
 #include <string.h>
-#include <math.h> // for expand_message_xmd_sha512
 #include "dependencies/sha.h"
 #include "ristretto255/ristretto255.h"
 #include "ristretto255/helpers.h"
@@ -313,7 +315,7 @@ void Store(
   * @param[out] -> cleartext_credentials,   ->    a CleartextCredentials structure.
   * @param[out] -> export_key,              ->    an additional client key.
 **/
-size_t Recover(
+uint32_t Recover(
     uint8_t client_private_key[Npk],
     CleartextCredentials *cleartext_credentials,
     uint8_t export_key[Nh],
@@ -404,199 +406,6 @@ size_t Recover(
     crypto_wipe(expected_tag, sizeof expected_tag); 
     return 1;
 }
-
-
-/**
-  * REGISTRATION PART (PHASE 1)
-  * ---------------------------
-  * Registration part consists of 3 functions:
-  *         - (request, blind) = CreateRegistrationRequest(password)
-  *         - response = CreateRegistrationResponse(request, server_public_key, credential_identifier, oprf_seed)
-  *         - (record, export_key) = FinalizeRegistrationRequest(response, server_identity, client_identity)
-  *
-  *
-**/
-
-
-/**
-  *
-  * Input:
-  * @param[in]    ->  password    -> an opaque byte string containing the client's password.
-  * @param[out]   ->  request     -> a RegistrationRequest structure.
-  * @param[out]   ->  blind       -> an OPRF scalar value.
-**/
-void CreateRegistrationRequestWithBlind( 
-    const uint8_t blind[32], 
-    RegistrationRequest *request, 
-    const uint8_t* password, const uint32_t password_len
-  ) {
- 
-  uint8_t blinded_message[32];
-  
-  //(blind, blinded_element) = Blind(password)
-  //blinded_message = SerializeElement(blinded_element)
-  // NOTE that ecc_voprf_ristretto255_sha512_BlindWithScalar returns serialized element already
-  ecc_voprf_ristretto255_sha512_BlindWithScalar(blinded_message, password, password_len, blind);
-
-  // RegistrationRequest();
-  memcpy(request->blinded_message,blinded_message,32);
-
-  crypto_wipe(blinded_message, sizeof blinded_message);
-
-}
-
-
-
-// CreateRegistrationResponse
-
-// Input:
-// - request, a RegistrationRequest structure.
-// - server_public_key, the server's public key.
-// - credential_identifier, an identifier that uniquely represents the credential.
-// - oprf_seed, the seed of Nh bytes used by the server to generate an oprf_key.
-
-// Output:
-// - response, a RegistrationResponse structure.
-
-// Exceptions:
-// - DeserializeError, when OPRF element deserialization fails.
-// - DeriveKeyPairError, when OPRF key derivation fails.
-
-// def CreateRegistrationResponse(request, server_public_key,
-//                                credential_identifier, oprf_seed):
-//   seed = Expand(oprf_seed, concat(credential_identifier, "OprfKey"), Nok)
-//   (oprf_key, _) = DeriveKeyPair(seed, "OPAQUE-DeriveKeyPair")
-
-//   blinded_element = DeserializeElement(request.blinded_message)
-//   evaluated_element = BlindEvaluate(oprf_key, blinded_element)
-//   evaluated_message = SerializeElement(evaluated_element)
-
-//   Create RegistrationResponse response with (evaluated_message, server_public_key)
-//   return response
-
-
-void CreateRegistrationResponse(
-    RegistrationResponse *response,
-    const RegistrationRequest *request,
-    const uint8_t server_public_key[Npk],
-    const uint8_t *credential_identifier, const uint32_t credential_identifier_len,
-    const uint8_t oprf_seed[Nh]
-    ) {
-
-    uint8_t seed_label[7] = {'O','p','r','f','K','e','y'};
-
-    uint8_t seed_info[credential_identifier_len + 7];    
-
-    //seed = Expand(oprf_seed, concat(credential_identifier, "OprfKey"), Nok)
-    uint8_t seed[Nok];
-    ecc_concat2(seed_info, credential_identifier, credential_identifier_len, seed_label, 7);
-    hkdfExpand(SHA512,oprf_seed,Nh, seed_info, credential_identifier_len + 7, seed, Nok);
-
-
-    // (oprf_key, _) = DeriveKeyPair(seed, "OPAQUE-DeriveKeyPair")
-    uint8_t oprf_key[Nsk];
-    uint8_t ignore[Npk];
-
-
-    uint8_t info[20] = {'O', 'P', 'A', 'Q', 'U', 'E', '-', 'D', 'e', 'r', 'i', 'v', 'e', 'K', 'e', 'y', 'P', 'a', 'i', 'r'};
-    uint32_t infoLen = 20;
-    DeterministicDeriveKeyPair(
-        oprf_key,
-        ignore,
-        seed,
-        info, infoLen
-      ); 
-
-
-//   blinded_element = DeserializeElement(request.blinded_message)
-    // NOTE that DeserializeElement is not needed since blinded_message is already deserialized
-//   evaluated_element = BlindEvaluate(oprf_key, blinded_element)
-    BlindEvaluate(response->evaluated_message, oprf_key, request->blinded_message);
-    //evaluated_message = SerializeElement(evaluated_element)
-    // NOTE that serialization is not needed, it is already made it in BlindEvaluate
-    memcpy(response->server_public_key, server_public_key, Npk);
-
-    crypto_wipe(seed_info, sizeof seed_info);
-    crypto_wipe(seed, sizeof seed);
-    crypto_wipe(oprf_key, sizeof oprf_key);
-    crypto_wipe(ignore, sizeof ignore);
-    
-}
-
-
-// FinalizeRegistrationRequest
-
-// Input:
-// - password, an opaque byte string containing the client's password.
-// - blind, an OPRF scalar value.
-// - response, a RegistrationResponse structure.
-// - server_identity, the optional encoded server identity.
-// - client_identity, the optional encoded client identity.
-
-// Output:
-// - record, a RegistrationRecord structure.
-// - export_key, an additional client key.
-
-// Exceptions:
-// - DeserializeError, when OPRF element deserialization fails.
-
-// def FinalizeRegistrationRequest(password, blind, response, server_identity, client_identity):
-//   evaluated_element = DeserializeElement(response.evaluated_message)
-//   oprf_output = Finalize(password, blind, evaluated_element)
-
-//   stretched_oprf_output = Stretch(oprf_output)
-//   randomized_password = Extract("", concat(oprf_output, stretched_oprf_output))
-
-//   (envelope, client_public_key, masking_key, export_key) =
-//     Store(randomized_password, response.server_public_key,
-//           server_identity, client_identity)
-//   Create RegistrationRecord record with (client_public_key, masking_key, envelope)
-//   return (record, export_key)
-
-
-void FinalizeRegistrationRequest(
-   RegistrationRecord *record,
-   uint8_t export_key[Nh],
-   const uint8_t* password, const uint32_t password_len,
-   const uint8_t blind[32],
-   const RegistrationResponse *response,
-   const uint8_t *server_identity, const uint32_t server_identity_len,
-   const uint8_t *client_identity, const uint32_t client_identity_len
-  ) {
-
-  uint8_t oprf_output[Nh];
-
-  Finalize(
-    oprf_output,
-    password, password_len,
-    blind, 
-    response->evaluated_message
-    );
-
-  // STRETCHING .. msg = Stretch(msg) SO WE CAN SKIP THIS FOR NOW
-
-  uint8_t password_info[Nh+Nh];
-  ecc_concat2(password_info, oprf_output, Nh, oprf_output, Nh);
-  uint8_t randomized_password[Nh];  
-  hkdfExtract(SHA512,(uint8_t*) ' ',0, password_info, Nh+Nh, randomized_password);
-  
-  Store(
-      &record->envelope,
-      record->client_public_key,
-      record->masking_key,
-      export_key,
-      randomized_password, Nh,
-      response->server_public_key,
-      server_identity, server_identity_len,
-      client_identity, client_identity_len
-    );
-
-  crypto_wipe(oprf_output, sizeof oprf_output); 
-  crypto_wipe(password_info, sizeof password_info);
-  crypto_wipe(randomized_password, sizeof randomized_password);
-
-}
-
 
 /**
   * Online Authenticated Key Exchange/ LOGIN
@@ -771,156 +580,6 @@ void GenerateKE1(
   crypto_wipe(&request, sizeof(CredentialRequest));
 
 }
-
-
-/**
-  * GenerateKE2
-  * 
-  * State:
-  * - state, a ServerState structure.
-  * 
-  * Input:
-  * - server_identity, the optional encoded server identity, which is set to
-  *   server_public_key if not specified.
-  * - server_private_key, the server's private key.
-  * - server_public_key, the server's public key.
-  * - record, the client's RegistrationRecord structure.
-  * - credential_identifier, an identifier that uniquely represents the credential.
-  * - oprf_seed, the server-side seed of Nh bytes used to generate an oprf_key.
-  * - ke1, a KE1 message structure.
-  * - client_identity, the optional encoded client identity, which is set to
-  *   client_public_key if not specified.
-  * 
-  * Output:
-  * - ke2, a KE2 structure.
-  * 
-  * def GenerateKE2(server_identity, server_private_key, server_public_key,
-  *                record, credential_identifier, oprf_seed, ke1, client_identity):
-  *   credential_response = CreateCredentialResponse(ke1.credential_request, server_public_key, record,
-  *     credential_identifier, oprf_seed)
-  *   cleartext_credentials = CreateCleartextCredentials(server_public_key,
-  *                       record.client_public_key, server_identity, client_identity)
-  *   auth_response = AuthServerRespond(cleartext_credentials, server_private_key,
-  *                       record.client_public_key, ke1, credential_response)
-  *   Create KE2 ke2 with (credential_response, auth_response)
-  *   return ke2
-  **/
-
-
-void ecc_opaque_ristretto255_sha512_CreateCredentialResponseWithMasking(
-    CredentialResponse *response_raw,
-    const CredentialRequest *request_raw,
-    const uint8_t server_public_key[32],
-    const RegistrationRecord *record_raw,
-    const uint8_t *credential_identifier, const uint32_t credential_identifier_len,
-    const uint8_t oprf_seed[Nh],
-    const uint8_t masking_nonce[Nn]
-) {
-    // Steps:
-    // 1. seed = Expand(oprf_seed, concat(credential_identifier, "OprfKey"), Nok)
-    // 2. (oprf_key, _) = DeriveKeyPair(seed)
-    // 3. Z = Evaluate(oprf_key, request.data, nil)
-    // 4. masking_nonce = random(Nn)
-    // 5. credential_response_pad = Expand(record.masking_key,
-    //      concat(masking_nonce, "CredentialResponsePad"), Npk + Ne)
-    // 6. masked_response = xor(credential_response_pad,
-    //                          concat(server_public_key, record.envelope))
-    // 7. Create CredentialResponse response with (Z, masking_nonce, masked_response)
-    // 8. Output response
-
-
-    // 1. seed = Expand(oprf_seed, concat(credential_identifier, "OprfKey"), Nok)
-    // - concat(credential_identifier, "OprfKey")
-
-
-
-//    const uint32_t seed_info_len = credential_identifier_len + 7;
-//    uint8_t seed_info[256];
-//    uint8_t oprf_key_label[7] = "OprfKey";
-//    ecc_concat2(seed_info, credential_identifier, credential_identifier_len, oprf_key_label, 7);
-//    // - Expand(oprf_seed, ikm_info, Nok)
-//    uint8_t seed[Nok];
-//
-//    hkdfExpand(SHA512,oprf_seed,Nh,seed_info, seed_info_len, seed, Nok);
-//
-//    //ecc_kdf_hkdf_sha512_expand(seed, oprf_seed, seed_info, seed_info_len, Nok);
-//
-//    // 2. (oprf_key, _) = DeriveKeyPair(seed)
-//    uint8_t oprf_key[32];
-//    uint8_t ignore[32];
-//    ecc_opaque_ristretto255_sha512_DeriveDiffieHellmanKeyPair(oprf_key, ignore, seed);
-
-    
-    uint8_t seed_label[7] = {'O','p','r','f','K','e','y'};
-
-    uint8_t seed_info[credential_identifier_len + 7];    
-
-    //seed = Expand(oprf_seed, concat(credential_identifier, "OprfKey"), Nok)
-    uint8_t seed[Nok];
-    ecc_concat2(seed_info, credential_identifier, credential_identifier_len, seed_label, 7);
-    hkdfExpand(SHA512,oprf_seed,Nh, seed_info, credential_identifier_len + 7, seed, Nok);
-
-
-    // (oprf_key, _) = DeriveKeyPair(seed, "OPAQUE-DeriveKeyPair")
-    uint8_t oprf_key[Nsk];
-    uint8_t ignore[Npk];
-
-
-    uint8_t info[20] = {'O', 'P', 'A', 'Q', 'U', 'E', '-', 'D', 'e', 'r', 'i', 'v', 'e', 'K', 'e', 'y', 'P', 'a', 'i', 'r'};
-    uint32_t infoLen = 20;
-    DeterministicDeriveKeyPair(
-        oprf_key,
-        ignore,
-        seed,
-        info, infoLen
-      ); 
-
-
-    // 3. Z = Evaluate(oprf_key, request.data, nil)
-    uint8_t Z[32];
-    BlindEvaluate(
-        Z,
-        oprf_key,
-        (uint8_t *)request_raw->blinded_message
-    );
-
-
-    // 5. credential_response_pad = Expand(record.masking_key,
-    //      concat(masking_nonce, "CredentialResponsePad"), Npk + Ne)
-    uint8_t credential_response_pad_label[21] = {'C', 'r', 'e', 'd', 'e', 'n', 't', 'i', 'a', 'l', 'R', 'e', 's', 'p', 'o', 'n', 's', 'e', 'P', 'a', 'd'};
-    uint8_t credential_response_pad_info[Nn + 21];
-    ecc_concat2(credential_response_pad_info, masking_nonce, Nn, credential_response_pad_label, 21);
-    uint8_t credential_response_pad[Npk + Ne];
-    
-    hkdfExpand(SHA512,record_raw->masking_key,Nh, credential_response_pad_info,sizeof credential_response_pad_info , credential_response_pad, Npk + Ne);
-
-    //ecc_kdf_hkdf_sha512_expand(credential_response_pad, record_raw->masking_key, credential_response_pad_info, sizeof credential_response_pad_info, Npk + Ne);
-
-    // 6. masked_response = xor(credential_response_pad,
-    //                          concat(server_public_key, record.envelope))
-    uint8_t masked_response_xor[Npk + Ne];
-    ecc_concat2(masked_response_xor, server_public_key, Npk, (const uint8_t *) &record_raw->envelope, Ne); // NOTE is it working????
-    uint8_t masked_response[Npk + Ne];
-    ecc_strxor(masked_response, credential_response_pad, masked_response_xor, Npk + Ne);
-
-    // 7. Create CredentialResponse response with (Z, masking_nonce, masked_response)
-    // 8. Output response
-    memcpy(response_raw->evaluated_message, Z, sizeof Z);
-    memcpy(response_raw->masking_nonce, masking_nonce, Nn);
-    memcpy(response_raw->masked_response, masked_response, sizeof masked_response);
-
-    // cleanup stack memory
-    WIPE_BUFFER(seed_info);
-    WIPE_BUFFER(seed);
-    WIPE_BUFFER(oprf_key);
-    WIPE_BUFFER(ignore);
-    WIPE_BUFFER(Z);
-    WIPE_BUFFER(credential_response_pad_info);
-    WIPE_BUFFER(credential_response_pad);
-    WIPE_BUFFER(masked_response_xor);
-    WIPE_BUFFER(masked_response);
-}
-
 
 uint32_t ecc_opaque_ristretto255_sha512_3DH_Preamble(
     uint8_t *preamble,
@@ -1137,193 +796,6 @@ void ecc_opaque_ristretto255_sha512_3DH_DeriveKeys(
     crypto_wipe(preamble_hash, sizeof preamble_hash);
     crypto_wipe(handshake_secret, sizeof handshake_secret);
 }
-
-
-void ecc_opaque_ristretto255_sha512_3DH_ResponseWithSeed(
-    KE2 *ke2,
-    ServerState *state,
-    const uint8_t *server_identity, const uint32_t server_identity_len,
-    const uint8_t server_private_key[32],
-    const uint8_t server_public_key[32],
-    const uint8_t *client_identity, const uint32_t client_identity_len,
-    const uint8_t client_public_key[32],
-    const KE1 *ke1,
-    const CredentialResponse *credential_response_raw,
-    const uint8_t *context, const uint32_t context_len,
-    const uint8_t server_nonce[Nn],
-    const uint8_t seed[Nseed]
-) {
-    // Steps:
-    // 1. server_nonce = random(Nn)
-    // 2. server_secret, server_keyshare = GenerateAuthKeyPair()
-    // 3. Create inner_ke2 ike2 with (credential_response, server_nonce, server_keyshare)
-    // 4. preamble = Preamble(client_identity, ke1, server_identity, ike2)
-    // 5. ikm = TripleDHIKM(server_secret, ke1.client_keyshare, server_private_key, ke1.client_keyshare, server_secret, client_public_key)
-    // 6. Km2, Km3, session_key = DeriveKeys(ikm, preamble)
-    // 7. server_mac = MAC(Km2, Hash(preamble))
-    // 8. expected_client_mac = MAC(Km3, Hash(concat(preamble, server_mac))
-    // 9. Populate state with ServerState(expected_client_mac, session_key)
-    // 10. Create KE2_t ke2 with (ike2, server_mac)
-    // 11. Output ke2
-
-    // 2. server_secret, server_keyshare = GenerateAuthKeyPair()
-    uint8_t server_secret[32];
-    uint8_t server_keyshare[32];
-    ecc_opaque_ristretto255_sha512_DeriveDiffieHellmanKeyPair(server_secret, server_keyshare, (uint8_t *)seed);
-
-    // 3. Create inner_ke2 ike2 with (credential_response, server_nonce, server_keyshare)
-   
-    memcpy(&ke2->credential_response, credential_response_raw, sizeof(CredentialResponse));
-    memcpy(ke2->auth_response.server_nonce, server_nonce, 32);
-    memcpy(ke2->auth_response.server_public_keyshare, server_keyshare, 32);
-
-    // 4. preamble = Preamble(client_identity, ke1, server_identity, ike2)
-    uint8_t preamble[512];
-    const uint32_t preamble_len = ecc_opaque_ristretto255_sha512_3DH_Preamble(
-        preamble,
-        sizeof preamble,
-        context, context_len,
-        client_identity, client_identity_len,
-        client_public_key,
-        ke1,
-        server_identity, server_identity_len,
-        server_public_key,
-        ke2
-    );
-
-    // 5. ikm = TripleDHIKM(server_secret, ke1.client_keyshare, server_private_key, ke1.client_keyshare, server_secret, client_public_key)
-    uint8_t ikm[96];
-    ecc_opaque_ristretto255_sha512_3DH_TripleDHIKM(
-        ikm,
-        server_secret, ke1->auth_request.client_public_keyshare,
-        server_private_key, ke1->auth_request.client_public_keyshare,
-        server_secret, client_public_key
-    );
-
-    // 6. Km2, Km3, session_key = DeriveKeys(ikm, preamble)
-    uint8_t km2[64];
-    uint8_t km3[64];
-    uint8_t session_key[64];
-    ecc_opaque_ristretto255_sha512_3DH_DeriveKeys(
-        km2, km3,
-        session_key,
-        ikm, sizeof ikm,
-        preamble, preamble_len
-    );
-
-    // 7. server_mac = MAC(Km2, Hash(preamble))
-    uint8_t preamble_hash[64];
-    //ecc_hash_sha512(preamble_hash, preamble, preamble_len);
-    SHA512Context mySha512;
-    SHA512Reset(&mySha512);
-    SHA512Input(&mySha512, preamble, preamble_len);
-    SHA512Result(&mySha512, preamble_hash);
-
-    uint8_t server_mac[64];
-    // ecc_mac_hmac_sha512(
-    //     server_mac,
-    //     preamble_hash, sizeof preamble_hash,
-    //     km2,
-    //     sizeof km2
-    // );
-
-    hmac(SHA512, preamble_hash, sizeof preamble_hash, km2, sizeof km2, server_mac);
-
-
-    // 8. expected_client_mac = MAC(Km3, Hash(concat(preamble, server_mac))
-    uint8_t expected_client_mac_input[64];
-    SHA512Context hst;
-    SHA512Reset(&hst);
-    SHA512Input(&hst, preamble, (unsigned long long) preamble_len);
-    SHA512Input(&hst, server_mac, sizeof server_mac);
-    SHA512Result(&hst, expected_client_mac_input);
-    uint8_t expected_client_mac[64];
-    // ecc_mac_hmac_sha512(
-    //     expected_client_mac,
-    //     expected_client_mac_input, sizeof expected_client_mac_input,
-    //     km3,
-    //     sizeof km3
-    // );
-
-    hmac(SHA512, expected_client_mac_input, sizeof expected_client_mac_input, km3, sizeof km3, expected_client_mac);
-
-    // 9. Populate state with ServerState(expected_client_mac, session_key)
-    memcpy(state->expected_client_mac, expected_client_mac, sizeof expected_client_mac);
-    memcpy(state->session_key, session_key, sizeof session_key);
-
-    // 10. Create KE2_t ke2 with (ike2, server_mac)
-    // 11. Output ke2
-    memcpy(ke2->auth_response.server_mac, server_mac, sizeof server_mac);
-
-    // cleanup stack memory
-    crypto_wipe(preamble, sizeof preamble);
-    crypto_wipe(ikm, sizeof ikm);
-    crypto_wipe(km2, sizeof km2);
-    crypto_wipe(km3, sizeof km3);
-    crypto_wipe(session_key, sizeof session_key);
-    crypto_wipe(preamble_hash, sizeof preamble_hash);
-    crypto_wipe(server_mac, sizeof server_mac);
-    crypto_wipe(expected_client_mac_input, sizeof expected_client_mac_input);
-    crypto_wipe(expected_client_mac, sizeof expected_client_mac);
-    crypto_wipe((uint8_t *) &hst, sizeof hst);
-}
-
-
-void ecc_opaque_ristretto255_sha512_GenerateKE2WithSeed(
-    KE2 *ke2_raw,
-    ServerState *state_raw,
-    const uint8_t *server_identity, const uint32_t server_identity_len,
-    const uint8_t server_private_key[32],
-    const uint8_t server_public_key[32],
-    const RegistrationRecord *record_raw,
-    const uint8_t *credential_identifier, const uint32_t credential_identifier_len,
-    const uint8_t oprf_seed[Nh],
-    const KE1 *ke1_raw,
-    const uint8_t *client_identity, const uint32_t client_identity_len,
-    const uint8_t *context, const uint32_t context_len,
-    const uint8_t masking_nonce[Nn],
-    const uint8_t server_nonce[Nn],
-    const uint8_t seed[Nseed]
-) {
-    // Steps:
-    // 1. response = CreateCredentialResponse(ke1.request, server_public_key, record,
-    //     credential_identifier, oprf_seed)
-    // 2. ke2 = Response(server_identity, server_private_key,
-    //     client_identity, record.client_public_key, ke1, response)
-    // 3. Output ke2
-
-    CredentialResponse response;
-    ecc_opaque_ristretto255_sha512_CreateCredentialResponseWithMasking(
-        &response,
-        &ke1_raw->credential_request,
-        server_public_key,
-        record_raw,
-        credential_identifier, credential_identifier_len,
-        oprf_seed,
-        masking_nonce
-    );
-
-    // printf("\n skuska response:\n");
-    // print_32(response.evaluated_message);
-    // printf("\n ---\n");
-
-    ecc_opaque_ristretto255_sha512_3DH_ResponseWithSeed(
-        ke2_raw,
-        state_raw,
-        server_identity, server_identity_len,
-        server_private_key,
-        server_public_key,
-        client_identity, client_identity_len,
-        record_raw->client_public_key,
-        ke1_raw,
-        &response,
-        context, context_len,
-        server_nonce,
-        seed
-    );
-}
-
-
 
 uint32_t ecc_opaque_ristretto255_sha512_RecoverCredentials(
     uint8_t client_private_key[32],
@@ -1557,7 +1029,7 @@ uint32_t ecc_opaque_ristretto255_sha512_3DH_ClientFinalize(
 // GENERATE KE3
 
 
-size_t ecc_opaque_ristretto255_sha512_GenerateKE3(
+uint32_t ecc_opaque_ristretto255_sha512_GenerateKE3(
     KE3 *ke3_raw,
     uint8_t session_key[64], // client_session_key
     uint8_t export_key[64], // 64
@@ -1618,22 +1090,4 @@ size_t ecc_opaque_ristretto255_sha512_GenerateKE3(
         return 0;
     else
         return -1;
-}
-
-
-size_t ecc_opaque_ristretto255_sha512_ServerFinish(
-    uint8_t session_key[Nx],
-    const ServerState *state,
-    const KE3 *ke3
-) {
-    // Steps:
-    // 1. if !ct_equal(ke3.client_mac, state.expected_client_mac):
-    // 2.    raise HandshakeError
-    // 3. Output state.session_key
-
-    if (!cmp(ke3->client_mac, state->expected_client_mac, Nh))
-        return -1;
-
-    memcpy(session_key, state->session_key, 64);
-    return 0;
 }

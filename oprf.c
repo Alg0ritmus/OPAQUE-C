@@ -5,9 +5,12 @@
 // ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
-// ---------------------------version 0.0.1 -------------------------
-// --------------------------- 14-10-2023 ---------------------------
+// ---------------------------version T.T.2 -------------------------
+// --------------------------- 21-02-2023 ---------------------------
 // ******************************************************************
+
+// P.Z. A lot of features was removed to use just whats
+// needed for MCU tests.
 
 #include <stdio.h>
 #include <stddef.h>
@@ -81,18 +84,6 @@ void ecc_strxor(uint8_t *out, const uint8_t *a, const uint8_t *b, const int32_t 
     for (int32_t i = 0; i < len; i++) {
         out[i] = a[i] ^ b[i];
     }
-}
-
-
-static void printDigest(uint8_t in[SHA512HashSize]){
-  for (uint32_t i = 0; i < SHA512HashSize; ++i)
-  {
-    if (i%16==0){
-      printf("\n");
-    }
-    printf("%0x,",in[i]);
-  }
-  printf("\n");
 }
 
 void ecc_concat2(
@@ -174,7 +165,7 @@ static uint32_t createContextString(
 // https://github.com/aldenml/ecc/blob/fedffd5624db6d90c659864c21be0c530484c925/test/data/h2c/expand_message_xmd_sha512.json
 
 
-uint32_t expand_message_xmd_sha512(
+static uint32_t expand_message_xmd_sha512(
     uint8_t *out,
     uint8_t *msg, uint32_t msgLen,
     uint8_t *DST, uint32_t dstLen,
@@ -418,32 +409,12 @@ uint32_t DeterministicDeriveKeyPair(
   return 1;
 }
 
-
-
-// generate random Scalar < L in constant time
-// inspired by: https://github.com/facebook/ristretto255-js/blob/main/src/ristretto255.js
-// NOTE that this approach is potentially faster than approach "generate random scalar 
-// and reduce (mod L)"
-
-static void getRandomScalar(uint8_t r[32]){
-    rand_32_bytes_lower_thanL(r);
-}
-
-
-size_t DeriveKeyPair(uint8_t skS[Nsk], uint8_t pkS[Npk]){
-  
-  getRandomScalar(skS); 
-
-  ScalarMult_(pkS,skS,(uint8_t*)RISTRETTO255_BASEPOINT_OPRF);
-  return 1;
-}
-
 //https://www.rfc-editor.org/rfc/rfc9380.html#name-expand_message
 // expand_message_xmd(msg, DST, len_in_bytes) ?? treba asi ci ?
 
 #endif // test
 // https://www.ietf.org/archive/id/draft-irtf-cfrg-voprf-21.html#name-oprf-protocol
-size_t ecc_voprf_ristretto255_sha512_BlindWithScalar(
+int32_t ecc_voprf_ristretto255_sha512_BlindWithScalar(
     uint8_t *blindedElement,
     const  uint8_t *input, const uint32_t inputLen,
     const uint8_t *blind
@@ -460,19 +431,6 @@ size_t ecc_voprf_ristretto255_sha512_BlindWithScalar(
     return 1;
 }
 
-size_t ecc_voprf_ristretto255_sha512_Blind(
-    uint8_t *blind,
-    uint8_t *blindedElement,
-    uint8_t *input, uint32_t inputLen
-) {
-    getRandomScalar(blind);
-    return ecc_voprf_ristretto255_sha512_BlindWithScalar(
-        blindedElement,
-        input, inputLen,
-        blind
-    );
-  }
-
 
 // input/output elem are ristretto255 elems in 32 byte form
 void ScalarMult_(uint8_t outputElement[32], const uint8_t scalar[32], const uint8_t inputElement[32]){
@@ -485,11 +443,6 @@ void ScalarMult_(uint8_t outputElement[32], const uint8_t scalar[32], const uint
   ristretto255_scalarmult(out_rist2, out_rist, scalar);
   ristretto255_encode(outputElement,out_rist2);
 }
-
-void BlindEvaluate(uint8_t evaluatedElement[32], const uint8_t skS[Nsk], const uint8_t blindedElement[32]){
-  ScalarMult_(evaluatedElement,skS,blindedElement);
-}
-
 
 void Finalize(
     uint8_t output[Nh],

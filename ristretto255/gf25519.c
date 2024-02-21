@@ -242,9 +242,9 @@
  
  // Original name: curve25519Pwr2
  // URL: https://github.com/Oryx-Embedded/CycloneCRYPTO/blob/master/ecc/curve25519.c#L331
- void gf25519Pwr2(u32 *r, const u32 *a, size_t n)
+ void gf25519Pwr2(u32 *r, const u32 *a, int32_t n)
  {
-    size_t i;
+    int32_t i;
   
     //Pre-compute (A ^ 2) mod p
     gf25519Sqr(r, a);
@@ -267,7 +267,7 @@
  // URL: https://github.com/Oryx-Embedded/CycloneCRYPTO/blob/master/ecc/curve25519.c#L352
  void gf25519Red(u32 *r, const u32 *a)
  {
-    size_t i;
+    int32_t i;
     u64 temp;
     u32 b[8];
   
@@ -302,7 +302,7 @@
  // URL: https://github.com/Oryx-Embedded/CycloneCRYPTO/blob/master/ecc/curve25519.c#L515
  void gf25519Copy(u32 *a, const u32 *b)
  {
-    size_t i;
+    int32_t i;
   
     //Copy the value of the integer
     for(i = 0; i < 8; i++)
@@ -323,7 +323,7 @@
  // URL: https://github.com/Oryx-Embedded/CycloneCRYPTO/blob/master/ecc/curve25519.c#L534
  void gf25519Swap(u32 *a, u32 *b, u32 c)
  {
-    size_t i;
+    int32_t i;
     u32 mask;
     u32 dummy;
   
@@ -357,7 +357,7 @@
  void gf25519Select(u32 *r, const u32 *a, const u32 *b,
     u32 c)
  {
-    size_t i;
+    int32_t i;
     u32 mask;
   
     //The mask is the all-1 or all-0 word
@@ -383,7 +383,7 @@
  // URL: https://github.com/Oryx-Embedded/CycloneCRYPTO/blob/master/ecc/curve25519.c#L587
  u32 gf25519Comp(const u32 *a, const u32 *b)
  {
-    size_t i;
+    int32_t i;
     u32 mask;
   
     //Initialize mask

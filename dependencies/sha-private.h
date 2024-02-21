@@ -1,3 +1,16 @@
+// ******************************************************************
+// ----------------- TECHNICAL UNIVERSITY OF KOSICE -----------------
+// ---Department of Electronics and Multimedia Telecommunications ---
+// -------- FACULTY OF ELECTRICAL ENGINEERING AND INFORMATICS -------
+// ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
+// ------------------------- Master thesis --------------------------
+// -----------------Patrik Zelenak & Milos Drutarovsky --------------
+// ---------------------------version T.T.2 -------------------------
+// --------------------------- 21-02-2023 ---------------------------
+// ******************************************************************
+
+// P.Z. Unmodified.
+
 /************************ sha-private.h ************************/
 /***************** See RFC 6234 for details. *******************/
 #ifndef _SHA_PRIVATE__H

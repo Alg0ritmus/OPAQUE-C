@@ -1,3 +1,17 @@
+// ******************************************************************
+// ----------------- TECHNICAL UNIVERSITY OF KOSICE -----------------
+// ---Department of Electronics and Multimedia Telecommunications ---
+// -------- FACULTY OF ELECTRICAL ENGINEERING AND INFORMATICS -------
+// ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
+// ------------------------- Master thesis --------------------------
+// -----------------Patrik Zelenak & Milos Drutarovsky --------------
+// ---------------------------version T.T.2 -------------------------
+// --------------------------- 21-02-2023 ---------------------------
+// ******************************************************************
+
+// P.Z. A lot of function was removed or adjusted to use just whats
+// needed.
+
 /**************************** usha.c ***************************/
 /***************** See RFC 6234 for details. *******************/
 /* Copyright (c) 2011 IETF Trust and the persons identified as */
