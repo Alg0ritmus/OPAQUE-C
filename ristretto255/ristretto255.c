@@ -537,12 +537,20 @@ static void cswap(ristretto255_point* p, ristretto255_point* q,u8 b){
 }
 
 
+#ifdef USE_ASM
+static u32 is_Canonical(const u32 in[FIELED_ELEM_SIZE]){
+  u32 temp[FIELED_ELEM_SIZE];
+  memcpy((u8*) temp, (u8*) in, 32);
+  fe25519_reduce_emil(temp);
+  return feq(temp,in);  
+}
+#else
 static u32 is_Canonical(const u32 in[FIELED_ELEM_SIZE]){
   u32 temp[FIELED_ELEM_SIZE];
   carry25519(temp,in);
   return feq(temp,in);  
 }
-
+#endif
 
 /**
   * @brief Decode input bytes u8[32] to ristretto255_point

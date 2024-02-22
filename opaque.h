@@ -37,8 +37,11 @@
 #define Noe 32
 #define Ne 96
 
-//#define unsigned uint32_t uint_t
-#define IDENTITY_BYTE_SIZE 65535 // <1; 2^16-1> // QUESTION, is it correct?, if not change CreateCleartextCredentials()
+// This is an application-
+// specific value, e.g., an e-mail address or an account name.  If
+// not specified, it defaults to the client/server public key, therefore
+// we specified it as 512 bytes to run it without any problems on MCUs
+#define IDENTITY_BYTE_SIZE 512
 
 
 /**

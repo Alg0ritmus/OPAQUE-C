@@ -399,7 +399,7 @@ uint32_t Recover(
     
     //If !ct_equal(envelope.auth_tag, expected_tag)
     if (cmp(envelope->auth_tag,expected_tag,Nn+cleartext_creds_len)){
-      fprintf(stderr, "Error: auth_tag is not valid! \n");
+      printf("Error: auth_tag is not valid! \n");
       crypto_wipe(expected_tag, sizeof expected_tag); 
       return -1;
     }

@@ -10,6 +10,18 @@
 // ******************************************************************
 
 
+
+22.2.2024
+TODO:
+zdielaj lokalne premenne
+mozno sa zamysli nad ClientState ci nedame do globalnej kedze to ostava na clientovi
+prepocitaj ristretto255 + OPAQUE stacksize
+
+DONE:
+zmenil som fprintf na printf <br> 
+zmenil som velkost buffra v OPAQUE -> IDENTITY_BYTE_SIZE 512 <br> 
+pridal som emil. kod do ristretta na is_canoncial <br> 
+
 11-14.2 DONE:
 Teraz mozeme skompilovat main.c alebo test.c,
 co zavisi od `make all` / `make test` prikazu.<br>
