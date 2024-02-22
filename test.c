@@ -308,7 +308,12 @@ uint8_t test_result = 1;
   else {printf("SUCCESS: GenerateKE3->export_key\n");}
 
 
-  printf("TEST RESULT: %d",test_result);
+  if (test_result){
+    printf("TEST RESULT: SUCCESS");
+  }
+  else{
+    printf("TEST RESULT: ERROR");
+  }
   return 0;
 
 }
