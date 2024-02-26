@@ -27,7 +27,8 @@
 
 #define MAXINFOSIZE 1024*5
 
-#define ecc_h2c_expand_message_xmd_sha512_MAXSIZE 16320
+//#define ecc_h2c_expand_message_xmd_sha512_MAXSIZE 16320
+#define ecc_h2c_expand_message_xmd_sha512_MAXSIZE 255
 
 #define ecc_h2c_expand_message_xmd_sha512_DSTMAXSIZE 255
 
@@ -165,7 +166,7 @@ static uint32_t createContextString(
 // Test Vect:
 // https://github.com/aldenml/ecc/blob/fedffd5624db6d90c659864c21be0c530484c925/test/data/h2c/expand_message_xmd_sha512.json
 
-// STACKSIZE: ~1293B
+// STACKSIZE: ~1345B
 static uint32_t expand_message_xmd_sha512(
     uint8_t *out,
     uint8_t *msg, uint32_t msgLen,
@@ -216,10 +217,14 @@ static uint32_t expand_message_xmd_sha512(
 
   // b_0 = H(msg_prime = Z_pad || msg || l_i_b_str || I2OSP(0, 1) || DST_prime)
 
-  uint8_t b_0[64];
-  uint8_t b_1[64];
+   
   SHA512Reset(&mySha512);
   SHA512Input(&mySha512,Z_pad,s_in_bytes);
+  //uint8_t b_0[64];// save memory on stack
+  #define b_0 Z_pad
+  
+  //uint8_t b_1[64]; // save memory on stack
+  #define b_1 &Z_pad[64]
   SHA512Input(&mySha512,msg,msgLen);
   SHA512Input(&mySha512,l_i_b_str,2);
   ecc_I2OSP(tmp, 0, 1);
@@ -246,7 +251,7 @@ static uint32_t expand_message_xmd_sha512(
   memset(uniform_bytes,0,ecc_h2c_expand_message_xmd_sha512_MAXSIZE);
   // To avoid temp variables and concatination we're using
   // uniform_bytes buffer, note that proper order of elements 
-  // is cucial. Also we can possibly avoid using uniform_bytes
+  // is crucial. Also we can possibly avoid using uniform_bytes
   // buffer to avoid stack growth by using nested Hash.
 
   memcpy(uniform_bytes, b_1, 64);
@@ -271,6 +276,9 @@ static uint32_t expand_message_xmd_sha512(
   memcpy(out, uniform_bytes, (size_t)len_in_bytes);
 
   // DONT FORGET TO CLEAN UP STACK!
+  crypto_wipe(uniform_bytes, sizeof uniform_bytes);
+  #undef b_0 
+  #undef b_1
 
   return 1;
 
@@ -290,6 +298,7 @@ static void ecc_voprf_ristretto255_sha512_HashToGroupWithDST(
     hash_to_group(out, expand_message);
 
     // stack memory cleanup
+    crypto_wipe(expand_message, sizeof expand_message);
 
 }
 
@@ -306,10 +315,11 @@ static void ecc_voprf_ristretto255_sha512_HashToGroup(
     );
 
     ecc_voprf_ristretto255_sha512_HashToGroupWithDST(out, input, inputLen, DST, DSTLen);
+    crypto_wipe(DST, sizeof DST);
 }
 
 
-// STACKSIZE: 1421B
+// STACKSIZE: 1409B
 static void ecc_voprf_ristretto255_sha512_HashToScalarWithDST(
     uint8_t *out,
     const uint8_t *input, const uint32_t inputLen,
@@ -318,17 +328,10 @@ static void ecc_voprf_ristretto255_sha512_HashToScalarWithDST(
     uint8_t expand_message[64];
     expand_message_xmd_sha512(expand_message, (uint8_t*) input, inputLen, (uint8_t*) dst, dstLen, 64);
 
-    
-    uint32_t tmp[16];
-    // tmp <- expand_message
-
-    memcpy(tmp, expand_message, 64); 
-
-    mod_l(out, tmp);
+    mod_l(out, (uint32_t*)expand_message);
 
     // stack memory cleanup
     crypto_wipe(expand_message, sizeof expand_message);
-    crypto_wipe(tmp, sizeof tmp);
  
 }
 
@@ -352,7 +355,7 @@ static void ecc_voprf_ristretto255_sha512_HashToScalarWithDST(
 
 
 // https://www.ietf.org/archive/id/draft-irtf-cfrg-voprf-21.html#section-3.2.1
-// STACKSIZE: 1679B
+// STACKSIZE: 1664B
 uint32_t DeterministicDeriveKeyPair(
     uint8_t skS[Nsk], uint8_t pkS[Npk],
     uint8_t seed[Nseed], uint8_t *info, uint32_t infoLen

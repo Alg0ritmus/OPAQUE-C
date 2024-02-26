@@ -536,7 +536,7 @@ static void CreateCredentialRequest(
 }
 
 
-//STACKSIZE: 1712B
+//STACKSIZE: 1697B
 void ecc_opaque_ristretto255_sha512_DeriveDiffieHellmanKeyPair(
     uint8_t private_key[Nsk], uint8_t public_key[Npk],
     uint8_t seed[Nseed]
@@ -552,7 +552,7 @@ void ecc_opaque_ristretto255_sha512_DeriveDiffieHellmanKeyPair(
 
 
 
-//STACKSIZE: 1776B
+//STACKSIZE: 1761B
 void ecc_opaque_ristretto255_sha512_3DH_StartWithSeed(
     KE1 *ke1,
     ClientState *state,
@@ -612,7 +612,7 @@ void ecc_opaque_ristretto255_sha512_3DH_StartWithSeed(
 **/
 
 
-// STACKSIZE: 1808B
+// STACKSIZE: 1793B
 void GenerateKE1(
   KE1 *ke1,
   ClientState *state,
