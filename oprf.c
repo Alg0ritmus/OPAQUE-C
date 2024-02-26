@@ -293,7 +293,7 @@ static void ecc_voprf_ristretto255_sha512_HashToGroupWithDST(
 
 }
 
-// STACKSIZE: 1383B
+// STACKSIZE: 1469B
 static void ecc_voprf_ristretto255_sha512_HashToGroup(
     uint8_t *out,
     const uint8_t *input, const uint32_t inputLen
@@ -419,7 +419,7 @@ uint32_t DeterministicDeriveKeyPair(
 
 
 // https://www.ietf.org/archive/id/draft-irtf-cfrg-voprf-21.html#name-oprf-protocol
-// STACKSIZE: 1415B
+// STACKSIZE: 1501B
 int32_t ecc_voprf_ristretto255_sha512_BlindWithScalar(
     uint8_t *blindedElement,
     const  uint8_t *input, const uint32_t inputLen,

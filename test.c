@@ -262,6 +262,7 @@ int main(){
   // --------------- OPAQUE ------------
   // -----------------------------------   
 
+uint8_t result=1;
 uint8_t test_result = 1;
 
   //////////////////////////
@@ -280,6 +281,7 @@ uint8_t test_result = 1;
     );
 
   test_result = cmp((uint8_t*) &ke1,_KE1,96);
+  result &= test_result;
   if (test_result==0){printf("ERROR: GenerateKE1->KE1\n");}
   else {printf("SUCCESS: GenerateKE1->KE1\n");}
 	
@@ -298,17 +300,22 @@ uint8_t test_result = 1;
   );
 
   test_result = cmp((uint8_t*) &ke3,_KE3,64);
+  result &= test_result;
   if (test_result==0){printf("ERROR: GenerateKE3->KE3\n");}
   else {printf("SUCCESS: GenerateKE3->KE3\n");}
+  
   test_result = cmp(client_session_key,_session_key,64);
+  result &= test_result;
   if (test_result==0){printf("ERROR: GenerateKE3->client_session_key\n");}
-  {printf("SUCCESS: GenerateKE3->client_session_key\n");}
+  else {printf("SUCCESS: GenerateKE3->client_session_key\n");}
+  
   test_result = cmp(export_key,_export_key,64);
+  result &= test_result;
   if (test_result==0){printf("ERROR: GenerateKE3->export_key\n");}
   else {printf("SUCCESS: GenerateKE3->export_key\n");}
 
 
-  if (test_result){
+  if (result){
     printf("TEST RESULT: SUCCESS");
   }
   else{

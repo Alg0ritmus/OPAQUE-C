@@ -115,7 +115,7 @@
 static void CreateCleartextCredentials(
     CleartextCredentials *cleartext_credentials,
     const uint8_t server_public_key[Npk],
-    const uint8_t client_public_key[Npk], // QUESTION: how to propperly indent this ?
+    const uint8_t client_public_key[Npk],
     const uint8_t server_identity[IDENTITY_BYTE_SIZE], uint32_t server_identity_len,
     const uint8_t client_identity[IDENTITY_BYTE_SIZE], uint32_t client_identity_len
   ) {
@@ -192,7 +192,7 @@ static uint32_t serializeCleartextCredentials(uint8_t *out, CleartextCredentials
   *
   *
   * @brief Creation of Envelope on client during registration phase
-  * @param[in]   -> randomized_password -> random pass of variable length? (QUESTION: is it really random length) ?
+  * @param[in]   -> randomized_password -> random pass of 512 bytes in length
   * @param[in]   -> server_public_key   -> the encoded server public key for the AKE protocol
   * @param[in]   -> server_identity     -> the optional encoded server identity
   * @param[in]   -> client_identity     -> the optional encoded client identity
@@ -204,7 +204,7 @@ static uint32_t serializeCleartextCredentials(uint8_t *out, CleartextCredentials
 
 // https://www.ietf.org/archive/id/draft-irtf-cfrg-opaque-12.html
 // STACKSIZE BEFORE CLEANING: 3030B // we can set as global variable ?
-// STACKSIZE AFTER CLEANING: 
+// STACKSIZE AFTER CLEANING: 2112B
 void Store(
     Envelope *envelope, 
     uint8_t client_public_key[Npk],
@@ -217,20 +217,12 @@ void Store(
     ) {
 
 
-
-    CleartextCredentials clear_cred; 
-    CleartextCredentials *cleartext_credentials = &clear_cred;
-
-    // QUESTION: we need to use TRNG multiple time here
     #ifdef TESTING_ENVELOPE_NONCE
         uint8_t envelope_nonce[Nn] = {0xac, 0x13, 0x17, 0x1b, 0x2f, 0x17, 0xbc, 0x2c, 0x74, 0x99, 0x7f, 0x0f, 0xce, 0x1e, 0x1f, 0x35, 0xbe, 0xc6, 0xb9, 0x1f, 0xe2, 0xe1, 0x2d, 0xbd, 0x32, 0x3d, 0x23, 0xba, 0x7a, 0x38, 0xdf, 0xec};
     #else
         uint8_t envelope_nonce[Nn];
         rand_32_bytes(envelope_nonce);
     #endif
-    
-    //rnd(envelope_nonce,0x00);    // envelope_nonce = random(Nn)
-
 
  
     // NOTE: that Expand/Extract should be taken from HKDF 
@@ -241,34 +233,50 @@ void Store(
     uint8_t export_key_label[9] = {'E', 'x', 'p', 'o', 'r', 't', 'K', 'e', 'y'};
     uint8_t seed_label[10] = {'P', 'r', 'i', 'v', 'a', 't', 'e', 'K', 'e', 'y'};
 
-
-    uint8_t auth_key[Nh];
-    uint8_t auth_key_info[Nn + 7];
-    uint8_t export_key_info[Nn+9];
-    uint8_t seed[Nseed];
-    uint8_t seed_info[Nn + 10];
-
     hkdfExpand(SHA512,randomized_password,randomized_password_len, masking_key_info, 10, masking_key, Nh);
 
-    ecc_concat2(auth_key_info, envelope_nonce, Nn, auth_key_label, 7);
-    hkdfExpand(SHA512,randomized_password,randomized_password_len, auth_key_info, Nn+7, auth_key, Nh);
+    // temp_buffer is set to 296 bytes, this variable is used to reduce amount of allocated bytes 
+    // needed for expanding export key, masking key, seed and cleartext_creds_buf later
 
+    uint8_t temp_buffer[296];
+    
+    
+    // uint8_t export_key_info[Nn+9]; NOTE that in this point, overhead is 255 bytes (296-(32+9))
+    // meaning, that we allocated more than we acctually needed by 255 bytes
+    // after expanding export_key, we no longer need to store this information
+    #define export_key_info temp_buffer
     ecc_concat2(export_key_info, envelope_nonce, Nn, export_key_label, 9);
     hkdfExpand(SHA512,randomized_password,randomized_password_len, export_key_info, Nn+9, export_key, Nh);
 
+    
+    // instead of new seed variable we will rewrite 32 lower bytes of temp_buffer
+    // to save some space on stack same will apply on seed_info on upper 42 bytes.
+
+    //uint8_t seed[Nseed];
+    #define seed temp_buffer //lower 32 bytes of temp_buffer is allocated for seed
+
+    // uint8_t seed_info[Nn + 10];
+    #define seed_info &temp_buffer[32] //next 42 bytes of temp_buffer is allocated for seed_info
+    
+
     ecc_concat2(seed_info, envelope_nonce, Nn, seed_label, 10);
     hkdfExpand(SHA512,randomized_password,randomized_password_len, seed_info, Nn+10, seed, Nseed);
+    
+    //uint8_t skS[Nsk]; // dont need this bcs we are acctually using temp_buffer
 
-    // 
-    uint8_t skS[Nsk];
+    #define skS &temp_buffer[32] // saving space on stack, bcs we dont need space previously allocated for seed_info
     uint8_t info[33] = {'O', 'P', 'A', 'Q', 'U', 'E', '-', 'D', 'e', 'r', 'i', 'v', 'e', 'D', 'i', 'f', 'f', 'i', 'e', 'H', 'e', 'l', 'l', 'm', 'a', 'n', 'K', 'e', 'y', 'P', 'a', 'i', 'r'};
     //DeriveDiffieHellmanKeyPair(seed);
 
-
+    // do not forget to clear skS from stack
     DeterministicDeriveKeyPair(skS,client_public_key,seed, info, 33);
-    // clear skS from stack
+    
 
-    //printf("server_identity_len:%d, client_identity_len:%d\n",server_identity_len,client_identity_len );
+
+    // During memory optimization we reduced  size of CleartextCredentials to STACKSIZE: 296B
+    CleartextCredentials clear_cred; 
+    CleartextCredentials *cleartext_credentials = &clear_cred;
+
     CreateCleartextCredentials(
         cleartext_credentials, 
         server_public_key, 
@@ -277,7 +285,9 @@ void Store(
         client_identity, client_identity_len
       );
 
-    uint8_t cleartext_creds_buf[512];
+
+    //uint8_t cleartext_creds_buf[296];
+    #define cleartext_creds_buf temp_buffer // saving space on stack
 
     uint32_t cleartext_creds_len = serializeCleartextCredentials(
         cleartext_creds_buf,
@@ -292,17 +302,35 @@ void Store(
         cleartext_creds_buf, cleartext_creds_len
     );
 
+
+    //uint8_t auth_key[Nh];
+    #define auth_key temp_buffer // saving space on stack (lower 64 bytes are auth_key)
+    
+    //uint8_t auth_key_info[Nn + 7];
+    #define auth_key_info &temp_buffer[Nh] // saving space on stack (next 39 bytes are auth_key_info)
+    
+    ecc_concat2(auth_key_info, envelope_nonce, Nn, auth_key_label, 7);
+    hkdfExpand(SHA512,randomized_password,randomized_password_len, auth_key_info, Nn+7, auth_key, Nh);
+
     hmac(SHA512, auth_tag_mac_input, Nn+cleartext_creds_len, auth_key, Nh, envelope->auth_tag);
     memcpy(envelope->nonce, envelope_nonce, Nn);
 
-    crypto_wipe(auth_key, sizeof auth_key); 
-    crypto_wipe(auth_key_info, sizeof auth_key_info); 
-    crypto_wipe(export_key_info, sizeof export_key_info);
-    crypto_wipe(seed, sizeof seed);
-    crypto_wipe(seed_info, sizeof seed_info);
-    crypto_wipe(skS, sizeof skS);
-    crypto_wipe(cleartext_creds_buf, sizeof cleartext_creds_buf); 
+    //crypto_wipe(auth_key, sizeof auth_key); 
+    //crypto_wipe(auth_key_info, sizeof auth_key_info); 
+    //crypto_wipe(export_key_info, sizeof export_key_info);
+    //crypto_wipe(seed, sizeof seed);
+    //crypto_wipe(seed_info, sizeof seed_info);
+    //crypto_wipe(skS, sizeof skS);
+    crypto_wipe(temp_buffer, 296);
+    crypto_wipe(cleartext_credentials, sizeof cleartext_credentials); 
     crypto_wipe(auth_tag_mac_input, sizeof auth_tag_mac_input);
+    #undef export_key_info 
+    #undef seed
+    #undef seed_info
+    #undef skS
+    #undef cleartext_creds_buf
+    #undef auth_key
+    #undef auth_key_info
 }
 
 
@@ -319,32 +347,39 @@ void Store(
   * @param[out] -> export_key,              ->    an additional client key.
 **/
 
-// STACKSIZE BEFORE CLEANING: 1959B
-uint32_t Recover(
+// STACKSIZE BEFORE CLEANING: 2500B
+// STACKSIZE AFTER CLEANING: 2075B
+static uint32_t Recover(
     uint8_t client_private_key[Npk],
     CleartextCredentials *cleartext_credentials,
     uint8_t export_key[Nh],
 
-    uint8_t *randomized_password, uint32_t randomized_password_len,
-    uint8_t server_public_key[Npk],
-    Envelope *envelope, 
-    uint8_t *server_identity, uint32_t server_identity_len,
-    uint8_t *client_identity, uint32_t client_identity_len
+    const uint8_t *randomized_password, const uint32_t randomized_password_len,
+    const uint8_t server_public_key[Npk],
+    const Envelope *envelope, 
+    const uint8_t *server_identity, const uint32_t server_identity_len,
+    const uint8_t *client_identity, const uint32_t client_identity_len
   ) {
   
     uint8_t auth_key_label[7] = {'A', 'u', 't', 'h', 'K', 'e', 'y'};
     uint8_t export_key_label[9] = {'E', 'x', 'p', 'o', 'r', 't', 'K', 'e', 'y'};
     uint8_t seed_label[10] = {'P', 'r', 'i', 'v', 'a', 't', 'e', 'K', 'e', 'y'};
 
-    uint8_t auth_key[Nh];
-    uint8_t auth_key_info[Nn + 7];
-    uint8_t export_key_info[Nn+9];
-    uint8_t seed[Nseed];
-    uint8_t seed_info[Nn + 10];    
+    // temp_buffer is set to 296 bytes, this variable is used to reduce amount of allocated bytes 
+    // needed for expanding export key, etc. like we did in Store() above
 
-    //auth_key = Expand(randomized_password, concat(envelope.nonce, "AuthKey"), Nh)
-    ecc_concat2(auth_key_info, envelope->nonce, Nn, auth_key_label, 7);
-    hkdfExpand(SHA512,randomized_password,randomized_password_len, auth_key_info, Nn+7, auth_key, Nh);
+    uint8_t temp_buffer[296];
+
+    //uint8_t export_key_info[Nn+9];
+    #define export_key_info temp_buffer // save space on stack
+    
+    //uint8_t seed[Nseed];
+    #define seed temp_buffer //lower 32 bytes of temp_buffer is allocated for seed
+
+    //uint8_t seed_info[Nn + 10];
+    #define seed_info &temp_buffer[32] //next 42 bytes of temp_buffer is allocated for seed_info
+    
+
 
     //export_key = Expand(randomized_password, concat(envelope.nonce, "ExportKey"), Nh)
     ecc_concat2(export_key_info, envelope->nonce, Nn, export_key_label, 9);
@@ -355,7 +390,8 @@ uint32_t Recover(
     hkdfExpand(SHA512,randomized_password,randomized_password_len, seed_info, Nn+10, seed, Nseed);
 
     //(client_private_key, client_public_key) = DeriveDiffieHellmanKeyPair(seed)
-    uint8_t client_public_key[Npk];
+    //uint8_t client_public_key[Npk]; //save space on stack
+    #define client_public_key &temp_buffer[32]
     uint8_t info[33] = {'O', 'P', 'A', 'Q', 'U', 'E', '-', 'D', 'e', 'r', 'i', 'v', 'e', 'D', 'i', 'f', 'f', 'i', 'e', 'H', 'e', 'l', 'l', 'm', 'a', 'n', 'K', 'e', 'y', 'P', 'a', 'i', 'r'};
     uint32_t infoLen = 33;
     DeterministicDeriveKeyPair(
@@ -378,8 +414,10 @@ uint32_t Recover(
 
 
     // expected_tag = MAC(auth_key, concat(envelope.nonce, cleartext_credentials))
-    uint8_t cleartext_creds_buf[512];
-    
+    // uint8_t cleartext_creds_buf[296];
+
+    #define cleartext_creds_buf temp_buffer // saving space on stack
+
     uint32_t cleartext_creds_len = serializeCleartextCredentials(
         cleartext_creds_buf,
         cleartext_credentials
@@ -392,7 +430,18 @@ uint32_t Recover(
         cleartext_creds_buf, cleartext_creds_len
     );
 
-    hmac(SHA512, expected_tag, Nn+cleartext_creds_len, auth_key, Nh, envelope->auth_tag);
+    //auth_key = Expand(randomized_password, concat(envelope.nonce, "AuthKey"), Nh)
+
+    //uint8_t auth_key[Nh];
+    #define auth_key temp_buffer // saving space on stack (lower 64 bytes are auth_key)
+    
+    //uint8_t auth_key_info[Nn + 7];
+    #define auth_key_info &temp_buffer[Nh] // saving space on stack (next 39 bytes are auth_key_info)
+    
+    ecc_concat2(auth_key_info, envelope->nonce, Nn, auth_key_label, 7);
+    hkdfExpand(SHA512,randomized_password,randomized_password_len, auth_key_info, Nn+7, auth_key, Nh);
+
+    hmac(SHA512, expected_tag, Nn+cleartext_creds_len, auth_key, Nh,  (uint8_t*)envelope->auth_tag);
 
     crypto_wipe(auth_key, sizeof auth_key);
     crypto_wipe(auth_key_info, sizeof auth_key_info);
@@ -401,6 +450,13 @@ uint32_t Recover(
     crypto_wipe(seed_info, sizeof seed_info);  
     crypto_wipe(client_public_key, sizeof client_public_key);
     crypto_wipe(cleartext_creds_buf, sizeof cleartext_creds_buf); 
+    #undef export_key_info 
+    #undef seed
+    #undef seed_info
+    #undef cleartext_creds_buf
+    #undef auth_key
+    #undef auth_key_info
+    #undef client_public_key
     
     //If !ct_equal(envelope.auth_tag, expected_tag)
     if (cmp(envelope->auth_tag,expected_tag,Nn+cleartext_creds_len)){
@@ -468,7 +524,7 @@ def CreateCredentialRequest(password):
 **/
 
 
-// STACKSIZE: 1415B
+// STACKSIZE: 1501B
 static void CreateCredentialRequest(
     uint8_t *password, uint32_t password_len,
     CredentialRequest *request,
@@ -704,15 +760,6 @@ void ecc_opaque_ristretto255_sha512_3DH_Expand_Label(
     const uint8_t *context, const uint32_t context_len,
     const uint32_t length
 ) {
-    // Expand-Label(Secret, Label, Context, Length) =
-    //     Expand(Secret, CustomLabel, Length)
-    //
-    // struct {
-    //   uint16 length = Length;
-    //   opaque label<8..255> = "OPAQUE-" + Label;
-    //   uint8 context<0..255> = Context;
-    // } CustomLabel;
-
     uint8_t opaque_prefix[7] = {'O', 'P', 'A', 'Q', 'U', 'E', '-'};
 
     uint8_t info[100];
@@ -814,7 +861,8 @@ void ecc_opaque_ristretto255_sha512_3DH_DeriveKeys(
 }
 
 
-// STACKSIZE BEFORE CLEANING: 3673B
+// STACKSIZE BEFORE CLEANING: 4384B
+// STACKSIZE AFTER CLEANING: 2999B
 uint32_t ecc_opaque_ristretto255_sha512_RecoverCredentials(
     uint8_t client_private_key[32],
     uint8_t server_public_key[32],
@@ -839,7 +887,10 @@ uint32_t ecc_opaque_ristretto255_sha512_RecoverCredentials(
     // 7. Output (client_private_key, response.server_public_key, export_key)
 
     // 1. y = Finalize(password, blind, response.data)
-    uint8_t y[64];
+    uint8_t temp_buffer[128];
+
+    // uint8_t y[64]; // saving space on stack
+    #define y temp_buffer  // y is saved on lower 64B of temp_buffer
     Finalize(
         y,
         (uint8_t *) password, password_len,
@@ -847,15 +898,18 @@ uint32_t ecc_opaque_ristretto255_sha512_RecoverCredentials(
         (uint8_t *) res->evaluated_message
     );
 
-
     // 2. randomized_pwd = Extract("", Harden(y, params))
     // - Harden(y, params)
-    uint8_t harden_result[Nh];
+    //uint8_t harden_result[Nh]; // saving space on stack
+    #define harden_result &temp_buffer[Nh] // harden_result is saved on higher 64B of temp_buffer
     memcpy(harden_result, y, Nh);
     
     // - concat(y, Harden(y, params))
-    uint8_t extract_input[2 * Nh];
-    ecc_concat2(extract_input, y, Nh, harden_result, Nh);
+    // We can skip concatination bcs. we actually already concatinate  y || harden_result
+    // uint8_t extract_input[2 * Nh];
+    // ecc_concat2(extract_input, y, Nh, harden_result, Nh);
+    #define extract_input temp_buffer
+    
     uint8_t randomized_pwd[Nh];
     //ecc_kdf_hkdf_sha512_extract(randomized_pwd, NULL, 0, extract_input, sizeof extract_input);
     hkdfExtract(SHA512,(uint8_t*) NULL,0, extract_input, sizeof extract_input, randomized_pwd);
@@ -863,7 +917,8 @@ uint32_t ecc_opaque_ristretto255_sha512_RecoverCredentials(
   
     // 3. masking_key = Expand(randomized_pwd, "MaskingKey", Nh)
     uint8_t masking_key_info[10] = {'M', 'a', 's', 'k', 'i', 'n', 'g', 'K', 'e', 'y'};
-    uint8_t masking_key[Nh];
+    //uint8_t masking_key[Nh];
+    #define masking_key temp_buffer // saving space on stack
     //ecc_kdf_hkdf_sha512_expand(masking_key, randomized_pwd, masking_key_info, sizeof masking_key_info, Nh);
     hkdfExpand(SHA512,randomized_pwd,Nh,masking_key_info, sizeof masking_key_info, masking_key, Nh);
 
@@ -918,7 +973,8 @@ uint32_t ecc_opaque_ristretto255_sha512_RecoverCredentials(
 
 
 
-// STACKSIZE BEFORE CLEANING: 3437B
+// STACKSIZE BEFORE CLEANING: 3501B
+// STACKSIZE AFTER CLEANING: 3029B
 uint32_t ecc_opaque_ristretto255_sha512_3DH_ClientFinalize(
     KE3 *ke3_raw, // 64
     uint8_t session_key[64],
@@ -942,17 +998,13 @@ uint32_t ecc_opaque_ristretto255_sha512_3DH_ClientFinalize(
     // 7. Create KE3 ke3 with client_mac
     // 8. Output (ke3, session_key)
 
-    // 1. ikm = TripleDHIKM(state.client_secret, ke2.server_keyshare,
-    //     state.client_secret, server_public_key, client_private_key, ke2.server_keyshare)
-    uint8_t ikm[96];
-    ecc_opaque_ristretto255_sha512_3DH_TripleDHIKM(
-        ikm,
-        state->client_ake_state.client_secret, ke2->auth_response.server_public_keyshare,
-        state->client_ake_state.client_secret, server_public_key,
-        client_private_key, ke2->auth_response.server_public_keyshare
-    );
+    
+    // temporary variable used for efficient manipulation w stack
+    uint8_t temp_buff[128];
+    
 
-    uint8_t client_public_key[Npk];
+    //uint8_t client_public_key[Npk]; // save space on stack
+    #define client_public_key temp_buff
     ScalarMult_(client_public_key, (uint8_t*)client_private_key,(uint8_t*)RISTRETTO255_BASEPOINT_OPRF);
 
     // 2. preamble = Preamble(client_identity, state.ke1, server_identity, ke2.inner_ke2)
@@ -969,28 +1021,46 @@ uint32_t ecc_opaque_ristretto255_sha512_3DH_ClientFinalize(
         ke2
     );
 
+    // 1. ikm = TripleDHIKM(state.client_secret, ke2.server_keyshare,
+    //     state.client_secret, server_public_key, client_private_key, ke2.server_keyshare)
+    
+    //uint8_t ikm[96]; //saving space on stack
+    #define ikm temp_buff
+    ecc_opaque_ristretto255_sha512_3DH_TripleDHIKM(
+        ikm,
+        state->client_ake_state.client_secret, ke2->auth_response.server_public_keyshare,
+        state->client_ake_state.client_secret, server_public_key,
+        client_private_key, ke2->auth_response.server_public_keyshare
+    );
+
+
     // 3. Km2, Km3, session_key = DeriveKeys(ikm, preamble)
     uint8_t km2[64];
     uint8_t km3[64];
     ecc_opaque_ristretto255_sha512_3DH_DeriveKeys(
         km2, km3,
         session_key,
-        ikm, sizeof ikm,
+        ikm, 96,
         preamble, preamble_len
     );
 
     // 4. expected_server_mac = MAC(Km2, Hash(preamble))
-    uint8_t preamble_hash[64];
+    //uint8_t preamble_hash[64]; //save space on stack
+
+    // at this point,lower 64bytes temp_buff of are occupied by preamble_hash
+    #define preamble_hash temp_buff 
     //ecc_hash_sha512(preamble_hash, preamble, preamble_len);
 
-    SHA512Context mySha512;
-    SHA512Reset(&mySha512);
-    SHA512Input(&mySha512, preamble, preamble_len);
-    SHA512Result(&mySha512, preamble_hash);
+    SHA512Context hst;
+    SHA512Reset(&hst);
+    SHA512Input(&hst, preamble, preamble_len);
+    SHA512Result(&hst, preamble_hash);
 
-    uint8_t expected_server_mac[64];
+    //uint8_t expected_server_mac[64];
+    // at this point,higher 64bytes temp_buff of are occupied by expected_server_mac
+    #define expected_server_mac &temp_buff[64]
     hmac(SHA512,
-        preamble_hash, sizeof preamble_hash,
+        preamble_hash, 64,
         km2,
         sizeof km2,
         expected_server_mac
@@ -1000,44 +1070,56 @@ uint32_t ecc_opaque_ristretto255_sha512_3DH_ClientFinalize(
     //      raise HandshakeError
     if (!cmp(ke2->auth_response.server_mac, expected_server_mac, Nh)) {
         // cleanup stack memory
-        crypto_wipe(ikm, sizeof ikm);
+        //crypto_wipe(ikm, sizeof ikm);
         crypto_wipe(preamble, sizeof preamble);
         crypto_wipe(km2, sizeof km2);
         crypto_wipe(km3, sizeof km3);
-        crypto_wipe(preamble_hash, sizeof preamble_hash);
-        crypto_wipe(expected_server_mac, sizeof expected_server_mac);
+        //crypto_wipe(preamble_hash, sizeof preamble_hash);
+        //crypto_wipe(expected_server_mac, sizeof expected_server_mac);
+        #undef preamble_hash
         return -1;
     }
 
     // 6. client_mac = MAC(Km3, Hash(concat(preamble, expected_server_mac))
-    uint8_t client_mac_input[64];
-    SHA512Context hst;
+    //uint8_t client_mac_input[64];
+    // at this point,lower 64bytes temp_buff of are occupied by client_mac_input
+    // higher 64 bytes of temp_buff are still in use (expected_server_mac)
+    #define client_mac_input temp_buff 
     SHA512Reset(&hst);
     SHA512Input(&hst, preamble, preamble_len);
-    SHA512Input(&hst, expected_server_mac, sizeof expected_server_mac);
+    SHA512Input(&hst, expected_server_mac, 64);
     SHA512Result(&hst, client_mac_input);
 
-    uint8_t client_mac[64];
+    //uint8_t client_mac_[64]; //saving space on stack
+    // we no longer need higher 64 bytes of temp_buff to store expected_server_mac
+    // so we use them to store client_mac
+    #define client_mac_ &temp_buff[64]
     hmac(SHA512,
-        client_mac_input, sizeof client_mac_input,
+        client_mac_input, 64,
         km3,
         sizeof km3,
-        client_mac
+        client_mac_
     );
 
     // 7. Create KE3 ke3 with client_mac
     // 8. Output (ke3, session_key)
-    memcpy(ke3_raw->client_mac, client_mac, sizeof client_mac);
+    memcpy(ke3_raw->client_mac, client_mac_, 64);
 
     // cleanup stack memory
-    crypto_wipe(ikm, sizeof ikm);
+    //crypto_wipe(ikm, sizeof ikm);
     crypto_wipe(preamble, sizeof preamble);
     crypto_wipe(km2, sizeof km2);
     crypto_wipe(km3, sizeof km3);
-    crypto_wipe(preamble_hash, sizeof preamble_hash);
-    crypto_wipe(expected_server_mac, sizeof expected_server_mac);
-    crypto_wipe(client_mac_input, sizeof client_mac_input);
-    crypto_wipe(client_mac, sizeof client_mac);
+    //crypto_wipe(preamble_hash, sizeof preamble_hash);
+    //crypto_wipe(expected_server_mac, sizeof expected_server_mac);
+    //crypto_wipe(client_mac_input, sizeof client_mac_input);
+    //crypto_wipe(client_mac_, sizeof client_mac_);
+    #undef client_public_key
+    #undef ikm
+    #undef preamble_hash
+    #undef expected_server_mac
+    #undef client_mac_input
+    #undef client_mac_
 
     return 0;
 }
@@ -1047,7 +1129,8 @@ uint32_t ecc_opaque_ristretto255_sha512_3DH_ClientFinalize(
 
 // GENERATE KE3
 
-// STACKSIZE: 3737
+// STACKSIZE BEFORE CLEANING: 4448B
+// STACKSIZE AFTER CLEANING: 3093B
 uint32_t ecc_opaque_ristretto255_sha512_GenerateKE3(
     KE3 *ke3_raw,
     uint8_t session_key[64], // client_session_key

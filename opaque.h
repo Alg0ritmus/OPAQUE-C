@@ -64,7 +64,8 @@
 **/
 
 // CleartextCredentials structure
-// STACKSIZE: 1064B
+// STACKSIZE BEFORE CLEANING : 1064B
+// STACKSIZE: 296B -> we lowered IDENTITY_BYTE_SIZE down to 128
 typedef struct CleartextCredentials_t{
      uint8_t server_public_key[Npk];
      uint8_t server_identity[IDENTITY_BYTE_SIZE];
