@@ -334,19 +334,19 @@ static void ecc_voprf_ristretto255_sha512_HashToScalarWithDST(
 
 
 // STACKSIZE: 1534B
-static void ecc_voprf_ristretto255_sha512_HashToScalar(
-    uint8_t *out,
-    const uint8_t *input, const uint32_t inputLen
-) {
-    uint8_t DST[100];
-    uint8_t DSTPrefix[13] = "HashToScalar-";
-    const uint32_t DSTsize = createContextString(
-        DST, 0,
-        DSTPrefix, sizeof DSTPrefix
-    );
+// static void ecc_voprf_ristretto255_sha512_HashToScalar(
+//     uint8_t *out,
+//     const uint8_t *input, const uint32_t inputLen
+// ) {
+//     uint8_t DST[100];
+//     uint8_t DSTPrefix[13] = "HashToScalar-";
+//     const uint32_t DSTsize = createContextString(
+//         DST, 0,
+//         DSTPrefix, sizeof DSTPrefix
+//     );
 
-    ecc_voprf_ristretto255_sha512_HashToScalarWithDST(out, input, inputLen, DST, DSTsize);
-}
+//     ecc_voprf_ristretto255_sha512_HashToScalarWithDST(out, input, inputLen, DST, DSTsize);
+// }
 
 // END OF STARTIC FUNC BLOCK
 
