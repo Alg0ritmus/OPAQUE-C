@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS= -std=c99 -Os -Wall -Werror -Wextra -Wno-unused-function
+CFLAGS= -Os -Wall -Werror -Wextra --pedantic-errors -Wno-unused-function
 SRCS += opaque.c 
 SRCS += oprf.c
 SRCS += dependencies/sha384-512.c dependencies/usha.c dependencies/hkdf.c dependencies/hmac.c

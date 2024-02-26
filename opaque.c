@@ -150,6 +150,7 @@ static void CreateCleartextCredentials(
 
 
 // https://github.com/aldenml/ecc/blob/fedffd5624db6d90c659864c21be0c530484c925/src/opaque.c#L194C1-L211C2
+// STACKSIZE: 8B
 static uint32_t serializeCleartextCredentials(uint8_t *out, CleartextCredentials *credentials) {
     const uint32_t len = Npk + 2 + credentials->server_identity_len + 2 + credentials->client_identity_len;
 
@@ -202,6 +203,8 @@ static uint32_t serializeCleartextCredentials(uint8_t *out, CleartextCredentials
 **/
 
 // https://www.ietf.org/archive/id/draft-irtf-cfrg-opaque-12.html
+// STACKSIZE BEFORE CLEANING: 3030B // we can set as global variable ?
+// STACKSIZE AFTER CLEANING: 
 void Store(
     Envelope *envelope, 
     uint8_t client_public_key[Npk],
@@ -315,6 +318,8 @@ void Store(
   * @param[out] -> cleartext_credentials,   ->    a CleartextCredentials structure.
   * @param[out] -> export_key,              ->    an additional client key.
 **/
+
+// STACKSIZE BEFORE CLEANING: 1959B
 uint32_t Recover(
     uint8_t client_private_key[Npk],
     CleartextCredentials *cleartext_credentials,
@@ -463,7 +468,7 @@ def CreateCredentialRequest(password):
 **/
 
 
-
+// STACKSIZE: 1415B
 static void CreateCredentialRequest(
     uint8_t *password, uint32_t password_len,
     CredentialRequest *request,
@@ -474,6 +479,8 @@ static void CreateCredentialRequest(
 
 }
 
+
+//STACKSIZE: 1712B
 void ecc_opaque_ristretto255_sha512_DeriveDiffieHellmanKeyPair(
     uint8_t private_key[Nsk], uint8_t public_key[Npk],
     uint8_t seed[Nseed]
@@ -488,6 +495,8 @@ void ecc_opaque_ristretto255_sha512_DeriveDiffieHellmanKeyPair(
 }
 
 
+
+//STACKSIZE: 1776B
 void ecc_opaque_ristretto255_sha512_3DH_StartWithSeed(
     KE1 *ke1,
     ClientState *state,
@@ -547,6 +556,7 @@ void ecc_opaque_ristretto255_sha512_3DH_StartWithSeed(
 **/
 
 
+// STACKSIZE: 1808B
 void GenerateKE1(
   KE1 *ke1,
   ClientState *state,
@@ -581,6 +591,8 @@ void GenerateKE1(
 
 }
 
+
+// STACKSIZE: ~13B 
 uint32_t ecc_opaque_ristretto255_sha512_3DH_Preamble(
     uint8_t *preamble,
     const uint32_t preamble_len,
@@ -649,6 +661,7 @@ uint32_t ecc_opaque_ristretto255_sha512_3DH_Preamble(
     return n;
 }
 
+// STACKSIZE: 776B
 void ecc_opaque_ristretto255_sha512_3DH_TripleDHIKM(
     uint8_t *ikm, // 96
     const uint8_t *sk1, const uint8_t *pk1,
@@ -682,6 +695,8 @@ void ecc_opaque_ristretto255_sha512_3DH_TripleDHIKM(
 }
 
 
+
+// STACKSIZE BEFORE CLEANING: 1141B
 void ecc_opaque_ristretto255_sha512_3DH_Expand_Label(
     uint8_t *out, // 64
     const uint8_t *secret,
@@ -700,7 +715,7 @@ void ecc_opaque_ristretto255_sha512_3DH_Expand_Label(
 
     uint8_t opaque_prefix[7] = {'O', 'P', 'A', 'Q', 'U', 'E', '-'};
 
-    uint8_t info[512];
+    uint8_t info[100];
     uint8_t *p = &info[0];
     uint32_t n = 0;
 
@@ -725,6 +740,7 @@ void ecc_opaque_ristretto255_sha512_3DH_Expand_Label(
 }
 
 
+// STACKSIZE BEFORE CLEANING: 1657B
 void ecc_opaque_ristretto255_sha512_3DH_DeriveKeys(
     uint8_t *km2, // 64
     uint8_t *km3, // 64
@@ -797,6 +813,8 @@ void ecc_opaque_ristretto255_sha512_3DH_DeriveKeys(
     crypto_wipe(handshake_secret, sizeof handshake_secret);
 }
 
+
+// STACKSIZE BEFORE CLEANING: 3673B
 uint32_t ecc_opaque_ristretto255_sha512_RecoverCredentials(
     uint8_t client_private_key[32],
     uint8_t server_public_key[32],
@@ -900,6 +918,7 @@ uint32_t ecc_opaque_ristretto255_sha512_RecoverCredentials(
 
 
 
+// STACKSIZE BEFORE CLEANING: 3437B
 uint32_t ecc_opaque_ristretto255_sha512_3DH_ClientFinalize(
     KE3 *ke3_raw, // 64
     uint8_t session_key[64],
@@ -937,7 +956,7 @@ uint32_t ecc_opaque_ristretto255_sha512_3DH_ClientFinalize(
     ScalarMult_(client_public_key, (uint8_t*)client_private_key,(uint8_t*)RISTRETTO255_BASEPOINT_OPRF);
 
     // 2. preamble = Preamble(client_identity, state.ke1, server_identity, ke2.inner_ke2)
-    uint8_t preamble[512];
+    uint8_t preamble[900]; // 900 should be enough in case IDENTITY_BYTE_SIZE is 128
     const uint32_t preamble_len = ecc_opaque_ristretto255_sha512_3DH_Preamble(
         preamble,
         sizeof preamble,
@@ -1028,7 +1047,7 @@ uint32_t ecc_opaque_ristretto255_sha512_3DH_ClientFinalize(
 
 // GENERATE KE3
 
-
+// STACKSIZE: 3737
 uint32_t ecc_opaque_ristretto255_sha512_GenerateKE3(
     KE3 *ke3_raw,
     uint8_t session_key[64], // client_session_key

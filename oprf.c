@@ -110,6 +110,7 @@ void ecc_concat3(
 
 // compare 2 arrays of same size
 // returns 1 if they are eq, otherwise 0
+// STACKSIZE: 4B
 uint32_t cmp(const uint8_t *a, const uint8_t *b, uint32_t size){
   uint32_t result = 1;
   for (uint32_t i = 0; i < size; ++i) {
@@ -120,7 +121,7 @@ uint32_t cmp(const uint8_t *a, const uint8_t *b, uint32_t size){
 
 
 // STATIC FUNC
-
+// STACKSIZE: 26B
 static uint32_t createContextString(
     uint8_t *contextString,
     const uint32_t mode,
@@ -164,7 +165,7 @@ static uint32_t createContextString(
 // Test Vect:
 // https://github.com/aldenml/ecc/blob/fedffd5624db6d90c659864c21be0c530484c925/test/data/h2c/expand_message_xmd_sha512.json
 
-
+// STACKSIZE: ~1293B
 static uint32_t expand_message_xmd_sha512(
     uint8_t *out,
     uint8_t *msg, uint32_t msgLen,
@@ -216,7 +217,7 @@ static uint32_t expand_message_xmd_sha512(
   // b_0 = H(msg_prime = Z_pad || msg || l_i_b_str || I2OSP(0, 1) || DST_prime)
 
   uint8_t b_0[64];
-  uint8_t b_1[512];
+  uint8_t b_1[64];
   SHA512Reset(&mySha512);
   SHA512Input(&mySha512,Z_pad,s_in_bytes);
   SHA512Input(&mySha512,msg,msgLen);
@@ -277,7 +278,7 @@ static uint32_t expand_message_xmd_sha512(
 }
 
 
-
+// STACKSIZE: 1357B
 static void ecc_voprf_ristretto255_sha512_HashToGroupWithDST(
     uint8_t *out,
     const uint8_t *input, const uint32_t inputLen,
@@ -292,7 +293,7 @@ static void ecc_voprf_ristretto255_sha512_HashToGroupWithDST(
 
 }
 
-
+// STACKSIZE: 1383B
 static void ecc_voprf_ristretto255_sha512_HashToGroup(
     uint8_t *out,
     const uint8_t *input, const uint32_t inputLen
@@ -308,6 +309,7 @@ static void ecc_voprf_ristretto255_sha512_HashToGroup(
 }
 
 
+// STACKSIZE: 1421B
 static void ecc_voprf_ristretto255_sha512_HashToScalarWithDST(
     uint8_t *out,
     const uint8_t *input, const uint32_t inputLen,
@@ -325,10 +327,13 @@ static void ecc_voprf_ristretto255_sha512_HashToScalarWithDST(
     mod_l(out, tmp);
 
     // stack memory cleanup
+    crypto_wipe(expand_message, sizeof expand_message);
+    crypto_wipe(tmp, sizeof tmp);
  
 }
 
 
+// STACKSIZE: 1534B
 static void ecc_voprf_ristretto255_sha512_HashToScalar(
     uint8_t *out,
     const uint8_t *input, const uint32_t inputLen
@@ -346,8 +351,8 @@ static void ecc_voprf_ristretto255_sha512_HashToScalar(
 // END OF STARTIC FUNC BLOCK
 
 
-#if 1 // test
 // https://www.ietf.org/archive/id/draft-irtf-cfrg-voprf-21.html#section-3.2.1
+// STACKSIZE: 1679B
 uint32_t DeterministicDeriveKeyPair(
     uint8_t skS[Nsk], uint8_t pkS[Npk],
     uint8_t seed[Nseed], uint8_t *info, uint32_t infoLen
@@ -358,7 +363,7 @@ uint32_t DeterministicDeriveKeyPair(
     return -1;
 
   }
-  uint8_t deriveInput[2048];
+  uint8_t deriveInput[70];
   
   // deriveInput = seed || I2OSP(len(info), 2) || info
   // For non-heap allocation, we created a long buffer called
@@ -372,7 +377,7 @@ uint32_t DeterministicDeriveKeyPair(
   ecc_I2OSP(&deriveInput[deriveInputLen], infoLen, 2);
   deriveInputLen += 2;
   ecc_concat2(&deriveInput[deriveInputLen], info, infoLen, NULL, 0);
-  deriveInputLen += infoLen;
+  deriveInputLen += infoLen; // infoLen is 33 in our implementation
 
   uint32_t counter = 0; //possibly uint8_t or size_t
   //sKs = 0
@@ -386,7 +391,7 @@ uint32_t DeterministicDeriveKeyPair(
   );
 
 
-  uint8_t input[2048];
+  uint8_t input[70];
   while (cmp(skS,ZERO_OPRF,Nsk)){
     if (counter > 255){return -1;}; //DeriveKeyPairError
       
@@ -412,8 +417,9 @@ uint32_t DeterministicDeriveKeyPair(
 //https://www.rfc-editor.org/rfc/rfc9380.html#name-expand_message
 // expand_message_xmd(msg, DST, len_in_bytes) ?? treba asi ci ?
 
-#endif // test
+
 // https://www.ietf.org/archive/id/draft-irtf-cfrg-voprf-21.html#name-oprf-protocol
+// STACKSIZE: 1415B
 int32_t ecc_voprf_ristretto255_sha512_BlindWithScalar(
     uint8_t *blindedElement,
     const  uint8_t *input, const uint32_t inputLen,
@@ -433,6 +439,8 @@ int32_t ecc_voprf_ristretto255_sha512_BlindWithScalar(
 
 
 // input/output elem are ristretto255 elems in 32 byte form
+
+// STACKSIZE: ~680B
 void ScalarMult_(uint8_t outputElement[32], const uint8_t scalar[32], const uint8_t inputElement[32]){
   ristretto255_point output_ristretto_point;
   ristretto255_point *out_rist = &output_ristretto_point;
@@ -444,6 +452,7 @@ void ScalarMult_(uint8_t outputElement[32], const uint8_t scalar[32], const uint
   ristretto255_encode(outputElement,out_rist2);
 }
 
+//SATCKSIE: ~970B 
 void Finalize(
     uint8_t output[Nh],
     const uint8_t* input, const uint32_t inputLen,

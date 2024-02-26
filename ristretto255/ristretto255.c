@@ -194,7 +194,7 @@ void fneg(field_elem out, field_elem in){
     // we need to perform REDC(in) and subsequently perform out = 2^255-19 - in 
     fsub(out, F_MODULUS, in);
     fe25519_reduce_emil(out);
-};
+}
 
 
 /**
@@ -537,6 +537,7 @@ static void cswap(ristretto255_point* p, ristretto255_point* q,u8 b){
 }
 
 
+// *** STACKSIZE: 52B + 2size_t ***
 #ifdef USE_ASM
 static u32 is_Canonical(const u32 in[FIELED_ELEM_SIZE]){
   u32 temp[FIELED_ELEM_SIZE];
@@ -566,7 +567,7 @@ static u32 is_Canonical(const u32 in[FIELED_ELEM_SIZE]){
 // every line with draft specification.
 // DRAFT from 2023-09-18:
 // https://datatracker.ietf.org/doc/draft-irtf-cfrg-ristretto255-decaf448/
-// *** STACKSIZE: 420B + 5size_t + 3int ***
+// *** STACKSIZE: 400B + 5size_t + 3int ***
 int ristretto255_decode(ristretto255_point *ristretto_out, const u8 bytes_in[BYTES_ELEM_SIZE]){
   
   uint32_t was_square, is_canonical, is_negative;

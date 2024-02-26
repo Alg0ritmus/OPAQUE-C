@@ -47,7 +47,7 @@ uint8_t blind_registration[32] = {
     0x0a, 0x26, 0x5d, 0x9c, 0x2d, 0x6a, 0xbe, 0x01
 };
 
-uint8_t client_identity[0] = {};
+uint8_t *client_identity; // array of length 0
 uint32_t client_identity_len=0;
 
 uint8_t client_keyshare_seed[32]=  {
@@ -94,7 +94,7 @@ uint8_t oprf_seed[64] = {
 uint8_t password[25] = {0x43, 0x6f, 0x72, 0x72, 0x65, 0x63, 0x74, 0x48, 0x6f, 0x72, 0x73, 0x65, 0x42, 0x61, 0x74, 0x74, 0x65, 0x72, 0x79, 0x53, 0x74, 0x61, 0x70, 0x6c, 0x65};
 uint32_t password_len = 25;
 
-uint8_t server_identity[0] = {};
+uint8_t *server_identity; // array of length 0
 uint32_t server_identity_len = 0;
 
 uint8_t server_keyshare_seed[32] = {

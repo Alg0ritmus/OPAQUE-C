@@ -56,9 +56,10 @@
  *
  */
 
+//STACKSIZE:  ~1138B
 int32_t hmac(SHAversion whichSha,
-    const unsigned char *message_array, int32_t  length,
-    const unsigned char *key, int32_t key_len,
+    const uint8_t *message_array, int32_t  length,
+    const uint8_t *key, int32_t key_len,
     uint8_t digest[USHAMaxHashSize])
 {
   HMACContext context;
@@ -88,16 +89,17 @@ int32_t hmac(SHAversion whichSha,
  *      sha Error Code.
  *
  */
+//STACKSIZE:  ~950B
 int32_t hmacReset(HMACContext *context, enum SHAversion whichSha,
-    const unsigned char *key, int32_t key_len)
+    const uint8_t *key, int32_t key_len)
 {
   int32_t i, blocksize, hashsize, ret;
 
   /* inner padding - key XORd with ipad */
-  unsigned char k_ipad[USHA_Max_Message_Block_Size];
+  uint8_t k_ipad[USHA_Max_Message_Block_Size];
 
   /* temporary buffer when keylen > blocksize */
-  unsigned char tempkey[USHAMaxHashSize];
+  uint8_t tempkey[USHAMaxHashSize];
 
   if (!context) return shaNull;
   context->Computed = 0;
@@ -172,7 +174,7 @@ int32_t hmacReset(HMACContext *context, enum SHAversion whichSha,
  *      sha Error Code.
  *
  */
-int32_t hmacInput(HMACContext *context, const unsigned char *text,
+int32_t hmacInput(HMACContext *context, const uint8_t *text,
     int32_t text_len)
 {
   if (!context) return shaNull;

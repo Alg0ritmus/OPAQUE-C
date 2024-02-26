@@ -10,7 +10,7 @@
 // ******************************************************************
 
 // P.Z. A lot of function was removed or adjusted to use just whats
-// needed.
+// needed. Also I added stack-size in desc. of every function.
 
 /**************************** hkdf.c ***************************/
 /***************** See RFC 6234 for details. *******************/
@@ -67,10 +67,11 @@
  *      sha Error Code.
  *
  */
+//STACKSIZE: 64B + 
 uint32_t hkdf(SHAversion whichSha,
-    const unsigned char *salt, uint32_t salt_len,
-    const unsigned char *ikm, uint32_t ikm_len,
-    const unsigned char *info, uint32_t info_len,
+    const uint8_t *salt, uint32_t salt_len,
+    const uint8_t *ikm, uint32_t ikm_len,
+    const uint8_t *info, uint32_t info_len,
     uint8_t okm[ ], uint32_t okm_len)
 {
   uint8_t prk[USHAMaxHashSize];
@@ -106,12 +107,13 @@ uint32_t hkdf(SHAversion whichSha,
  *      sha Error Code.
  *
  */
+//STACKSIZE: 1206B
 uint32_t hkdfExtract(SHAversion whichSha,
-    const unsigned char *salt, int32_t salt_len,
-    const unsigned char *ikm, uint32_t ikm_len,
+    const uint8_t *salt, int32_t salt_len,
+    const uint8_t *ikm, uint32_t ikm_len,
     uint8_t prk[USHAMaxHashSize])
 {
-  unsigned char nullSalt[USHAMaxHashSize];
+  uint8_t nullSalt[USHAMaxHashSize];
   if (salt == 0) {
     salt = nullSalt;
     salt_len = USHAHashSize(whichSha);
@@ -155,16 +157,18 @@ uint32_t hkdfExtract(SHAversion whichSha,
  *      sha Error Code.
  *
  */
+
+// STACKSIZE: ~1034B
 uint32_t hkdfExpand(SHAversion whichSha, const uint8_t prk[ ], uint32_t prk_len,
-    const unsigned char *info, int32_t info_len,
+    const uint8_t *info, int32_t info_len,
     uint8_t okm[ ], uint32_t okm_len)
 {
   uint32_t hash_len, N;
-  unsigned char T[USHAMaxHashSize];
+  uint8_t T[USHAMaxHashSize];
   uint32_t Tlen, where, i;
 
   if (info == 0) {
-    info = (const unsigned char *)"";
+    info = (const uint8_t *)"";
     info_len = 0;
   } else if (info_len < 0) {
     return shaBadParam;
@@ -182,7 +186,7 @@ uint32_t hkdfExpand(SHAversion whichSha, const uint8_t prk[ ], uint32_t prk_len,
   where = 0;
   for (i = 1; i <= N; i++) {
     HMACContext context;
-    unsigned char c = i;
+    uint8_t c = i;
     uint32_t ret = hmacReset(&context, whichSha, prk, prk_len) ||
               hmacInput(&context, T, Tlen) ||
               hmacInput(&context, info, info_len) ||

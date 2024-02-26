@@ -353,7 +353,8 @@ static uint64_t SHA512_H0[ ] = {
  *
  * Returns:
  *   sha Error Code.
- *
+ * 
+ * STACKSIZE: 4B
  */
 uint32_t SHA512Reset(SHA512Context *context)
 {
@@ -380,6 +381,8 @@ uint32_t SHA512Reset(SHA512Context *context)
  *   sha Error Code.
  *
  */
+
+// STACKSIZE: 668B
 uint32_t SHA512Input(SHA512Context *context,
         const uint8_t *message_array,
        uint32_t length)
@@ -424,6 +427,7 @@ uint32_t SHA512Input(SHA512Context *context,
  *   sha Error Code.
  *
  */
+// STACKSIZE: ~764B
 uint32_t SHA512FinalBits(SHA512Context *context,
                     uint8_t message_bits,uint32_t length)
 {
@@ -473,6 +477,7 @@ uint32_t SHA512FinalBits(SHA512Context *context,
  *   sha Error Code.
  *
  */
+//STACKSIZE: ~742B
 uint32_t SHA512Result(SHA512Context *context,
     uint8_t Message_Digest[SHA512HashSize])
 {
@@ -497,6 +502,8 @@ uint32_t SHA512Result(SHA512Context *context,
  *   sha Error Code.
  *
  */
+
+//STACKSIZE: 4B
 #ifdef USE_32BIT_ONLY
 static uint32_t SHA384_512Reset(SHA512Context *context,
                            uint32_t H0[SHA512HashSize/4])
@@ -549,6 +556,7 @@ static uint32_t SHA384_512Reset(SHA512Context *context,
  *
  *
  */
+// STACKSIZE: ~738B
 static void SHA384_512ProcessMessageBlock(SHA512Context *context)
 {
 #ifdef USE_32BIT_ONLY
@@ -778,6 +786,8 @@ static void SHA384_512ProcessMessageBlock(SHA512Context *context)
  *   sha Error Code.
  *
  */
+
+//STACKSIZE: ~738B
 static void SHA384_512Finalize(SHA512Context *context,
     uint8_t Pad_Byte)
 {
@@ -820,6 +830,8 @@ static void SHA384_512Finalize(SHA512Context *context,
  *   Nothing.
  *
  */
+
+// STACKSIZE: ~738B
 static void SHA384_512PadMessage(SHA512Context *context,
     uint8_t Pad_Byte)
 {
@@ -907,6 +919,8 @@ static void SHA384_512PadMessage(SHA512Context *context,
  *   sha Error Code.
  *
  */
+
+// STACKSIZE: ~742B
 static uint32_t SHA384_512ResultN(SHA512Context *context,
     uint8_t Message_Digest[ ], uint32_t HashSize)
 {

@@ -42,6 +42,8 @@
  *      sha Error Code.
  *
  */
+
+//STACKSIZE: 4B
 uint32_t USHAReset(USHAContext *context, enum SHAversion whichSha)
 {
   if (!context) return shaNull;
@@ -72,6 +74,8 @@ uint32_t USHAReset(USHAContext *context, enum SHAversion whichSha)
  *      sha Error Code.
  *
  */
+
+// STACKSIZE: ~738B
 uint32_t USHAInput(USHAContext *context,
               const uint8_t *bytes,uint32_t bytecount)
 {
@@ -103,6 +107,8 @@ uint32_t USHAInput(USHAContext *context,
  * Returns:
  *   sha Error Code.
  */
+
+// STACKSIZE: ~764B
 uint32_t USHAFinalBits(USHAContext *context,
                   uint8_t bits,uint32_t bit_count)
 {
@@ -134,6 +140,8 @@ uint32_t USHAFinalBits(USHAContext *context,
  *   sha Error Code.
  *
  */
+
+//STACKSIZE: ~742B
 uint32_t USHAResult(USHAContext *context,
                uint8_t Message_Digest[USHAMaxHashSize])
 {

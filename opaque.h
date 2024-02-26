@@ -40,8 +40,19 @@
 // This is an application-
 // specific value, e.g., an e-mail address or an account name.  If
 // not specified, it defaults to the client/server public key, therefore
-// we specified it as 512 bytes to run it without any problems on MCUs
-#define IDENTITY_BYTE_SIZE 512
+// we specified it as 128 bytes to run it without any problems on MCUs
+#define IDENTITY_BYTE_SIZE 128
+
+
+//OPAQUE-3DH can optionally include application-specific, shared
+//context information in the transcript, such as configuration
+//parameters or application-specific info, e.g. "appXYZ-v1.2.3".
+//
+//Context is the shared parameter used to construct the preamble.  
+// This parameter SHOULD include any application-
+//specific configuration information or parameters that are needed to
+//prevent cross-protocol or downgrade attacks.
+#define MAX_CONTEXT_LEN 255
 
 
 /**
@@ -53,6 +64,7 @@
 **/
 
 // CleartextCredentials structure
+// STACKSIZE: 1064B
 typedef struct CleartextCredentials_t{
      uint8_t server_public_key[Npk];
      uint8_t server_identity[IDENTITY_BYTE_SIZE];
@@ -61,6 +73,7 @@ typedef struct CleartextCredentials_t{
      uint32_t client_identity_len;
    }CleartextCredentials;
 
+// STACKSIZE: 96B
 typedef struct Envelope_t{
    uint8_t  nonce[Nn];     // randomly-sampled nonce, used to protect this Envelope
    uint8_t auth_tag[Nm];  // auth tag protecting the contents of the envelope, covering the envelope nonce and CleartextCredentials
@@ -68,17 +81,20 @@ typedef struct Envelope_t{
 
 
 // REGISTRATION MSGs
+// STACKSIZE: 32B
 typedef struct RegistrationRequest_t{
   uint8_t blinded_message[Noe];
 } RegistrationRequest;
 
 
+// STACKSIZE: 64B
 typedef struct RegistrationResponse_t{
   uint8_t evaluated_message[Noe];
   uint8_t server_public_key[Npk];
 } RegistrationResponse;
 
 
+// STACKSIZE: 192B
 typedef struct RegistrationRecord_t{
   uint8_t client_public_key[Npk];
   uint8_t masking_key[Nh];
@@ -86,57 +102,68 @@ typedef struct RegistrationRecord_t{
 } RegistrationRecord;
 
 // LOGIN MSGs
-
+// STACKSIZE: 32B
 typedef struct CredentialRequest_t{
   uint8_t blinded_message[Noe];
 } CredentialRequest;
 
 
+// STACKSIZE: 192B
 typedef struct CredentialResponse_t{
   uint8_t evaluated_message[Noe];
   uint8_t masking_nonce[Nn];
   uint8_t masked_response[Npk + Nn + Nm];
 } CredentialResponse;
 
+// STACKSIZE: 64B
 typedef struct AuthRequest_t{
   uint8_t client_nonce[Nn];
   uint8_t client_public_keyshare[Npk];
 } AuthRequest;
 
 
+// STACKSIZE: 96B
 typedef struct KE1_t{
   CredentialRequest credential_request;
   AuthRequest auth_request;
 } KE1;
 
+// STACKSIZE: 128B
 typedef struct AuthResponse_t{
   uint8_t server_nonce[Nn];
   uint8_t server_public_keyshare[Npk];
   uint8_t server_mac[Nm];
 } AuthResponse;
 
+// STACKSIZE: 320B
 typedef struct KE2_t{
   CredentialResponse credential_response;
   AuthResponse auth_response;
 } KE2;
 
+
+// STACKSIZE: 64B
 typedef struct KE3_t{
   uint8_t client_mac[Nm];
 } KE3;
 
-
+// STACKSIZE: 128B
 typedef struct ClientAkeState_t{
     uint8_t client_secret[Nsk];
     KE1 ke1;
 } ClientAkeState;
 
+
+// STACKSIZE: 676
 typedef struct ClientState_t{
-    uint8_t password[512];
+    uint8_t password[512]; 
     uint32_t password_len;
     uint8_t blind[Nok];
     ClientAkeState client_ake_state;
 } ClientState;
 
+
+// STACKSIZE: 128B
 typedef struct ServerState_t{
     uint8_t expected_client_mac[Nm];
     uint8_t session_key[Nx];
