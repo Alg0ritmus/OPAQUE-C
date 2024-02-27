@@ -35,9 +35,10 @@
  *  Description:
  *      This function will generate keying material using HKDF.
  *
+ *  whichSha: [not a param, bcs. we will always be using sha512]
+ *          SHA512
+ * 
  *  Parameters:
- *      whichSha: [in]
- *          One of SHA1, SHA224, SHA256, SHA384, SHA512
  *      salt[ ]: [in]
  *          The optional salt value (a non-secret random value);
  *          if not provided (salt == NULL), it is set internally
@@ -67,16 +68,16 @@
  *      sha Error Code.
  *
  */
-//STACKSIZE: 64B + 
-uint32_t hkdf(SHAversion whichSha,
+//STACKSIZE: 64B + 1206B
+uint32_t hkdf(
     const uint8_t *salt, uint32_t salt_len,
     const uint8_t *ikm, uint32_t ikm_len,
     const uint8_t *info, uint32_t info_len,
     uint8_t okm[ ], uint32_t okm_len)
 {
   uint8_t prk[USHAMaxHashSize];
-  return hkdfExtract(whichSha, salt, salt_len, ikm, ikm_len, prk) ||
-         hkdfExpand(whichSha, prk, USHAHashSize(whichSha), info,
+  return hkdfExtract(salt, salt_len, ikm, ikm_len, prk) ||
+         hkdfExpand(prk, USHAHashSize, info,
                     info_len, okm, okm_len);
 }
 
@@ -86,9 +87,10 @@ uint32_t hkdf(SHAversion whichSha,
  *  Description:
  *      This function will perform HKDF extraction.
  *
+ *  whichSha: [not a param, bcs. we will always be using sha512]
+ *          SHA512
+ * 
  *  Parameters:
- *      whichSha: [in]
- *          One of SHA1, SHA224, SHA256, SHA384, SHA512
  *      salt[ ]: [in]
  *          The optional salt value (a non-secret random value);
  *          if not provided (salt == NULL), it is set internally
@@ -108,7 +110,7 @@ uint32_t hkdf(SHAversion whichSha,
  *
  */
 //STACKSIZE: 1206B
-uint32_t hkdfExtract(SHAversion whichSha,
+uint32_t hkdfExtract(
     const uint8_t *salt, int32_t salt_len,
     const uint8_t *ikm, uint32_t ikm_len,
     uint8_t prk[USHAMaxHashSize])
@@ -116,12 +118,12 @@ uint32_t hkdfExtract(SHAversion whichSha,
   uint8_t nullSalt[USHAMaxHashSize];
   if (salt == 0) {
     salt = nullSalt;
-    salt_len = USHAHashSize(whichSha);
+    salt_len = USHAHashSize;
     memset(nullSalt, '\0', salt_len);
   } else if (salt_len < 0) {
     return shaBadParam;
   }
-  return hmac(whichSha, ikm, ikm_len, salt, salt_len, prk);
+  return hmac(ikm, ikm_len, salt, salt_len, prk);
 }
 
 /*
@@ -130,9 +132,9 @@ uint32_t hkdfExtract(SHAversion whichSha,
  *  Description:
  *      This function will perform HKDF expansion.
  *
+ *  whichSha: [not a param, bcs. we will always be using sha512]
+ *          SHA512
  *  Parameters:
- *      whichSha: [in]
- *          One of SHA1, SHA224, SHA256, SHA384, SHA512
  *      prk[ ]: [in]
  *          The pseudo-random key to be expanded; either obtained
  *          directly from a cryptographically strong, uniformly
@@ -159,7 +161,8 @@ uint32_t hkdfExtract(SHAversion whichSha,
  */
 
 // STACKSIZE: ~1034B
-uint32_t hkdfExpand(SHAversion whichSha, const uint8_t prk[ ], uint32_t prk_len,
+uint32_t hkdfExpand(
+    const uint8_t prk[ ], uint32_t prk_len,
     const uint8_t *info, int32_t info_len,
     uint8_t okm[ ], uint32_t okm_len)
 {
@@ -176,7 +179,7 @@ uint32_t hkdfExpand(SHAversion whichSha, const uint8_t prk[ ], uint32_t prk_len,
   if (okm_len <= 0) return shaBadParam;
   if (!okm) return shaBadParam;
 
-  hash_len = USHAHashSize(whichSha);
+  hash_len = USHAHashSize;
   if (prk_len < hash_len) return shaBadParam;
   N = okm_len / hash_len;
   if ((okm_len % hash_len) != 0) N++;
@@ -187,7 +190,7 @@ uint32_t hkdfExpand(SHAversion whichSha, const uint8_t prk[ ], uint32_t prk_len,
   for (i = 1; i <= N; i++) {
     HMACContext context;
     uint8_t c = i;
-    uint32_t ret = hmacReset(&context, whichSha, prk, prk_len) ||
+    uint32_t ret = hmacReset(&context, prk, prk_len) ||
               hmacInput(&context, T, Tlen) ||
               hmacInput(&context, info, info_len) ||
               hmacInput(&context, &c, 1) ||

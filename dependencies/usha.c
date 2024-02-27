@@ -32,11 +32,12 @@
  *      This function will initialize the SHA Context in preparation
  *      for computing a new SHA message digest.
  *
+ *  whichSha: [not a param, bcs. we will always be using sha512]
+ *       SHA512
+ * 
  *  Parameters:
  *      context: [in/out]
  *          The context to reset.
- *      whichSha: [in]
- *          Selects which SHA reset to call
  *
  *  Returns:
  *      sha Error Code.
@@ -44,14 +45,11 @@
  */
 
 //STACKSIZE: 4B
-uint32_t USHAReset(USHAContext *context, enum SHAversion whichSha)
+uint32_t USHAReset(USHAContext *context)
 {
   if (!context) return shaNull;
-  context->whichSha = whichSha;
-  switch (whichSha) {
-    case SHA512: return SHA512Reset((SHA512Context*)&context->ctx);
-    default: return shaBadParam;
-  }
+  context->whichSha = SHA512;
+  return SHA512Reset((SHA512Context*)&context->ctx);
 }
 
 /*
@@ -80,12 +78,10 @@ uint32_t USHAInput(USHAContext *context,
               const uint8_t *bytes,uint32_t bytecount)
 {
   if (!context) return shaNull;
-  switch (context->whichSha) {
-    case SHA512:
-      return SHA512Input((SHA512Context*)&context->ctx, bytes,
-          bytecount);
-    default: return shaBadParam;
-  }
+
+  return SHA512Input((SHA512Context*)&context->ctx, bytes,
+      bytecount);
+
 }
 
 /*
@@ -113,12 +109,9 @@ uint32_t USHAFinalBits(USHAContext *context,
                   uint8_t bits,uint32_t bit_count)
 {
   if (!context) return shaNull;
-  switch (context->whichSha) {
-    case SHA512:
-      return SHA512FinalBits((SHA512Context*)&context->ctx, bits,
+  return SHA512FinalBits((SHA512Context*)&context->ctx, bits,
           bit_count);
-    default: return shaBadParam;
-  }
+
 }
 
 /*
@@ -146,95 +139,41 @@ uint32_t USHAResult(USHAContext *context,
                uint8_t Message_Digest[USHAMaxHashSize])
 {
   if (!context) return shaNull;
-  switch (context->whichSha) {
-    case SHA512:
-      return SHA512Result((SHA512Context*)&context->ctx,
+  return SHA512Result((SHA512Context*)&context->ctx,
                           Message_Digest);
-    default: return shaBadParam;
-  }
+
+  
 }
+
 
 /*
  * USHABlockSize
- *
- * Description:
- *   This function will return the blocksize for the given SHA
- *   algorithm.
- *
- * Parameters:
- *   whichSha:
- *     which SHA algorithm to query
- *
- * Returns:
- *   block size
+ * block size of SHA512
  *
  */
-uint32_t USHABlockSize()
-{
-  return SHA512_Message_Block_Size;
-}
+const uint32_t USHABlockSize = SHA512_Message_Block_Size;
+
 
 /*
  * USHAHashSize
- *
- * Description:
- *   This function will return the hashsize for the given SHA
- *   algorithm.
- *
- * Parameters:
- *   whichSha:
- *     which SHA algorithm to query
- *
- * Returns:
- *   hash size
+
+ * hash size of SHA512
  *
  */
-uint32_t USHAHashSize()
-{
-  return SHA512HashSize;
-  
-}
+const uint32_t USHAHashSize = SHA512HashSize;
+
 
 /*
  * USHAHashSizeBits
- *
- * Description:
- *   This function will return the hashsize for the given SHA
- *   algorithm, expressed in bits.
- *
- * Parameters:
- *   whichSha:
- *     which SHA algorithm to query
- *
- * Returns:
- *   hash size in bits
+ *   hash size in bits of SHA512
  *
  */
-uint32_t USHAHashSizeBits()
-{
-  
-  return SHA512HashSizeBits;
+const uint32_t USHAHashSizeBits =  SHA512HashSizeBits;
 
-}
 
 /*
  * USHAHashName
- *
- * Description:
- *   This function will return the name of the given SHA algorithm
- *   as a string.
- *
- * Parameters:
- *   whichSha:
- *     which SHA algorithm to query
- *
- * Returns:
  *   character string with the name in it
  *
  */
-const char *USHAHashName()
-{
-  
-  return "SHA512";
-}
-
+const char *USHAHashName = "SHA512";

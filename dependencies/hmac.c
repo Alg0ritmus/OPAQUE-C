@@ -33,9 +33,10 @@
  *  Description:
  *      This function will compute an HMAC message digest.
  *
+ *  whichSha: [not a param, bcs. we will always be using sha512]
+ *       SHA512
+ * 
  *  Parameters:
- *      whichSha: [in]
- *          One of SHA1, SHA224, SHA256, SHA384, SHA512
  *      message_array[ ]: [in]
  *          An array of octets representing the message.
  *          Note: in RFC 2104, this parameter is known
@@ -57,13 +58,13 @@
  */
 
 //STACKSIZE:  ~1138B
-int32_t hmac(SHAversion whichSha,
+int32_t hmac(
     const uint8_t *message_array, int32_t  length,
     const uint8_t *key, int32_t key_len,
     uint8_t digest[USHAMaxHashSize])
 {
   HMACContext context;
-  return hmacReset(&context, whichSha, key, key_len) ||
+  return hmacReset(&context, key, key_len) ||
          hmacInput(&context, message_array, length) ||
          hmacResult(&context, digest);
 }
@@ -75,11 +76,12 @@ int32_t hmac(SHAversion whichSha,
  *      This function will initialize the hmacContext in preparation
  *      for computing a new HMAC message digest.
  *
+ *  whichSha: [not a param, bcs. we will always be using sha512]
+ *          SHA512
+ * 
  *  Parameters:
  *      context: [in/out]
  *          The context to reset.
- *      whichSha: [in]
- *          One of SHA1, SHA224, SHA256, SHA384, SHA512
  *      key[ ]: [in]
  *          The secret shared key.
  *      key_len: [in]
@@ -90,7 +92,7 @@ int32_t hmac(SHAversion whichSha,
  *
  */
 //STACKSIZE:  ~950B
-int32_t hmacReset(HMACContext *context, enum SHAversion whichSha,
+int32_t hmacReset(HMACContext *context,
     const uint8_t *key, int32_t key_len)
 {
   int32_t i, blocksize, hashsize, ret;
@@ -105,9 +107,9 @@ int32_t hmacReset(HMACContext *context, enum SHAversion whichSha,
   context->Computed = 0;
   context->Corrupted = shaSuccess;
 
-  blocksize = context->blockSize = USHABlockSize(whichSha);
-  hashsize = context->hashSize = USHAHashSize(whichSha);
-  context->whichSha = whichSha;
+  blocksize = context->blockSize = USHABlockSize;
+  hashsize = context->hashSize = USHAHashSize;
+  context->whichSha = SHA512;
 
   /*
    * If key is longer than the hash blocksize,
@@ -115,7 +117,7 @@ int32_t hmacReset(HMACContext *context, enum SHAversion whichSha,
    */
   if (key_len > blocksize) {
     USHAContext tcontext;
-    int32_t err = USHAReset(&tcontext, whichSha) ||
+    int32_t err = USHAReset(&tcontext) ||
               USHAInput(&tcontext, key, key_len) ||
               USHAResult(&tcontext, tempkey);
     if (err != shaSuccess) return err;
@@ -148,7 +150,7 @@ int32_t hmacReset(HMACContext *context, enum SHAversion whichSha,
 
   /* perform inner hash */
   /* init context for 1st pass */
-  ret = USHAReset(&context->shaContext, whichSha) ||
+  ret = USHAReset(&context->shaContext) ||
         /* and start with inner pad */
         USHAInput(&context->shaContext, k_ipad, blocksize);
   return context->Corrupted = ret;
@@ -172,7 +174,8 @@ int32_t hmacReset(HMACContext *context, enum SHAversion whichSha,
  *
  *  Returns:
  *      sha Error Code.
- *
+ * 
+ * STACKSIZE: ~738B
  */
 int32_t hmacInput(HMACContext *context, const uint8_t *text,
     int32_t text_len)
@@ -232,7 +235,8 @@ int32_t hmacFinalBits(HMACContext *context,
  *
  * Returns:
  *   sha Error Code.
- *
+ * 
+ * STACKSIZE: ~746B
  */
 int32_t hmacResult(HMACContext *context, uint8_t digest[USHAMaxHashSize])
 {
@@ -248,7 +252,7 @@ int32_t hmacResult(HMACContext *context, uint8_t digest[USHAMaxHashSize])
 
          /* perform outer SHA */
          /* init context for 2nd pass */
-         USHAReset(&context->shaContext, context->whichSha) ||
+         USHAReset(&context->shaContext) ||
 
          /* start with outer pad */
          USHAInput(&context->shaContext, context->k_opad,

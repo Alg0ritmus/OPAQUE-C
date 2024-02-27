@@ -233,7 +233,7 @@ void Store(
     uint8_t export_key_label[9] = {'E', 'x', 'p', 'o', 'r', 't', 'K', 'e', 'y'};
     uint8_t seed_label[10] = {'P', 'r', 'i', 'v', 'a', 't', 'e', 'K', 'e', 'y'};
 
-    hkdfExpand(SHA512,randomized_password,randomized_password_len, masking_key_info, 10, masking_key, Nh);
+    hkdfExpand(randomized_password,randomized_password_len, masking_key_info, 10, masking_key, Nh);
 
     // temp_buffer is set to 296 bytes, this variable is used to reduce amount of allocated bytes 
     // needed for expanding export key, masking key, seed and cleartext_creds_buf later
@@ -246,7 +246,7 @@ void Store(
     // after expanding export_key, we no longer need to store this information
     #define export_key_info temp_buffer
     ecc_concat2(export_key_info, envelope_nonce, Nn, export_key_label, 9);
-    hkdfExpand(SHA512,randomized_password,randomized_password_len, export_key_info, Nn+9, export_key, Nh);
+    hkdfExpand(randomized_password,randomized_password_len, export_key_info, Nn+9, export_key, Nh);
 
     
     // instead of new seed variable we will rewrite 32 lower bytes of temp_buffer
@@ -260,7 +260,7 @@ void Store(
     
 
     ecc_concat2(seed_info, envelope_nonce, Nn, seed_label, 10);
-    hkdfExpand(SHA512,randomized_password,randomized_password_len, seed_info, Nn+10, seed, Nseed);
+    hkdfExpand(randomized_password,randomized_password_len, seed_info, Nn+10, seed, Nseed);
     
     //uint8_t skS[Nsk]; // dont need this bcs we are acctually using temp_buffer
 
@@ -310,9 +310,9 @@ void Store(
     #define auth_key_info &temp_buffer[Nh] // saving space on stack (next 39 bytes are auth_key_info)
     
     ecc_concat2(auth_key_info, envelope_nonce, Nn, auth_key_label, 7);
-    hkdfExpand(SHA512,randomized_password,randomized_password_len, auth_key_info, Nn+7, auth_key, Nh);
+    hkdfExpand(randomized_password,randomized_password_len, auth_key_info, Nn+7, auth_key, Nh);
 
-    hmac(SHA512, auth_tag_mac_input, Nn+cleartext_creds_len, auth_key, Nh, envelope->auth_tag);
+    hmac(auth_tag_mac_input, Nn+cleartext_creds_len, auth_key, Nh, envelope->auth_tag);
     memcpy(envelope->nonce, envelope_nonce, Nn);
 
     //crypto_wipe(auth_key, sizeof auth_key); 
@@ -383,11 +383,11 @@ static uint32_t Recover(
 
     //export_key = Expand(randomized_password, concat(envelope.nonce, "ExportKey"), Nh)
     ecc_concat2(export_key_info, envelope->nonce, Nn, export_key_label, 9);
-    hkdfExpand(SHA512,randomized_password,randomized_password_len, export_key_info, Nn+9, export_key, Nh);
+    hkdfExpand(randomized_password,randomized_password_len, export_key_info, Nn+9, export_key, Nh);
 
     //seed = Expand(randomized_password, concat(envelope.nonce, "PrivateKey"), Nseed)
     ecc_concat2(seed_info, envelope->nonce, Nn, seed_label, 10);
-    hkdfExpand(SHA512,randomized_password,randomized_password_len, seed_info, Nn+10, seed, Nseed);
+    hkdfExpand(randomized_password,randomized_password_len, seed_info, Nn+10, seed, Nseed);
 
     //(client_private_key, client_public_key) = DeriveDiffieHellmanKeyPair(seed)
     //uint8_t client_public_key[Npk]; //save space on stack
@@ -439,9 +439,9 @@ static uint32_t Recover(
     #define auth_key_info &temp_buffer[Nh] // saving space on stack (next 39 bytes are auth_key_info)
     
     ecc_concat2(auth_key_info, envelope->nonce, Nn, auth_key_label, 7);
-    hkdfExpand(SHA512,randomized_password,randomized_password_len, auth_key_info, Nn+7, auth_key, Nh);
+    hkdfExpand(randomized_password,randomized_password_len, auth_key_info, Nn+7, auth_key, Nh);
 
-    hmac(SHA512, expected_tag, Nn+cleartext_creds_len, auth_key, Nh,  (uint8_t*)envelope->auth_tag);
+    hmac(expected_tag, Nn+cleartext_creds_len, auth_key, Nh,  (uint8_t*)envelope->auth_tag);
 
     crypto_wipe(auth_key, sizeof auth_key);
     crypto_wipe(auth_key_info, sizeof auth_key_info);
@@ -779,7 +779,7 @@ void ecc_opaque_ristretto255_sha512_3DH_Expand_Label(
 
     //ecc_kdf_hkdf_sha512_expand(out, secret, info, n, length);
 
-    hkdfExpand(SHA512,secret,Nh,info, n, out, length);
+    hkdfExpand(secret,Nh,info, n, out, length);
 
 
     //cleanup stack memory
@@ -806,7 +806,7 @@ void ecc_opaque_ristretto255_sha512_3DH_DeriveKeys(
     // 1. prk = Extract("", ikm)
     uint8_t prk[64];
     //ecc_kdf_hkdf_sha512_extract(prk, NULL, 0, ikm, ikm_len);
-    hkdfExtract(SHA512,(uint8_t*) NULL,0, ikm, ikm_len, prk);
+    hkdfExtract((uint8_t*) NULL,0, ikm, ikm_len, prk);
 
     // 2. handshake_secret = Derive-Secret(prk, "HandshakeSecret", Hash(preamble))
     uint8_t preamble_secret_label[15] = {'H', 'a', 'n', 'd', 's', 'h', 'a', 'k', 'e', 'S', 'e', 'c', 'r', 'e', 't'};
@@ -912,7 +912,7 @@ uint32_t ecc_opaque_ristretto255_sha512_RecoverCredentials(
     
     uint8_t randomized_pwd[Nh];
     //ecc_kdf_hkdf_sha512_extract(randomized_pwd, NULL, 0, extract_input, sizeof extract_input);
-    hkdfExtract(SHA512,(uint8_t*) NULL,0, extract_input, sizeof extract_input, randomized_pwd);
+    hkdfExtract((uint8_t*) NULL,0, extract_input, sizeof extract_input, randomized_pwd);
 
   
     // 3. masking_key = Expand(randomized_pwd, "MaskingKey", Nh)
@@ -920,7 +920,7 @@ uint32_t ecc_opaque_ristretto255_sha512_RecoverCredentials(
     //uint8_t masking_key[Nh];
     #define masking_key temp_buffer // saving space on stack
     //ecc_kdf_hkdf_sha512_expand(masking_key, randomized_pwd, masking_key_info, sizeof masking_key_info, Nh);
-    hkdfExpand(SHA512,randomized_pwd,Nh,masking_key_info, sizeof masking_key_info, masking_key, Nh);
+    hkdfExpand(randomized_pwd,Nh,masking_key_info, sizeof masking_key_info, masking_key, Nh);
 
     // 4. credential_response_pad = Expand(masking_key,
     //      concat(response.masking_nonce, "CredentialResponsePad"), Npk + Ne)
@@ -929,7 +929,7 @@ uint32_t ecc_opaque_ristretto255_sha512_RecoverCredentials(
     ecc_concat2(credential_response_pad_info, res->masking_nonce, Nn, credential_response_pad_label, 21);
     uint8_t credential_response_pad[Npk + Ne];
     //ecc_kdf_hkdf_sha512_expand(credential_response_pad, masking_key, credential_response_pad_info, sizeof credential_response_pad_info, Npk + Ne);
-    hkdfExpand(SHA512,masking_key,Nh,credential_response_pad_info, sizeof credential_response_pad_info, credential_response_pad, Npk + Ne);
+    hkdfExpand(masking_key,Nh,credential_response_pad_info, sizeof credential_response_pad_info, credential_response_pad, Npk + Ne);
 
 
     // 5. concat(server_public_key, envelope) = xor(credential_response_pad,
@@ -1059,7 +1059,7 @@ uint32_t ecc_opaque_ristretto255_sha512_3DH_ClientFinalize(
     //uint8_t expected_server_mac[64];
     // at this point,higher 64bytes temp_buff of are occupied by expected_server_mac
     #define expected_server_mac &temp_buff[64]
-    hmac(SHA512,
+    hmac(
         preamble_hash, 64,
         km2,
         sizeof km2,
@@ -1094,7 +1094,7 @@ uint32_t ecc_opaque_ristretto255_sha512_3DH_ClientFinalize(
     // we no longer need higher 64 bytes of temp_buff to store expected_server_mac
     // so we use them to store client_mac
     #define client_mac_ &temp_buff[64]
-    hmac(SHA512,
+    hmac(
         client_mac_input, 64,
         km3,
         sizeof km3,

@@ -213,25 +213,25 @@ extern uint32_t SHA512FinalBits(SHA512Context *, uint8_t bits,
 extern uint32_t SHA512Result(SHA512Context *,
                         uint8_t Message_Digest[SHA512HashSize]);
 
-/* Unified SHA functions, chosen by whichSha */
-extern uint32_t USHAReset(USHAContext *context, SHAversion whichSha);
+/* Unified SHA functions*/
+extern uint32_t USHAReset(USHAContext *context);
 extern uint32_t USHAInput(USHAContext *context,
                      const uint8_t *bytes,uint32_t bytecount);
 extern uint32_t USHAFinalBits(USHAContext *context,
                          uint8_t bits,uint32_t bit_count);
 extern uint32_t USHAResult(USHAContext *context,
                       uint8_t Message_Digest[USHAMaxHashSize]);
-extern uint32_t USHABlockSize();
-extern uint32_t USHAHashSize();
-extern uint32_t USHAHashSizeBits();
-extern const char *USHAHashName();
+extern const uint32_t USHABlockSize;
+extern const uint32_t USHAHashSize;
+extern const uint32_t USHAHashSizeBits;
+extern const char *USHAHashName;
 
 /*
  * HMAC Keyed-Hashing for Message Authentication, RFC 2104,
  * for all SHAs.
  * This interface allows a fixed-length text input to be used.
  */
-extern int32_t hmac(SHAversion whichSha, /* which SHA algorithm to use */
+extern int32_t hmac(
     const uint8_t *text,     /* pointer to data stream */
     int32_t text_len,                  /* length of data stream */
     const uint8_t *key,      /* pointer to authentication key */
@@ -244,7 +244,7 @@ extern int32_t hmac(SHAversion whichSha, /* which SHA algorithm to use */
  * for all SHAs.
  * This interface allows any length of text input to be used.
  */
-extern int hmacReset(HMACContext *context, enum SHAversion whichSha,
+extern int hmacReset(HMACContext *context,
                      const uint8_t *key, int32_t key_len);
 extern int hmacInput(HMACContext *context, const uint8_t *text,
                      int32_t text_len);
@@ -258,14 +258,14 @@ extern int hmacResult(HMACContext *context,
  * HKDF HMAC-based Extract-and-Expand Key Derivation Function,
  * RFC 5869, for all SHAs.
  */
-extern uint32_t hkdf(SHAversion whichSha, const uint8_t *salt,
+extern uint32_t hkdf(const uint8_t *salt,
                 uint32_t salt_len, const uint8_t *ikm, uint32_t ikm_len,
                 const uint8_t *info, uint32_t info_len,
                 uint8_t okm[ ], uint32_t okm_len);
-extern uint32_t hkdfExtract(SHAversion whichSha, const uint8_t *salt,
+extern uint32_t hkdfExtract(const uint8_t *salt,
                        int32_t salt_len, const uint8_t *ikm,
                        uint32_t ikm_len, uint8_t prk[USHAMaxHashSize]);
-extern uint32_t hkdfExpand(SHAversion whichSha, const uint8_t prk[ ],
+extern uint32_t hkdfExpand(const uint8_t prk[ ],
                       uint32_t prk_len, const uint8_t *info,
                       int32_t info_len, uint8_t okm[ ], uint32_t okm_len);
 #endif /* _SHA_H_ */

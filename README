@@ -10,6 +10,18 @@
 // ******************************************************************
 
 
+27.2.2024:
+1.) zmenene funkcie na konstanty v dependencies/sha.h a /usha.c
+USHABlockSize; USHAHashSize; USHAHashSizeBits; USHAHashName;
+
+- SHA512 som na uplnom 'low-level' neskumal, zameral som sa na hmac/hkdf ... 
+
+2.) Vela mazania a hranie sa so stackom v oprf.c
+
+3.) ristretto255 som necistil (predpokladam ze toto je uz vycistene)
+
+4.) NEPREPOCITAVAL SOM STACKSIZE VSADE len v oprf.c
+
 25.2. - 26.2.2024
 DONE:
 optimalizacia stacku + prepocitanie narokov na pamat
