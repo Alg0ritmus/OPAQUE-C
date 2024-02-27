@@ -201,9 +201,9 @@ static uint32_t expand_message_xmd_sha512(
   
 
   // 2.
-  if (ell>255 || len_in_bytes > 65535 || dstLen>255) {
-    return -1;
-  }
+//   if (ell>255 || len_in_bytes > 65535 || dstLen>255) {
+//     return -1;
+//   }
 
   // NOTE: to avoid concatenation we need to pass inputs in proper order
   
