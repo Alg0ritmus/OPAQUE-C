@@ -79,9 +79,9 @@ typedef struct RegistrationResponse_t{
 
 typedef struct RegistrationRecord_t{
   uint8_t client_public_key[Npk];
-  uint8_t masking_key[Nh];
-  Envelope envelope;
-} RegistrationRecord;
+  uint8_t masking_key[Nh]; // prevent enumeration attacks on server-side
+  Envelope envelope; // nonce, 
+} RegistrationRecord; //auth_tag
 
 // LOGIN MSGs
 
@@ -97,14 +97,14 @@ typedef struct CredentialResponse_t{
 } CredentialResponse;
 
 typedef struct AuthRequest_t{
-  uint8_t client_nonce[Nn];
-  uint8_t client_public_keyshare[Npk];
+  uint8_t client_nonce[Nn]; // (rng)
+  uint8_t client_public_keyshare[Npk]; // derived from rng seed
 } AuthRequest;
 
 
 typedef struct KE1_t{
-  CredentialRequest credential_request;
-  AuthRequest auth_request;
+  CredentialRequest credential_request; // blinded_msg
+  AuthRequest auth_request; //client_nonce, client_public_key from rng seed
 } KE1;
 
 typedef struct AuthResponse_t{
@@ -113,9 +113,9 @@ typedef struct AuthResponse_t{
   uint8_t server_mac[Nm];
 } AuthResponse;
 
-typedef struct KE2_t{
-  CredentialResponse credential_response;
-  AuthResponse auth_response;
+typedef struct KE2_t{                                                              // credential_resp_pad = KE1->masking_key XOR masking_nonce||envelope
+  CredentialResponse credential_response; //evaluated_message, masking_nonce(rng), masked_response(credential_resp_pad oxr (server_pub_key || envelope))
+  AuthResponse auth_response; // server_nonce(rng), server_public_keyshare, server_mac
 } KE2;
 
 typedef struct KE3_t{

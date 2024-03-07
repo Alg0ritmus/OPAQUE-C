@@ -377,14 +377,16 @@ size_t Recover(
         cleartext_credentials
     );
 
-    uint8_t expected_tag[Nn+cleartext_creds_len];
+    
+    uint8_t expected_tag_mac_input[Nn+cleartext_creds_len];
     ecc_concat2(
-        expected_tag,
+        expected_tag_mac_input,
         envelope->nonce, Nn,
         cleartext_creds_buf, cleartext_creds_len
     );
 
-    hmac(SHA512, expected_tag, Nn+cleartext_creds_len, auth_key, Nh, envelope->auth_tag);
+    uint8_t expected_tag[Nh];
+    hmac(SHA512, expected_tag_mac_input, Nn+cleartext_creds_len, auth_key, Nh, expected_tag);
 
     crypto_wipe(auth_key, sizeof auth_key);
     crypto_wipe(auth_key_info, sizeof auth_key_info);
@@ -395,8 +397,8 @@ size_t Recover(
     crypto_wipe(cleartext_creds_buf, sizeof cleartext_creds_buf); 
     
     //If !ct_equal(envelope.auth_tag, expected_tag)
-    if (cmp(envelope->auth_tag,expected_tag,Nn+cleartext_creds_len)){
-      fprintf(stderr, "Error: auth_tag is not valid! \n");
+    if (!cmp(envelope->auth_tag,expected_tag,Nh)){
+      printf("Error: auth_tag is not valid! \n");
       crypto_wipe(expected_tag, sizeof expected_tag); 
       return -1;
     }
@@ -898,7 +900,7 @@ void ecc_opaque_ristretto255_sha512_CreateCredentialResponseWithMasking(
     // 6. masked_response = xor(credential_response_pad,
     //                          concat(server_public_key, record.envelope))
     uint8_t masked_response_xor[Npk + Ne];
-    ecc_concat2(masked_response_xor, server_public_key, Npk, (const uint8_t *) &record_raw->envelope, Ne); // NOTE is it working????
+    ecc_concat2(masked_response_xor, server_public_key, Npk, (const uint8_t *) &record_raw->envelope, Ne); 
     uint8_t masked_response[Npk + Ne];
     ecc_strxor(masked_response, credential_response_pad, masked_response_xor, Npk + Ne);
 
@@ -1280,9 +1282,9 @@ void ecc_opaque_ristretto255_sha512_GenerateKE2WithSeed(
     const KE1 *ke1_raw,
     const uint8_t *client_identity, const uint32_t client_identity_len,
     const uint8_t *context, const uint32_t context_len,
-    const uint8_t masking_nonce[Nn],
-    const uint8_t server_nonce[Nn],
-    const uint8_t seed[Nseed]
+    const uint8_t masking_nonce[Nn], //rng 
+    const uint8_t server_nonce[Nn], //rng
+    const uint8_t seed[Nseed] //rng
 ) {
     // Steps:
     // 1. response = CreateCredentialResponse(ke1.request, server_public_key, record,
