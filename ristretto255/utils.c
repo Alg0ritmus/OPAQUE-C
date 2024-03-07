@@ -5,8 +5,8 @@
 // ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
-// ---------------------------version T.T.5 -------------------------
-// --------------------------- 10-02-2024 ---------------------------
+// ---------------------------version 1.0.0 -------------------------
+// --------------------------- 07-03-2024 ---------------------------
 // ******************************************************************
 
 
@@ -38,8 +38,8 @@ void print_32(const u8* o){
 
 // return 1 if they're equal
 // checking if two u8[32] are eq
-int bytes_eq_32( const u8 a[BYTES_ELEM_SIZE],  const u8 b[BYTES_ELEM_SIZE]){
-    int result = 1;
+uint32_t bytes_eq_32( const u8 a[BYTES_ELEM_SIZE],  const u8 b[BYTES_ELEM_SIZE]){
+    uint32_t result = 1;
 
     for (int i = 0; i < BYTES_ELEM_SIZE; ++i){
         result &= a[i] == b[i];

@@ -5,8 +5,8 @@
 // ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
-// ---------------------------version 0.0.1 -------------------------
-// --------------------------- 11-10-2023 ---------------------------
+// ---------------------------version 1.0.0 -------------------------
+// --------------------------- 07-03-2024 ---------------------------
 // ******************************************************************
 
 #include "server_side.h"
@@ -161,15 +161,13 @@ void ServerGenerateKE2(
 }
 
 
-// if -1, error occured
-// else 0, success
 uint8_t ServerFinish(
     uint8_t session_key[Nx],
     const ServerState *state,
     const KE3 *ke3
   ) {
 
-  uint8_t result = 0;
+  uint8_t result = OPAQUE_ERROR; //init with error value
   result = ecc_opaque_ristretto255_sha512_ServerFinish(
     session_key,
     state, //server state from KE2

@@ -1,3 +1,17 @@
+// ******************************************************************
+// ----------------- TECHNICAL UNIVERSITY OF KOSICE -----------------
+// ---Department of Electronics and Multimedia Telecommunications ---
+// -------- FACULTY OF ELECTRICAL ENGINEERING AND INFORMATICS -------
+// ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
+// ------------------------- Master thesis --------------------------
+// -----------------Patrik Zelenak & Milos Drutarovsky --------------
+// ---------------------------version 1.0.0 -------------------------
+// --------------------------- 07-03-2024 ---------------------------
+// ******************************************************************
+
+// P.Z. A lot of function was removed or adjusted to use just whats
+// needed.
+
 /**************************** hmac.c ***************************/
 /***************** See RFC 6234 for details. *******************/
 /* Copyright (c) 2011 IETF Trust and the persons identified as */
@@ -19,9 +33,10 @@
  *  Description:
  *      This function will compute an HMAC message digest.
  *
+ *  whichSha: [not a param, bcs. we will always be using sha512]
+ *       SHA512
+ * 
  *  Parameters:
- *      whichSha: [in]
- *          One of SHA1, SHA224, SHA256, SHA384, SHA512
  *      message_array[ ]: [in]
  *          An array of octets representing the message.
  *          Note: in RFC 2104, this parameter is known
@@ -42,13 +57,14 @@
  *
  */
 
-int hmac(SHAversion whichSha,
-    const unsigned char *message_array, int length,
-    const unsigned char *key, int key_len,
+//STACKSIZE:  ~1138B
+int32_t hmac(
+    const uint8_t *message_array, int32_t  length,
+    const uint8_t *key, int32_t key_len,
     uint8_t digest[USHAMaxHashSize])
 {
   HMACContext context;
-  return hmacReset(&context, whichSha, key, key_len) ||
+  return hmacReset(&context, key, key_len) ||
          hmacInput(&context, message_array, length) ||
          hmacResult(&context, digest);
 }
@@ -60,11 +76,12 @@ int hmac(SHAversion whichSha,
  *      This function will initialize the hmacContext in preparation
  *      for computing a new HMAC message digest.
  *
+ *  whichSha: [not a param, bcs. we will always be using sha512]
+ *          SHA512
+ * 
  *  Parameters:
  *      context: [in/out]
  *          The context to reset.
- *      whichSha: [in]
- *          One of SHA1, SHA224, SHA256, SHA384, SHA512
  *      key[ ]: [in]
  *          The secret shared key.
  *      key_len: [in]
@@ -74,24 +91,25 @@ int hmac(SHAversion whichSha,
  *      sha Error Code.
  *
  */
-int hmacReset(HMACContext *context, enum SHAversion whichSha,
-    const unsigned char *key, int key_len)
+//STACKSIZE:  ~950B
+int32_t hmacReset(HMACContext *context,
+    const uint8_t *key, int32_t key_len)
 {
-  int i, blocksize, hashsize, ret;
+  int32_t i, blocksize, hashsize, ret;
 
   /* inner padding - key XORd with ipad */
-  unsigned char k_ipad[USHA_Max_Message_Block_Size];
+  uint8_t k_ipad[USHA_Max_Message_Block_Size];
 
   /* temporary buffer when keylen > blocksize */
-  unsigned char tempkey[USHAMaxHashSize];
+  uint8_t tempkey[USHAMaxHashSize];
 
   if (!context) return shaNull;
   context->Computed = 0;
   context->Corrupted = shaSuccess;
 
-  blocksize = context->blockSize = USHABlockSize(whichSha);
-  hashsize = context->hashSize = USHAHashSize(whichSha);
-  context->whichSha = whichSha;
+  blocksize = context->blockSize = USHABlockSize;
+  hashsize = context->hashSize = USHAHashSize;
+  context->whichSha = SHA512;
 
   /*
    * If key is longer than the hash blocksize,
@@ -99,7 +117,7 @@ int hmacReset(HMACContext *context, enum SHAversion whichSha,
    */
   if (key_len > blocksize) {
     USHAContext tcontext;
-    int err = USHAReset(&tcontext, whichSha) ||
+    int32_t err = USHAReset(&tcontext) ||
               USHAInput(&tcontext, key, key_len) ||
               USHAResult(&tcontext, tempkey);
     if (err != shaSuccess) return err;
@@ -132,7 +150,7 @@ int hmacReset(HMACContext *context, enum SHAversion whichSha,
 
   /* perform inner hash */
   /* init context for 1st pass */
-  ret = USHAReset(&context->shaContext, whichSha) ||
+  ret = USHAReset(&context->shaContext) ||
         /* and start with inner pad */
         USHAInput(&context->shaContext, k_ipad, blocksize);
   return context->Corrupted = ret;
@@ -156,10 +174,11 @@ int hmacReset(HMACContext *context, enum SHAversion whichSha,
  *
  *  Returns:
  *      sha Error Code.
- *
+ * 
+ * STACKSIZE: ~738B
  */
-int hmacInput(HMACContext *context, const unsigned char *text,
-    int text_len)
+int32_t hmacInput(HMACContext *context, const uint8_t *text,
+    int32_t text_len)
 {
   if (!context) return shaNull;
   if (context->Corrupted) return context->Corrupted;
@@ -188,8 +207,8 @@ int hmacInput(HMACContext *context, const unsigned char *text,
  * Returns:
  *   sha Error Code.
  */
-int hmacFinalBits(HMACContext *context,
-    uint8_t bits, unsigned int bit_count)
+int32_t hmacFinalBits(HMACContext *context,
+    uint8_t bits, uint32_t bit_count)
 {
   if (!context) return shaNull;
   if (context->Corrupted) return context->Corrupted;
@@ -216,11 +235,12 @@ int hmacFinalBits(HMACContext *context,
  *
  * Returns:
  *   sha Error Code.
- *
+ * 
+ * STACKSIZE: ~746B
  */
-int hmacResult(HMACContext *context, uint8_t digest[USHAMaxHashSize])
+int32_t hmacResult(HMACContext *context, uint8_t digest[USHAMaxHashSize])
 {
-  int ret;
+  int32_t ret;
   if (!context) return shaNull;
   if (context->Corrupted) return context->Corrupted;
   if (context->Computed) return context->Corrupted = shaStateError;
@@ -232,7 +252,7 @@ int hmacResult(HMACContext *context, uint8_t digest[USHAMaxHashSize])
 
          /* perform outer SHA */
          /* init context for 2nd pass */
-         USHAReset(&context->shaContext, context->whichSha) ||
+         USHAReset(&context->shaContext) ||
 
          /* start with outer pad */
          USHAInput(&context->shaContext, context->k_opad,
@@ -246,4 +266,3 @@ int hmacResult(HMACContext *context, uint8_t digest[USHAMaxHashSize])
   context->Computed = 1;
   return context->Corrupted = ret;
 }
-

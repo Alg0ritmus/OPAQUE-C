@@ -5,8 +5,8 @@
 // ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
-// ---------------------------version T.T.5 -------------------------
-// --------------------------- 05-02-2024 ---------------------------
+// ---------------------------version 1.0.0 -------------------------
+// --------------------------- 07-03-2024 ---------------------------
 // ******************************************************************
 
 /**
@@ -396,7 +396,8 @@
        mask |= a[i] ^ b[i];
     }
   
-    //Return 0 if A = B, else 1, NOTE: that we need reversed logic in ristretto.c for our needs
+    // Return 0 if A = B, else 1, NOTE: that we need reversed logic in ristretto.c 
+    // to adjust it for our needs, see ristretto255.c at the top of the file.
     return (((u32) (mask | (~mask + 1))) >> 31); 
  }
 

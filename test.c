@@ -2,11 +2,11 @@
 // ----------------- TECHNICAL UNIVERSITY OF KOSICE -----------------
 // ---Department of Electronics and Multimedia Telecommunications ---
 // -------- FACULTY OF ELECTRICAL ENGINEERING AND INFORMATICS -------
-// ------------ THIS CODE IS A PART OF A MASTERS THESIS ------------
+// ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
-// ---------------------------version 0.0.1 -------------------------
-// --------------------------- 14-10-2023 ---------------------------
+// ---------------------------version 1.0.0 -------------------------
+// --------------------------- 07-03-2024 ---------------------------
 // ******************************************************************
 
 /*
@@ -44,7 +44,7 @@ uint8_t blind_registration[32] = {
     0x0a, 0x26, 0x5d, 0x9c, 0x2d, 0x6a, 0xbe, 0x01
 };
 
-uint8_t client_identity[0] = {};
+uint8_t *client_identity; // length of 0
 uint32_t client_identity_len=0;
 
 uint8_t client_keyshare_seed[32]=  {
@@ -91,7 +91,7 @@ uint8_t oprf_seed[64] = {
 uint8_t password[25] = {0x43, 0x6f, 0x72, 0x72, 0x65, 0x63, 0x74, 0x48, 0x6f, 0x72, 0x73, 0x65, 0x42, 0x61, 0x74, 0x74, 0x65, 0x72, 0x79, 0x53, 0x74, 0x61, 0x70, 0x6c, 0x65};
 uint32_t password_len = 25;
 
-uint8_t server_identity[0] = {};
+uint8_t *server_identity; // array of length 0
 uint32_t server_identity_len = 0;
 
 uint8_t server_keyshare_seed[32] = {
@@ -375,14 +375,14 @@ static uint8_t compare(uint8_t *a, uint8_t *b, size_t count){
 }
 
 int main(){
-  s_rand(1234);
+  s_rand(1234); //initialize rng see ristretto255/prng.c
 
   // -----------------------------------         
   // ------------- TESTING OF ----------
   // --------------- OPAQUE ------------
   // -----------------------------------   
 
-uint8_t test_result = 1;
+uint8_t test_result = 1; // used to 
 
 uint8_t randomized_password[64] = {0xaa,0xc4,0x8c,0x25,0xab,0x03,0x6e,0x30,0x75,0x08,0x39,0xd3,0x1d,0x6e,0x73,0x00,0x73,0x44,0xcb,0x11,0x55,0x28,0x9f,0xb7,0xd3,0x29,0xbe,0xb9,0x32,0xe9,0xad,0xee,0xa7,0x3d,0x5d,0x5c,0x22,0xa0,0xce,0x19,0x52,0xf8,0xab,0xa6,0xd6,0x60,0x07,0x61,0x5c,0xd1,0x69,0x8d,0x4a,0xc8,0x5e,0xf1,0xfc,0xf1,0x50,0x03,0x1d,0x14,0x35,0xd9};
 uint32_t randomized_password_len = 64;

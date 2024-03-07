@@ -5,14 +5,18 @@
 // ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
-// ---------------------------version 0.0.1 -------------------------
-// --------------------------- 14-10-2023 ---------------------------
+// ---------------------------version 1.0.0 -------------------------
+// --------------------------- 07-03-2024 ---------------------------
 // ******************************************************************
+
+
+// This file include all function needed for OPRF (core part of
+// OPAQE registration stage). Most of the code was inspired by:
+// https://github.com/aldenml/ecc
 
 #include <stdio.h>
 #include <stddef.h>
 #include <string.h>
-#include <math.h> // for expand_message_xmd_sha512
 #include "dependencies/sha.h"
 #include "ristretto255/ristretto255.h"
 #include "ristretto255/helpers.h"
@@ -85,18 +89,6 @@ void ecc_strxor(uint8_t *out, const uint8_t *a, const uint8_t *b, const int32_t 
     }
 }
 
-
-static void printDigest(uint8_t in[SHA512HashSize]){
-  for (uint32_t i = 0; i < SHA512HashSize; ++i)
-  {
-    if (i%16==0){
-      printf("\n");
-    }
-    printf("%0x,",in[i]);
-  }
-  printf("\n");
-}
-
 void ecc_concat2(
     uint8_t *out,
     const uint8_t *a1, const uint32_t a1_len,
@@ -140,9 +132,9 @@ static uint32_t createContextString(
 ) {
     // contextString = "OPRFV1-" || I2OSP(mode, 1) || "-" || identifier
 
-    uint8_t id[6] = "OPRFV1";
-    uint8_t identifier[19] = "ristretto255-SHA512";
-    uint8_t dash[1] = "-";
+    uint8_t id[6] = {'O', 'P', 'R', 'F', 'V', '1'};
+    uint8_t identifier[19] = {'r', 'i', 's', 't', 'r', 'e', 't', 't', 'o', '2', '5', '5', '-', 'S', 'H', 'A', '5', '1', '2'};
+    uint8_t dash[] = {'-'};
 
     uint8_t *p = contextString;
 
@@ -158,18 +150,14 @@ static uint32_t createContextString(
     ecc_concat2(p, dash, 1, identifier, sizeof identifier);
     p += 1 + sizeof identifier;
 
-    return (int)(p - contextString);
+    return (uint32_t)(p - contextString);
 }
 
 
-
-
-// we need hash to group for oprf 
-// we need hash to scalar for oprf
-// https://github.com/aldenml/ecc/blob/fedffd5624db6d90c659864c21be0c530484c925/src/voprf.c#L1364
-
-
-// for this we need: ecc_h2c_expand_message_xmd_sha512
+// The expand_message_xmd function produces a uniformly random byte string using 
+// a cryptographic hash function H that outputs b bits.
+// DRAFT: https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve-16#page-20
+// IMPLEMENTATION THAT INSPIRED ME:
 // https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve-16#page-20
 // https://github.com/aldenml/ecc/blob/fedffd5624db6d90c659864c21be0c530484c925/src/h2c.c#L152
 // Test Vect:
@@ -179,13 +167,13 @@ static uint32_t createContextString(
 uint32_t expand_message_xmd_sha512(
     uint8_t *out,
     uint8_t *msg, uint32_t msgLen,
-    uint8_t *DST, uint32_t dstLen,
+    uint8_t *DST, uint32_t dstLen, // // domain separation tag (DST), which is a byte string
     uint32_t len_in_bytes
   ) {
   // Steps:
   //  1.  ell = ceil(len_in_bytes / b_in_bytes)
   //  2.  ABORT if ell > 255 or len_in_bytes > 65535 or len(DST) > 255
-  //  3.  DST_prime = DST || I2OSP(len(DST), 1)
+  //  3.  3. DST_prime = DST[dstLen] || I2OSP(len(DST), 1) -> DST is domain name separation (byte-string)
   //  4.  Z_pad = I2OSP(0, s_in_bytes)
   //  5.  l_i_b_str = I2OSP(len_in_bytes, 2)
   //  6.  msg_prime = Z_pad || msg || l_i_b_str || I2OSP(0, 1) || DST_prime
@@ -196,8 +184,8 @@ uint32_t expand_message_xmd_sha512(
   //  11. uniform_bytes = b_1 || ... || b_ell
   //  12. return substr(uniform_bytes, 0, len_in_bytes)
 
-  const uint32_t b_in_bytes = 64; // output of Hash function in bytes SHA512 -> 64 bytes
-  const uint32_t s_in_bytes = 128;
+  const uint32_t b_in_bytes = 64; // b / 8 for b the output size of H in bits -> 512/8 = 64
+  const uint32_t s_in_bytes = 128; // the input block size of SHA512 -> 1024/8 = 128B
   uint8_t tmp[1];
   SHA512Context mySha512;
   
@@ -308,8 +296,8 @@ static void ecc_voprf_ristretto255_sha512_HashToGroup(
     uint8_t *out,
     const uint8_t *input, const uint32_t inputLen
 ) {
-    uint8_t DST[100];
-    uint8_t DSTPrefix[12] = "HashToGroup-";
+    uint8_t DST[40]; // will be filled w "HashToGroup-"|| "OPRFV1-" || "00" || "-" || "ristretto255-SHA512"
+    uint8_t DSTPrefix[12] = {'H', 'a', 's', 'h', 'T', 'o', 'G', 'r', 'o', 'u', 'p', '-'};
     const uint32_t DSTLen = createContextString(
         DST, 0,
         DSTPrefix, sizeof DSTPrefix
@@ -340,20 +328,6 @@ static void ecc_voprf_ristretto255_sha512_HashToScalarWithDST(
 }
 
 
-static void ecc_voprf_ristretto255_sha512_HashToScalar(
-    uint8_t *out,
-    const uint8_t *input, const uint32_t inputLen
-) {
-    uint8_t DST[100];
-    uint8_t DSTPrefix[13] = "HashToScalar-";
-    const uint32_t DSTsize = createContextString(
-        DST, 0,
-        DSTPrefix, sizeof DSTPrefix
-    );
-
-    ecc_voprf_ristretto255_sha512_HashToScalarWithDST(out, input, inputLen, DST, DSTsize);
-}
-
 // END OF STARTIC FUNC BLOCK
 
 
@@ -369,7 +343,10 @@ uint32_t DeterministicDeriveKeyPair(
     return -1;
 
   }
-  uint8_t deriveInput[2048];
+  // 100 bytes should be enough bcs it just holds
+  // seed[32], info[33 in our impl.] and some negligible values
+  uint8_t deriveInput[100]; 
+  
   
   // deriveInput = seed || I2OSP(len(info), 2) || info
   // For non-heap allocation, we created a long buffer called
@@ -388,8 +365,8 @@ uint32_t DeterministicDeriveKeyPair(
   uint32_t counter = 0; //possibly uint8_t or size_t
   //sKs = 0
   memset(skS, 0, Nsk);
-  uint8_t DST[100];
-  uint8_t DSTPrefix[13] = "DeriveKeyPair";
+  uint8_t DST[41]; // will be filled w "DeriveKeyPair"|| "OPRFV1-" || "00" || "-" || "ristretto255-SHA512"
+  uint8_t DSTPrefix[13] = {'D', 'e', 'r', 'i', 'v', 'e', 'K', 'e', 'y', 'P', 'a', 'i', 'r'};
   const uint8_t DSTsize = createContextString(
       DST,
       0,
@@ -397,7 +374,7 @@ uint32_t DeterministicDeriveKeyPair(
   );
 
 
-  uint8_t input[2048];
+  uint8_t input[100];
   while (cmp(skS,ZERO_OPRF,Nsk)){
     if (counter > 255){return -1;}; //DeriveKeyPairError
       
@@ -432,7 +409,7 @@ static void getRandomScalar(uint8_t r[32]){
 }
 
 
-size_t DeriveKeyPair(uint8_t skS[Nsk], uint8_t pkS[Npk]){
+uint32_t DeriveKeyPair(uint8_t skS[Nsk], uint8_t pkS[Npk]){
   
   getRandomScalar(skS); 
 
@@ -445,7 +422,7 @@ size_t DeriveKeyPair(uint8_t skS[Nsk], uint8_t pkS[Npk]){
 
 #endif // test
 // https://www.ietf.org/archive/id/draft-irtf-cfrg-voprf-21.html#name-oprf-protocol
-size_t ecc_voprf_ristretto255_sha512_BlindWithScalar(
+uint32_t ecc_voprf_ristretto255_sha512_BlindWithScalar(
     uint8_t *blindedElement,
     const  uint8_t *input, const uint32_t inputLen,
     const uint8_t *blind
@@ -462,7 +439,7 @@ size_t ecc_voprf_ristretto255_sha512_BlindWithScalar(
     return 1;
 }
 
-size_t ecc_voprf_ristretto255_sha512_Blind(
+uint32_t ecc_voprf_ristretto255_sha512_Blind(
     uint8_t *blind,
     uint8_t *blindedElement,
     uint8_t *input, uint32_t inputLen
@@ -520,7 +497,7 @@ void Finalize(
   
   //hash from big secure_concat
   
-  uint8_t temp[8] = "Finalize";
+  uint8_t temp[8] = {'F', 'i', 'n', 'a', 'l', 'i', 'z', 'e'};
   
   ecc_I2OSP(i2osp1, inputLen, 2); // I2OSP(len(input), 2)
   ecc_I2OSP(i2osp2, 32, 2); //I2OSP(len(unblindedElement), 2)
@@ -537,6 +514,14 @@ void Finalize(
   SHA512Input(&mySha512, unblindedElement, 32);
   SHA512Input(&mySha512, temp, 8);
   SHA512Result(&mySha512, output);
+
+  crypto_wipe(out_rist->x, sizeof out_rist->x);
+  crypto_wipe(out_rist->y, sizeof out_rist->y);
+  crypto_wipe(out_rist->z, sizeof out_rist->z);
+  crypto_wipe(out_rist->t, sizeof out_rist->t);
+  crypto_wipe(blind_inverse, sizeof blind_inverse);
+  crypto_wipe(N, sizeof N);
+  crypto_wipe(unblindedElement, sizeof unblindedElement);
 }
 
 

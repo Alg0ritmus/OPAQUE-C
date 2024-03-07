@@ -5,8 +5,8 @@
 // ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
-// ---------------------------version 0.0.1 -------------------------
-// --------------------------- 11-10-2023 ---------------------------
+// ---------------------------version 1.0.0 -------------------------
+// --------------------------- 07-03-2024 ---------------------------
 // ******************************************************************
 
 /**
@@ -37,13 +37,13 @@
 extern const uint8_t RISTRETTO255_BASEPOINT_OPRF[32];
 
 uint32_t DeterministicDeriveKeyPair(uint8_t skS[Nsk], uint8_t pkS[Npk],uint8_t seed[Nseed], uint8_t *info, uint32_t infoLen);
-size_t DeriveKeyPair(uint8_t skS[Nsk], uint8_t pkS[Npk]);
-size_t ecc_voprf_ristretto255_sha512_Blind(
+uint32_t DeriveKeyPair(uint8_t skS[Nsk], uint8_t pkS[Npk]);
+uint32_t ecc_voprf_ristretto255_sha512_Blind(
     uint8_t *blind,
     uint8_t *blindedElement,
     uint8_t *input, uint32_t inputLen
 );
-size_t ecc_voprf_ristretto255_sha512_BlindWithScalar(
+uint32_t ecc_voprf_ristretto255_sha512_BlindWithScalar(
     uint8_t *blindedElement,
     const  uint8_t *input, const uint32_t inputLen,
     const uint8_t *blind

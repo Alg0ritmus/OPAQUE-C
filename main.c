@@ -26,6 +26,10 @@
 
 /**
   * This file, serves for internal testing purposes.
+  * It is used for developer as a playground :).
+  * Please ignore it if you just want to use library.
+  * But feel free to use this playground to discover
+  * and with this opaque implementation.
   *------------------------------------------------
   *
 	* SHA512 was tested here:

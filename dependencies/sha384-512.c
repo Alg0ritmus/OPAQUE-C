@@ -1,8 +1,28 @@
+// ******************************************************************
+// ----------------- TECHNICAL UNIVERSITY OF KOSICE -----------------
+// ---Department of Electronics and Multimedia Telecommunications ---
+// -------- FACULTY OF ELECTRICAL ENGINEERING AND INFORMATICS -------
+// ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
+// ------------------------- Master thesis --------------------------
+// -----------------Patrik Zelenak & Milos Drutarovsky --------------
+// ---------------------------version 1.0.0 -------------------------
+// --------------------------- 07-03-2024 ---------------------------
+// ******************************************************************
+
+// P.Z. A SHA384_512ProcessMessageBlock function was modified to
+// use uint64_t W[16] array instead of W[80].
+
+
+
+
 /************************* sha384-512.c ************************/
 /***************** See RFC 6234 for details. *******************/
 /* Copyright (c) 2011 IETF Trust and the persons identified as */
 /* authors of the code.  All rights reserved.                  */
 /* See sha.h for terms of use and redistribution.              */
+
+
+
 
 /*
  * Description:
@@ -77,15 +97,15 @@ static uint64_t addTemp;
                                     (context)->Corrupted)
 
 /* Local Function Prototypes */
-static int SHA384_512Reset(SHA512Context *context,
+static uint32_t SHA384_512Reset(SHA512Context *context,
                            uint64_t H0[SHA512HashSize/8]);
 static void SHA384_512ProcessMessageBlock(SHA512Context *context);
 static void SHA384_512Finalize(SHA512Context *context,
   uint8_t Pad_Byte);
 static void SHA384_512PadMessage(SHA512Context *context,
   uint8_t Pad_Byte);
-static int SHA384_512ResultN(SHA512Context *context,
-  uint8_t Message_Digest[ ], int HashSize);
+static uint32_t SHA384_512ResultN(SHA512Context *context,
+  uint8_t Message_Digest[ ], uint32_t HashSize);
 
 /* Initial Hash Values: FIPS 180-3 sections 5.3.4 and 5.3.5 */
 
@@ -111,7 +131,7 @@ static uint64_t SHA512_H0[ ] = {
  *   sha Error Code.
  *
  */
-int SHA512Reset(SHA512Context *context)
+uint32_t SHA512Reset(SHA512Context *context)
 {
   return SHA384_512Reset(context, SHA512_H0);
 }
@@ -136,9 +156,9 @@ int SHA512Reset(SHA512Context *context)
  *   sha Error Code.
  *
  */
-int SHA512Input(SHA512Context *context,
+uint32_t SHA512Input(SHA512Context *context,
         const uint8_t *message_array,
-        unsigned int length)
+        uint32_t length)
 {
   if (!context) return shaNull;
   if (!length) return shaSuccess;
@@ -180,8 +200,8 @@ int SHA512Input(SHA512Context *context,
  *   sha Error Code.
  *
  */
-int SHA512FinalBits(SHA512Context *context,
-                    uint8_t message_bits, unsigned int length)
+uint32_t SHA512FinalBits(SHA512Context *context,
+                    uint8_t message_bits, uint32_t length)
 {
   static uint8_t masks[8] = {
       /* 0 0b00000000 */ 0x00, /* 1 0b10000000 */ 0x80,
@@ -229,7 +249,7 @@ int SHA512FinalBits(SHA512Context *context,
  *   sha Error Code.
  *
  */
-int SHA512Result(SHA512Context *context,
+uint32_t SHA512Result(SHA512Context *context,
     uint8_t Message_Digest[SHA512HashSize])
 {
   return SHA384_512ResultN(context, Message_Digest, SHA512HashSize);
@@ -254,11 +274,11 @@ int SHA512Result(SHA512Context *context,
  *
  */
 
-static int SHA384_512Reset(SHA512Context *context,
+static uint32_t SHA384_512Reset(SHA512Context *context,
                            uint64_t H0[SHA512HashSize/8])
 
 {
-  int i;
+  uint32_t i;
   if (!context) return shaNull;
   context->Message_Block_Index = 0;
 
@@ -328,7 +348,7 @@ static void SHA384_512ProcessMessageBlock(SHA512Context *context)
       0x431D67C49C100D4Cll, 0x4CC5D4BECB3E42B6ll, 0x597F299CFC657E2All,
       0x5FCB6FAB3AD6FAECll, 0x6C44198C4A475817ll
   };
-  int        t, t8;                   /* Loop counter */
+  uint32_t        t, t8;                   /* Loop counter */
   uint64_t   temp1, temp2, s0, s1;            /* Temporary word value */
   uint64_t   W[16];                   /* Word sequence */
   uint64_t   A, B, C, D, E, F, G, H;  /* Word buffers */
@@ -536,10 +556,10 @@ static void SHA384_512PadMessage(SHA512Context *context,
  *   sha Error Code.
  *
  */
-static int SHA384_512ResultN(SHA512Context *context,
-    uint8_t Message_Digest[ ], int HashSize)
+static uint32_t SHA384_512ResultN(SHA512Context *context,
+    uint8_t Message_Digest[ ], uint32_t HashSize)
 {
-  int i;
+  uint32_t i;
 
   if (!context) return shaNull;
   if (!Message_Digest) return shaNull;

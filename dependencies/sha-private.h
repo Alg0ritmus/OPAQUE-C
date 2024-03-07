@@ -1,3 +1,16 @@
+// ******************************************************************
+// ----------------- TECHNICAL UNIVERSITY OF KOSICE -----------------
+// ---Department of Electronics and Multimedia Telecommunications ---
+// -------- FACULTY OF ELECTRICAL ENGINEERING AND INFORMATICS -------
+// ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
+// ------------------------- Master thesis --------------------------
+// -----------------Patrik Zelenak & Milos Drutarovsky --------------
+// ---------------------------version 1.0.0 -------------------------
+// --------------------------- 07-03-2024 ---------------------------
+// ******************************************************************
+
+// P.Z. Unmodified.
+
 /************************ sha-private.h ************************/
 /***************** See RFC 6234 for details. *******************/
 #ifndef _SHA_PRIVATE__H
@@ -26,4 +39,3 @@
 #define SHA_Parity(x, y, z)  ((x) ^ (y) ^ (z))
 
 #endif /* _SHA_PRIVATE__H */
-

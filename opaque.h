@@ -5,8 +5,8 @@
 // ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
-// ---------------------------version 0.0.1 -------------------------
-// --------------------------- 11-10-2023 ---------------------------
+// ---------------------------version 1.0.0 -------------------------
+// --------------------------- 07-03-2024 ---------------------------
 // ******************************************************************
 
 /**
@@ -38,9 +38,12 @@
 #define Noe 32
 #define Ne 96
 
-//#define unsigned uint32_t uint_t
 #define IDENTITY_BYTE_SIZE 65535 // <1; 2^16-1> // QUESTION, is it correct?, if not change CreateCleartextCredentials()
 
+
+// opaque function return values 
+#define OPAQUE_OK 1
+#define OPAQUE_ERROR 0
 
 /**
   * OPAQUE STRUCTURES 
@@ -113,7 +116,7 @@ typedef struct AuthResponse_t{
   uint8_t server_mac[Nm];
 } AuthResponse;
 
-typedef struct KE2_t{                                                              // credential_resp_pad = KE1->masking_key XOR masking_nonce||envelope
+typedef struct KE2_t{                                                              // credential_resp_pad = Envelope->masking_key XOR masking_nonce||envelope
   CredentialResponse credential_response; //evaluated_message, masking_nonce(rng), masked_response(credential_resp_pad oxr (server_pub_key || envelope))
   AuthResponse auth_response; // server_nonce(rng), server_public_keyshare, server_mac
 } KE2;
@@ -164,7 +167,7 @@ void Store(
     const uint8_t *client_identity, const uint32_t client_identity_len
     );
 
-size_t Recover(
+uint32_t Recover(
     uint8_t client_private_key[Npk],
     CleartextCredentials *cleartext_credentials,
     uint8_t export_key[Nh],
@@ -236,7 +239,7 @@ void ecc_opaque_ristretto255_sha512_GenerateKE2WithSeed(
 );
 
 
-size_t ecc_opaque_ristretto255_sha512_GenerateKE3(
+uint32_t ecc_opaque_ristretto255_sha512_GenerateKE3(
     KE3 *ke3_raw,
     uint8_t session_key[64], // client_session_key
     uint8_t export_key[64], // 64
@@ -248,7 +251,7 @@ size_t ecc_opaque_ristretto255_sha512_GenerateKE3(
 );
 
 
-size_t ecc_opaque_ristretto255_sha512_ServerFinish(
+uint32_t ecc_opaque_ristretto255_sha512_ServerFinish(
     uint8_t session_key[Nx],
     const ServerState *state,
     const KE3 *ke3

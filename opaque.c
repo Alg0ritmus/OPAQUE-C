@@ -5,8 +5,8 @@
 // ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
-// ---------------------------version 0.0.1 -------------------------
-// --------------------------- 11-10-2023 ---------------------------
+// ---------------------------version 1.0.0 -------------------------
+// --------------------------- 07-03-2024 ---------------------------
 // ******************************************************************
 
 
@@ -242,16 +242,16 @@ void Store(
     uint8_t seed[Nseed];
     uint8_t seed_info[Nn + 10];
 
-    hkdfExpand(SHA512,randomized_password,randomized_password_len, masking_key_info, 10, masking_key, Nh);
+    hkdfExpand( randomized_password,randomized_password_len, masking_key_info, 10, masking_key, Nh);
 
     ecc_concat2(auth_key_info, envelope_nonce, Nn, auth_key_label, 7);
-    hkdfExpand(SHA512,randomized_password,randomized_password_len, auth_key_info, Nn+7, auth_key, Nh);
+    hkdfExpand( randomized_password,randomized_password_len, auth_key_info, Nn+7, auth_key, Nh);
 
     ecc_concat2(export_key_info, envelope_nonce, Nn, export_key_label, 9);
-    hkdfExpand(SHA512,randomized_password,randomized_password_len, export_key_info, Nn+9, export_key, Nh);
+    hkdfExpand( randomized_password,randomized_password_len, export_key_info, Nn+9, export_key, Nh);
 
     ecc_concat2(seed_info, envelope_nonce, Nn, seed_label, 10);
-    hkdfExpand(SHA512,randomized_password,randomized_password_len, seed_info, Nn+10, seed, Nseed);
+    hkdfExpand( randomized_password,randomized_password_len, seed_info, Nn+10, seed, Nseed);
 
     // 
     uint8_t skS[Nsk];
@@ -286,7 +286,7 @@ void Store(
         cleartext_creds_buf, cleartext_creds_len
     );
 
-    hmac(SHA512, auth_tag_mac_input, Nn+cleartext_creds_len, auth_key, Nh, envelope->auth_tag);
+    hmac(  auth_tag_mac_input, Nn+cleartext_creds_len, auth_key, Nh, envelope->auth_tag);
     memcpy(envelope->nonce, envelope_nonce, Nn);
 
     crypto_wipe(auth_key, sizeof auth_key); 
@@ -312,7 +312,7 @@ void Store(
   * @param[out] -> cleartext_credentials,   ->    a CleartextCredentials structure.
   * @param[out] -> export_key,              ->    an additional client key.
 **/
-size_t Recover(
+uint32_t Recover(
     uint8_t client_private_key[Npk],
     CleartextCredentials *cleartext_credentials,
     uint8_t export_key[Nh],
@@ -336,15 +336,15 @@ size_t Recover(
 
     //auth_key = Expand(randomized_password, concat(envelope.nonce, "AuthKey"), Nh)
     ecc_concat2(auth_key_info, envelope->nonce, Nn, auth_key_label, 7);
-    hkdfExpand(SHA512,randomized_password,randomized_password_len, auth_key_info, Nn+7, auth_key, Nh);
+    hkdfExpand( randomized_password,randomized_password_len, auth_key_info, Nn+7, auth_key, Nh);
 
     //export_key = Expand(randomized_password, concat(envelope.nonce, "ExportKey"), Nh)
     ecc_concat2(export_key_info, envelope->nonce, Nn, export_key_label, 9);
-    hkdfExpand(SHA512,randomized_password,randomized_password_len, export_key_info, Nn+9, export_key, Nh);
+    hkdfExpand( randomized_password,randomized_password_len, export_key_info, Nn+9, export_key, Nh);
 
     //seed = Expand(randomized_password, concat(envelope.nonce, "PrivateKey"), Nseed)
     ecc_concat2(seed_info, envelope->nonce, Nn, seed_label, 10);
-    hkdfExpand(SHA512,randomized_password,randomized_password_len, seed_info, Nn+10, seed, Nseed);
+    hkdfExpand( randomized_password,randomized_password_len, seed_info, Nn+10, seed, Nseed);
 
     //(client_private_key, client_public_key) = DeriveDiffieHellmanKeyPair(seed)
     uint8_t client_public_key[Npk];
@@ -386,7 +386,7 @@ size_t Recover(
     );
 
     uint8_t expected_tag[Nh];
-    hmac(SHA512, expected_tag_mac_input, Nn+cleartext_creds_len, auth_key, Nh, expected_tag);
+    hmac(  expected_tag_mac_input, Nn+cleartext_creds_len, auth_key, Nh, expected_tag);
 
     crypto_wipe(auth_key, sizeof auth_key);
     crypto_wipe(auth_key_info, sizeof auth_key_info);
@@ -398,12 +398,11 @@ size_t Recover(
     
     //If !ct_equal(envelope.auth_tag, expected_tag)
     if (!cmp(envelope->auth_tag,expected_tag,Nh)){
-      printf("Error: auth_tag is not valid! \n");
       crypto_wipe(expected_tag, sizeof expected_tag); 
-      return -1;
+      return OPAQUE_ERROR;
     }
     crypto_wipe(expected_tag, sizeof expected_tag); 
-    return 1;
+    return OPAQUE_OK;
 }
 
 
@@ -491,7 +490,7 @@ void CreateRegistrationResponse(
     //seed = Expand(oprf_seed, concat(credential_identifier, "OprfKey"), Nok)
     uint8_t seed[Nok];
     ecc_concat2(seed_info, credential_identifier, credential_identifier_len, seed_label, 7);
-    hkdfExpand(SHA512,oprf_seed,Nh, seed_info, credential_identifier_len + 7, seed, Nok);
+    hkdfExpand( oprf_seed,Nh, seed_info, credential_identifier_len + 7, seed, Nok);
 
 
     // (oprf_key, _) = DeriveKeyPair(seed, "OPAQUE-DeriveKeyPair")
@@ -579,7 +578,7 @@ void FinalizeRegistrationRequest(
   uint8_t password_info[Nh+Nh];
   ecc_concat2(password_info, oprf_output, Nh, oprf_output, Nh);
   uint8_t randomized_password[Nh];  
-  hkdfExtract(SHA512,(uint8_t*) ' ',0, password_info, Nh+Nh, randomized_password);
+  hkdfExtract( (uint8_t*) ' ',0, password_info, Nh+Nh, randomized_password);
   
   Store(
       &record->envelope,
@@ -842,7 +841,7 @@ void ecc_opaque_ristretto255_sha512_CreateCredentialResponseWithMasking(
 //    // - Expand(oprf_seed, ikm_info, Nok)
 //    uint8_t seed[Nok];
 //
-//    hkdfExpand(SHA512,oprf_seed,Nh,seed_info, seed_info_len, seed, Nok);
+//    hkdfExpand( oprf_seed,Nh,seed_info, seed_info_len, seed, Nok);
 //
 //    //ecc_kdf_hkdf_sha512_expand(seed, oprf_seed, seed_info, seed_info_len, Nok);
 //
@@ -859,7 +858,7 @@ void ecc_opaque_ristretto255_sha512_CreateCredentialResponseWithMasking(
     //seed = Expand(oprf_seed, concat(credential_identifier, "OprfKey"), Nok)
     uint8_t seed[Nok];
     ecc_concat2(seed_info, credential_identifier, credential_identifier_len, seed_label, 7);
-    hkdfExpand(SHA512,oprf_seed,Nh, seed_info, credential_identifier_len + 7, seed, Nok);
+    hkdfExpand( oprf_seed,Nh, seed_info, credential_identifier_len + 7, seed, Nok);
 
 
     // (oprf_key, _) = DeriveKeyPair(seed, "OPAQUE-DeriveKeyPair")
@@ -893,7 +892,7 @@ void ecc_opaque_ristretto255_sha512_CreateCredentialResponseWithMasking(
     ecc_concat2(credential_response_pad_info, masking_nonce, Nn, credential_response_pad_label, 21);
     uint8_t credential_response_pad[Npk + Ne];
     
-    hkdfExpand(SHA512,record_raw->masking_key,Nh, credential_response_pad_info,sizeof credential_response_pad_info , credential_response_pad, Npk + Ne);
+    hkdfExpand( record_raw->masking_key,Nh, credential_response_pad_info,sizeof credential_response_pad_info , credential_response_pad, Npk + Ne);
 
     //ecc_kdf_hkdf_sha512_expand(credential_response_pad, record_raw->masking_key, credential_response_pad_info, sizeof credential_response_pad_info, Npk + Ne);
 
@@ -1059,7 +1058,7 @@ void ecc_opaque_ristretto255_sha512_3DH_Expand_Label(
 
     //ecc_kdf_hkdf_sha512_expand(out, secret, info, n, length);
 
-    hkdfExpand(SHA512,secret,Nh,info, n, out, length);
+    hkdfExpand( secret,Nh,info, n, out, length);
 
 
     //cleanup stack memory
@@ -1085,7 +1084,7 @@ void ecc_opaque_ristretto255_sha512_3DH_DeriveKeys(
     // 1. prk = Extract("", ikm)
     uint8_t prk[64];
     //ecc_kdf_hkdf_sha512_extract(prk, NULL, 0, ikm, ikm_len);
-    hkdfExtract(SHA512,(uint8_t*) NULL,0, ikm, ikm_len, prk);
+    hkdfExtract( (uint8_t*) NULL,0, ikm, ikm_len, prk);
 
     // 2. handshake_secret = Derive-Secret(prk, "HandshakeSecret", Hash(preamble))
     uint8_t preamble_secret_label[15] = {'H', 'a', 'n', 'd', 's', 'h', 'a', 'k', 'e', 'S', 'e', 'c', 'r', 'e', 't'};
@@ -1228,7 +1227,7 @@ void ecc_opaque_ristretto255_sha512_3DH_ResponseWithSeed(
     //     sizeof km2
     // );
 
-    hmac(SHA512, preamble_hash, sizeof preamble_hash, km2, sizeof km2, server_mac);
+    hmac(  preamble_hash, sizeof preamble_hash, km2, sizeof km2, server_mac);
 
 
     // 8. expected_client_mac = MAC(Km3, Hash(concat(preamble, server_mac))
@@ -1246,7 +1245,7 @@ void ecc_opaque_ristretto255_sha512_3DH_ResponseWithSeed(
     //     sizeof km3
     // );
 
-    hmac(SHA512, expected_client_mac_input, sizeof expected_client_mac_input, km3, sizeof km3, expected_client_mac);
+    hmac(  expected_client_mac_input, sizeof expected_client_mac_input, km3, sizeof km3, expected_client_mac);
 
     // 9. Populate state with ServerState(expected_client_mac, session_key)
     memcpy(state->expected_client_mac, expected_client_mac, sizeof expected_client_mac);
@@ -1369,14 +1368,14 @@ uint32_t ecc_opaque_ristretto255_sha512_RecoverCredentials(
     ecc_concat2(extract_input, y, Nh, harden_result, Nh);
     uint8_t randomized_pwd[Nh];
     //ecc_kdf_hkdf_sha512_extract(randomized_pwd, NULL, 0, extract_input, sizeof extract_input);
-    hkdfExtract(SHA512,(uint8_t*) NULL,0, extract_input, sizeof extract_input, randomized_pwd);
+    hkdfExtract( (uint8_t*) NULL,0, extract_input, sizeof extract_input, randomized_pwd);
 
   
     // 3. masking_key = Expand(randomized_pwd, "MaskingKey", Nh)
     uint8_t masking_key_info[10] = {'M', 'a', 's', 'k', 'i', 'n', 'g', 'K', 'e', 'y'};
     uint8_t masking_key[Nh];
     //ecc_kdf_hkdf_sha512_expand(masking_key, randomized_pwd, masking_key_info, sizeof masking_key_info, Nh);
-    hkdfExpand(SHA512,randomized_pwd,Nh,masking_key_info, sizeof masking_key_info, masking_key, Nh);
+    hkdfExpand( randomized_pwd,Nh,masking_key_info, sizeof masking_key_info, masking_key, Nh);
 
     // 4. credential_response_pad = Expand(masking_key,
     //      concat(response.masking_nonce, "CredentialResponsePad"), Npk + Ne)
@@ -1385,7 +1384,7 @@ uint32_t ecc_opaque_ristretto255_sha512_RecoverCredentials(
     ecc_concat2(credential_response_pad_info, res->masking_nonce, Nn, credential_response_pad_label, 21);
     uint8_t credential_response_pad[Npk + Ne];
     //ecc_kdf_hkdf_sha512_expand(credential_response_pad, masking_key, credential_response_pad_info, sizeof credential_response_pad_info, Npk + Ne);
-    hkdfExpand(SHA512,masking_key,Nh,credential_response_pad_info, sizeof credential_response_pad_info, credential_response_pad, Npk + Ne);
+    hkdfExpand( masking_key,Nh,credential_response_pad_info, sizeof credential_response_pad_info, credential_response_pad, Npk + Ne);
 
 
     // 5. concat(server_public_key, envelope) = xor(credential_response_pad,
@@ -1423,7 +1422,7 @@ uint32_t ecc_opaque_ristretto255_sha512_RecoverCredentials(
     crypto_wipe(&envelope, sizeof envelope);
 
     // 7. Output (client_private_key, response.server_public_key, export_key)
-    return ret;
+    return ret; // return OPAQUE_OK->1 or OPAQUE_ERROR ->0
 }
 
 
@@ -1499,7 +1498,7 @@ uint32_t ecc_opaque_ristretto255_sha512_3DH_ClientFinalize(
     SHA512Result(&mySha512, preamble_hash);
 
     uint8_t expected_server_mac[64];
-    hmac(SHA512,
+    hmac( 
         preamble_hash, sizeof preamble_hash,
         km2,
         sizeof km2,
@@ -1516,7 +1515,7 @@ uint32_t ecc_opaque_ristretto255_sha512_3DH_ClientFinalize(
         crypto_wipe(km3, sizeof km3);
         crypto_wipe(preamble_hash, sizeof preamble_hash);
         crypto_wipe(expected_server_mac, sizeof expected_server_mac);
-        return -1;
+        return OPAQUE_ERROR;
     }
 
     // 6. client_mac = MAC(Km3, Hash(concat(preamble, expected_server_mac))
@@ -1528,7 +1527,7 @@ uint32_t ecc_opaque_ristretto255_sha512_3DH_ClientFinalize(
     SHA512Result(&hst, client_mac_input);
 
     uint8_t client_mac[64];
-    hmac(SHA512,
+    hmac( 
         client_mac_input, sizeof client_mac_input,
         km3,
         sizeof km3,
@@ -1549,7 +1548,7 @@ uint32_t ecc_opaque_ristretto255_sha512_3DH_ClientFinalize(
     crypto_wipe(client_mac_input, sizeof client_mac_input);
     crypto_wipe(client_mac, sizeof client_mac);
 
-    return 0;
+    return OPAQUE_OK;
 }
 
 
@@ -1558,7 +1557,7 @@ uint32_t ecc_opaque_ristretto255_sha512_3DH_ClientFinalize(
 // GENERATE KE3
 
 
-size_t ecc_opaque_ristretto255_sha512_GenerateKE3(
+uint32_t ecc_opaque_ristretto255_sha512_GenerateKE3(
     KE3 *ke3_raw,
     uint8_t session_key[64], // client_session_key
     uint8_t export_key[64], // 64
@@ -1616,13 +1615,13 @@ size_t ecc_opaque_ristretto255_sha512_GenerateKE3(
 //
     // 3. Output (ke3, session_key)
     if (recover_ret == 0 && finalize_ret == 0)
-        return 0;
+        return OPAQUE_OK;
     else
-        return -1;
+        return OPAQUE_ERROR;
 }
 
 
-size_t ecc_opaque_ristretto255_sha512_ServerFinish(
+uint32_t ecc_opaque_ristretto255_sha512_ServerFinish(
     uint8_t session_key[Nx],
     const ServerState *state,
     const KE3 *ke3
@@ -1633,8 +1632,8 @@ size_t ecc_opaque_ristretto255_sha512_ServerFinish(
     // 3. Output state.session_key
 
     if (!cmp(ke3->client_mac, state->expected_client_mac, Nh))
-        return -1;
+        return OPAQUE_ERROR;
 
     memcpy(session_key, state->session_key, 64);
-    return 0;
+    return OPAQUE_OK;
 }

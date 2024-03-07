@@ -1,3 +1,17 @@
+// ******************************************************************
+// ----------------- TECHNICAL UNIVERSITY OF KOSICE -----------------
+// ---Department of Electronics and Multimedia Telecommunications ---
+// -------- FACULTY OF ELECTRICAL ENGINEERING AND INFORMATICS -------
+// ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
+// ------------------------- Master thesis --------------------------
+// -----------------Patrik Zelenak & Milos Drutarovsky --------------
+// ---------------------------version 1.0.0 -------------------------
+// --------------------------- 07-03-2024 ---------------------------
+// ******************************************************************
+
+// P.Z. A lot of function was removed or adjusted to use just whats
+// needed.
+
 /**************************** sha.h ****************************/
 /***************** See RFC 6234 for details. *******************/
 /*
@@ -77,7 +91,7 @@
  *    name              meaning
  *  uint64_t         unsigned 64-bit integer
  *  uint32_t         unsigned 32-bit integer
- *  uint8_t          unsigned 8-bit integer (i.e., unsigned char)
+ *  uint8_t          unsigned 8-bit integer (i.e., uint8_t)
  *  int_least16_t    integer of >= 16 bits
  *
  * See stdint-example.h
@@ -122,6 +136,7 @@ typedef enum SHAversion {
 /*
  *  This structure will hold context information for the SHA-512
  *  hashing operation.
+ * STACKSIZE: ~216B
  */
 typedef struct SHA512Context {
 #ifdef USE_32BIT_ONLY
@@ -136,8 +151,8 @@ typedef struct SHA512Context {
                                         /* 1024-bit message blocks */
     uint8_t Message_Block[SHA512_Message_Block_Size];
 
-    int Computed;                   /* Is the hash computed?*/
-    int Corrupted;                  /* Cumulative corruption code */
+    uint32_t Computed;                   /* Is the hash computed?*/
+    uint32_t Corrupted;                  /* Cumulative corruption code */
 } SHA512Context;
 
 
@@ -145,8 +160,9 @@ typedef struct SHA512Context {
  *  This structure holds context information for all SHA
  *  hashing operations.
  */
+// STACKSIZE: ~140B
 typedef struct USHAContext {
-    int whichSha;               /* which SHA is being used */
+    uint32_t whichSha;               /* which SHA is being used */
     union {
       SHA512Context sha512Context;
     } ctx;
@@ -156,16 +172,17 @@ typedef struct USHAContext {
 /*
  *  This structure will hold context information for the HMAC
  *  keyed-hashing operation.
+ * STACKSIZE: ~188B
  */
 typedef struct HMACContext {
-    int whichSha;               /* which SHA is being used */
-    int hashSize;               /* hash size of SHA being used */
-    int blockSize;              /* block size of SHA being used */
+    uint32_t whichSha;               /* which SHA is being used */
+    uint32_t hashSize;               /* hash size of SHA being used */
+    uint32_t blockSize;              /* block size of SHA being used */
     USHAContext shaContext;     /* SHA context */
-    unsigned char k_opad[USHA_Max_Message_Block_Size];
+    uint8_t k_opad[USHA_Max_Message_Block_Size];
                         /* outer padding - key XORd with opad */
-    int Computed;               /* Is the MAC computed? */
-    int Corrupted;              /* Cumulative corruption code */
+    uint32_t Computed;               /* Is the MAC computed? */
+    uint32_t Corrupted;              /* Cumulative corruption code */
 
 } HMACContext;
 
@@ -174,13 +191,13 @@ typedef struct HMACContext {
  *  extract-and-expand Key Derivation Functions.
  */
 typedef struct HKDFContext {
-    int whichSha;               /* which SHA is being used */
+    uint32_t whichSha;               /* which SHA is being used */
     HMACContext hmacContext;
-    int hashSize;               /* hash size of SHA being used */
-    unsigned char prk[USHAMaxHashSize];
+    uint32_t hashSize;               /* hash size of SHA being used */
+    uint8_t prk[USHAMaxHashSize];
                         /* pseudo-random key - output of hkdfInput */
-    int Computed;               /* Is the key material computed? */
-    int Corrupted;              /* Cumulative corruption code */
+    uint32_t Computed;               /* Is the key material computed? */
+    uint32_t Corrupted;              /* Cumulative corruption code */
 } HKDFContext;
 
 /*
@@ -188,82 +205,67 @@ typedef struct HKDFContext {
  */
 
 /* SHA-512 */
-extern int SHA512Reset(SHA512Context *);
-extern int SHA512Input(SHA512Context *, const uint8_t *bytes,
-                       unsigned int bytecount);
-extern int SHA512FinalBits(SHA512Context *, uint8_t bits,
-                           unsigned int bit_count);
-extern int SHA512Result(SHA512Context *,
+extern uint32_t SHA512Reset(SHA512Context *);
+extern uint32_t SHA512Input(SHA512Context *, const uint8_t *bytes,
+                      uint32_t bytecount);
+extern uint32_t SHA512FinalBits(SHA512Context *, uint8_t bits,
+                          uint32_t bit_count);
+extern uint32_t SHA512Result(SHA512Context *,
                         uint8_t Message_Digest[SHA512HashSize]);
 
-/* Unified SHA functions, chosen by whichSha */
-extern int USHAReset(USHAContext *context, SHAversion whichSha);
-extern int USHAInput(USHAContext *context,
-                     const uint8_t *bytes, unsigned int bytecount);
-extern int USHAFinalBits(USHAContext *context,
-                         uint8_t bits, unsigned int bit_count);
-extern int USHAResult(USHAContext *context,
+/* Unified SHA functions*/
+extern uint32_t USHAReset(USHAContext *context);
+extern uint32_t USHAInput(USHAContext *context,
+                     const uint8_t *bytes,uint32_t bytecount);
+extern uint32_t USHAFinalBits(USHAContext *context,
+                         uint8_t bits,uint32_t bit_count);
+extern uint32_t USHAResult(USHAContext *context,
                       uint8_t Message_Digest[USHAMaxHashSize]);
-extern int USHABlockSize();
-extern int USHAHashSize();
-extern int USHAHashSizeBits();
-extern const char *USHAHashName();
+extern const uint32_t USHABlockSize;
+extern const uint32_t USHAHashSize;
+extern const uint32_t USHAHashSizeBits;
+extern const char *USHAHashName;
 
 /*
  * HMAC Keyed-Hashing for Message Authentication, RFC 2104,
  * for all SHAs.
  * This interface allows a fixed-length text input to be used.
  */
-extern int hmac(SHAversion whichSha, /* which SHA algorithm to use */
-    const unsigned char *text,     /* pointer to data stream */
-    int text_len,                  /* length of data stream */
-    const unsigned char *key,      /* pointer to authentication key */
-    int key_len,                   /* length of authentication key */
+extern int32_t hmac(
+    const uint8_t *text,     /* pointer to data stream */
+    int32_t text_len,                  /* length of data stream */
+    const uint8_t *key,      /* pointer to authentication key */
+    int32_t key_len,                   /* length of authentication key */
     uint8_t digest[USHAMaxHashSize]); /* caller digest to fill in */
+
 
 /*
  * HMAC Keyed-Hashing for Message Authentication, RFC 2104,
  * for all SHAs.
  * This interface allows any length of text input to be used.
  */
-extern int hmacReset(HMACContext *context, enum SHAversion whichSha,
-                     const unsigned char *key, int key_len);
-extern int hmacInput(HMACContext *context, const unsigned char *text,
-                     int text_len);
+extern int hmacReset(HMACContext *context,
+                     const uint8_t *key, int32_t key_len);
+extern int hmacInput(HMACContext *context, const uint8_t *text,
+                     int32_t text_len);
 extern int hmacFinalBits(HMACContext *context, uint8_t bits,
-                         unsigned int bit_count);
+                         uint32_t bit_count);
 extern int hmacResult(HMACContext *context,
                       uint8_t digest[USHAMaxHashSize]);
 
-/*
- * HKDF HMAC-based Extract-and-Expand Key Derivation Function,
- * RFC 5869, for all SHAs.
- */
-extern int hkdf(SHAversion whichSha, const unsigned char *salt,
-                int salt_len, const unsigned char *ikm, int ikm_len,
-                const unsigned char *info, int info_len,
-                uint8_t okm[ ], int okm_len);
-extern int hkdfExtract(SHAversion whichSha, const unsigned char *salt,
-                       int salt_len, const unsigned char *ikm,
-                       int ikm_len, uint8_t prk[USHAMaxHashSize]);
-extern int hkdfExpand(SHAversion whichSha, const uint8_t prk[ ],
-                      int prk_len, const unsigned char *info,
-                      int info_len, uint8_t okm[ ], int okm_len);
 
 /*
  * HKDF HMAC-based Extract-and-Expand Key Derivation Function,
  * RFC 5869, for all SHAs.
- * This interface allows any length of text input to be used.
  */
-extern int hkdfReset(HKDFContext *context, enum SHAversion whichSha,
-                     const unsigned char *salt, int salt_len);
-extern int hkdfInput(HKDFContext *context, const unsigned char *ikm,
-                     int ikm_len);
-extern int hkdfFinalBits(HKDFContext *context, uint8_t ikm_bits,
-                         unsigned int ikm_bit_count);
-extern int hkdfResult(HKDFContext *context,
-                      uint8_t prk[USHAMaxHashSize],
-                      const unsigned char *info, int info_len,
-                      uint8_t okm[USHAMaxHashSize], int okm_len);
+extern uint32_t hkdf(const uint8_t *salt,
+                uint32_t salt_len, const uint8_t *ikm, uint32_t ikm_len,
+                const uint8_t *info, uint32_t info_len,
+                uint8_t okm[ ], uint32_t okm_len);
+extern uint32_t hkdfExtract(const uint8_t *salt,
+                       int32_t salt_len, const uint8_t *ikm,
+                       uint32_t ikm_len, uint8_t prk[USHAMaxHashSize]);
+extern uint32_t hkdfExpand(const uint8_t prk[ ],
+                      uint32_t prk_len, const uint8_t *info,
+                      int32_t info_len, uint8_t okm[ ], uint32_t okm_len);
 #endif /* _SHA_H_ */
-

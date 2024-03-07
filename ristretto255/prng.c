@@ -5,10 +5,9 @@
 // ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
-// ---------------------------version T.T.5 -------------------------
-// --------------------------- 12-02-2024 ---------------------------
+// ---------------------------version 1.0.0 -------------------------
+// --------------------------- 07-03-2024 ---------------------------
 // ******************************************************************
-
 /**
   * This file contains PRNG taken from:
   * https://rosettacode.org/wiki/Linear_congruential_generator#C
@@ -28,7 +27,6 @@ void s_rand(int32_t x)
 	rseed = x;
 }
 
-#ifndef MS_RAND
 #define RAND_MAX ((1U << 31) - 1)
 
 static inline int32_t rand()
@@ -36,16 +34,6 @@ static inline int32_t rand()
 	return rseed = (rseed * 1103515245 + 12345) & RAND_MAX;
 }
 
-#else /* MS rand */
-
-#define RAND_MAX_32 ((1U << 31) - 1)
-
-static inline int32_t rand()
-{
-	return (rseed = (rseed * 214013 + 2531011) & RAND_MAX_32) >> 16;
-}
-
-#endif/* MS_RAND */
 
 
 
