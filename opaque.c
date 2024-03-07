@@ -468,6 +468,122 @@ static uint32_t Recover(
     return 1;
 }
 
+
+/**
+  * REGISTRATION PART (PHASE 1)
+  * ---------------------------
+  * Registration part consists of 3 functions:
+  *         - (request, blind) = CreateRegistrationRequest(password)
+  *         - response = CreateRegistrationResponse(request, server_public_key, credential_identifier, oprf_seed)
+  *         - (record, export_key) = FinalizeRegistrationRequest(response, server_identity, client_identity)
+  *
+  *
+**/
+
+
+/**
+  *
+  * Input:
+  * @param[in]    ->  password    -> an opaque byte string containing the client's password.
+  * @param[out]   ->  request     -> a RegistrationRequest structure.
+  * @param[out]   ->  blind       -> an OPRF scalar value.
+  * STACKSIZE: 1212B
+**/
+void CreateRegistrationRequestWithBlind( 
+    const uint8_t blind[32], 
+    RegistrationRequest *request, 
+    const uint8_t* password, const uint32_t password_len
+  ) {
+ 
+  uint8_t blinded_message[32];
+  
+  //(blind, blinded_element) = Blind(password)
+  //blinded_message = SerializeElement(blinded_element)
+  // NOTE that ecc_voprf_ristretto255_sha512_BlindWithScalar returns serialized element already
+  ecc_voprf_ristretto255_sha512_BlindWithScalar(blinded_message, password, password_len, blind);
+
+  // RegistrationRequest();
+  memcpy(request->blinded_message,blinded_message,32);
+
+  crypto_wipe(blinded_message, sizeof blinded_message);
+
+}
+
+
+// FinalizeRegistrationRequest
+
+// Input:
+// - password, an opaque byte string containing the client's password.
+// - blind, an OPRF scalar value.
+// - response, a RegistrationResponse structure.
+// - server_identity, the optional encoded server identity.
+// - client_identity, the optional encoded client identity.
+
+// Output:
+// - record, a RegistrationRecord structure.
+// - export_key, an additional client key.
+
+// Exceptions:
+// - DeserializeError, when OPRF element deserialization fails.
+
+// def FinalizeRegistrationRequest(password, blind, response, server_identity, client_identity):
+//   evaluated_element = DeserializeElement(response.evaluated_message)
+//   oprf_output = Finalize(password, blind, evaluated_element)
+
+//   stretched_oprf_output = Stretch(oprf_output)
+//   randomized_password = Extract("", concat(oprf_output, stretched_oprf_output))
+
+//   (envelope, client_public_key, masking_key, export_key) =
+//     Store(randomized_password, response.server_public_key,
+//           server_identity, client_identity)
+//   Create RegistrationRecord record with (client_public_key, masking_key, envelope)
+//   return (record, export_key)
+// STACKSIZE: ~1270B
+void FinalizeRegistrationRequest(
+   RegistrationRecord *record,
+   uint8_t export_key[Nh],
+   const uint8_t* password, const uint32_t password_len,
+   const uint8_t blind[32],
+   const RegistrationResponse *response,
+   const uint8_t *server_identity, const uint32_t server_identity_len,
+   const uint8_t *client_identity, const uint32_t client_identity_len
+  ) {
+
+  uint8_t oprf_output[Nh];
+
+  Finalize(
+    oprf_output,
+    password, password_len,
+    blind, 
+    response->evaluated_message
+    );
+
+  // STRETCHING .. msg = Stretch(msg) SO WE CAN SKIP THIS FOR NOW
+
+  uint8_t password_info[Nh+Nh];
+  ecc_concat2(password_info, oprf_output, Nh, oprf_output, Nh);
+  uint8_t randomized_password[Nh];  
+  hkdfExtract((uint8_t*) ' ',0, password_info, Nh+Nh, randomized_password);
+  
+  Store(
+      &record->envelope,
+      record->client_public_key,
+      record->masking_key,
+      export_key,
+      randomized_password, Nh,
+      response->server_public_key,
+      server_identity, server_identity_len,
+      client_identity, client_identity_len
+    );
+
+  crypto_wipe(oprf_output, sizeof oprf_output); 
+  crypto_wipe(password_info, sizeof password_info);
+  crypto_wipe(randomized_password, sizeof randomized_password);
+
+}
+
+
+
 /**
   * Online Authenticated Key Exchange/ LOGIN
   *

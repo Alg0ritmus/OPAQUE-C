@@ -216,6 +216,17 @@ uint8_t _registration_request[64] = {
     0xd2, 0x1b, 0xf3, 0x82, 0xe7, 0x5f, 0x7a, 0x71
 };
 
+uint8_t _registration_response[64] = {
+    0x74, 0x08, 0xa2, 0x68, 0x08, 0x3e, 0x03, 0xab,
+    0xc7, 0x09, 0x7f, 0xc0, 0x5b, 0x58, 0x78, 0x34,
+    0x53, 0x90, 0x65, 0xe8, 0x6f, 0xb0, 0xc7, 0xb6,
+    0x34, 0x2f, 0xcf, 0x5e, 0x01, 0xe5, 0xb0, 0x19,
+    0xb2, 0xfe, 0x7a, 0xf9, 0xf4, 0x8c, 0xc5, 0x02,
+    0xd0, 0x16, 0x72, 0x9d, 0x2f, 0xe2, 0x5c, 0xdd,
+    0x43, 0x3f, 0x2c, 0x4b, 0xc9, 0x04, 0x66, 0x0b,
+    0x2a, 0x38, 0x2c, 0x9b, 0x79, 0xdf, 0x1a, 0x78
+};
+
 uint8_t _registration_upload[192] = {
     0x76, 0xa8, 0x45, 0x46, 0x4c, 0x68, 0xa5, 0xd2,
     0xf7, 0xe4, 0x42, 0x43, 0x6b, 0xb1, 0x42, 0x49, 
@@ -266,7 +277,40 @@ uint8_t result=1;
 uint8_t test_result = 1;
 
   //////////////////////////
-  //  AKE1
+  //  REGISTRATION
+  //////
+  RegistrationRequest request;
+  CreateRegistrationRequestWithBlind( 
+    blind_registration, 
+    &request, 
+    password, password_len
+  );
+
+  test_result = cmp(request.blinded_message,_registration_request,32);
+  if (test_result==0){printf("ERROR: CreateRegistrationRequest->blinded_message\n");}
+  else {printf("SUCCESS: CreateRegistrationRequest->blinded_message\n");}
+
+  RegistrationRecord record;
+  uint8_t export_key_reg[64];
+  FinalizeRegistrationRequest(
+   &record,
+   export_key_reg,
+   password, password_len,
+   blind_registration,
+   (RegistrationResponse*)_registration_response,
+   server_identity, server_identity_len,
+   client_identity, client_identity_len
+  );
+
+  test_result = cmp(export_key_reg,_export_key,64);
+  if (test_result==0){printf("ERROR: FinalizeRegistrationRequest->export_key\n");}
+  else {printf("SUCCESS: FinalizeRegistrationRequest->export_key\n");}
+  test_result = cmp((uint8_t*) &record,_registration_upload,192);
+  if (test_result==0){printf("ERROR: FinalizeRegistrationRequest->record\n");}
+  else {printf("SUCCESS: FinalizeRegistrationRequest->record\n");}
+
+  //////////////////////////
+  //  LOGIN
   //////
 
   KE1 ke1;

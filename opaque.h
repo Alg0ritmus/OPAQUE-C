@@ -172,6 +172,21 @@ typedef struct ServerState_t{
 
 // High level Functions
 
+void CreateRegistrationRequestWithBlind( 
+    const uint8_t blind[32], 
+    RegistrationRequest *request, 
+    const uint8_t* password, const uint32_t password_len
+  );
+void FinalizeRegistrationRequest(
+   RegistrationRecord *record,
+   uint8_t export_key[Nh],
+   const uint8_t* password, const uint32_t password_len,
+   const uint8_t blind[32],
+   const RegistrationResponse *response,
+   const uint8_t *server_identity, const uint32_t server_identity_len,
+   const uint8_t *client_identity, const uint32_t client_identity_len
+  );
+
 void GenerateKE1(
   KE1 *ke1,
   ClientState *state,
