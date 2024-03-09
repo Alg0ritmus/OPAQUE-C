@@ -1,10 +1,23 @@
-# OPAQUE-MCU version
+# OPAQUE-MCU version (LITTLE-ENDIAN ONLY!!!)
 This repo is a 'trimmed-down' version of our default OPAQUE implementation. It is optimized (memory optimization for MCU) on the client side. It is also suitable for utilizing ASM functions for GF arithmetic, which perform calculations over GF(2^P) and subsequently reduce the results back to GF(P) at appropriate locations in the ristretto255 code (see detailed descriptions in the default version). Server-side functions are removed
 from the MCU version of OPAQUE because we believe that 
 clients, being potentially low-performance devices, 
 need optimization. In contrast, servers are typically 
 more powerful, and they can run the default OPAQUE version from:
 https://github.com/Alg0ritmus/OPAQUE-C
+
+Basically, files that differ from the default version are those with the header version of 'version M.C.U x.x.x':
+>  opaque.c  
+   opaque.h  
+   oprf.c  
+   oprf.h  
+   test.c  
+   ristretto255/ristretto255.c  
+   ristretto255/ristretto255.h
+
+> ⚠️ **Important Note:**
+These files are specific to the MCU version. For any updates to other files, please refer to the default version of our OPAQUE implementation. Just download the new default OPAQUE version and replace the desired files.
+
 ---
 # Default (main) OPAQUE implementation
 
