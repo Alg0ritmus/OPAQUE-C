@@ -3,6 +3,7 @@
         "rnd.h": "c",
         "client_side.h": "c",
         "sha.h": "c",
-        "prng.h": "c"
+        "prng.h": "c",
+        "string.h": "c"
     }
 }
