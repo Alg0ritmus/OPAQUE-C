@@ -68,8 +68,6 @@ There are three executables that can be built:<br>
 *`simulation` -> runs educational simulations (see opaque_in_details/)
 > `make simulation`
 
-*`main` -> dummy developer's playground (not needed for most users)
-> `make main`
 
 > ⚠️ **Important Note:**
 > 
