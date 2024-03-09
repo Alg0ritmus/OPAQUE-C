@@ -1,5 +1,5 @@
 # OPAQUE-MCU version (LITTLE-ENDIAN ONLY!!!)
-This repo is a 'trimmed-down' version of our default OPAQUE implementation. It is optimized (memory optimization for MCU) on the client side. It is also suitable for utilizing ASM functions for GF arithmetic, which perform calculations over GF(2^P) and subsequently reduce the results back to GF(P) at appropriate locations in the ristretto255 code (see detailed descriptions in the default version). Server-side functions are removed
+This repo is a 'trimmed-down' version of our default OPAQUE implementation. It is optimized (memory optimization for MCU) on the client side. It is also suitable for utilizing ASM functions for GF arithmetic, which perform calculations mod 2P and subsequently reduce the results back to mod P 'range' at appropriate locations in the ristretto255 code (see detailed descriptions in the default version). Server-side functions are removed
 from the MCU version of OPAQUE because we believe that 
 clients, being potentially low-performance devices, 
 need optimization. In contrast, servers are typically 
@@ -19,7 +19,7 @@ Basically, files that differ from the default version are those with the header 
 These files are specific to the MCU version. For any updates to other files, please refer to the default version of our OPAQUE implementation. Just download the new default OPAQUE version and replace the desired files.
 
 ---
-# Default (main) OPAQUE implementation
+# Default (main) OPAQUE implementation desc.
 
 # Introduction
 This repo is a part of my Master's thesis. This brach is dedicated

@@ -155,9 +155,9 @@ static void wipe_ristretto255_point(ristretto255_point* ristretto_in){
 
 
 // For MCUs, we find an efficient calculation that performs
-// calculations in GF(2P) instead of GF(P). After, let's say,
+// calculations mod 2P instead of mod P. After, let's say,
 // multiplication is done, we would reduce the value to 
-// bring it back into GF(P) 'range'. This has shown great results
+// bring it back into mod P 'range'. This has shown great results
 // in performance, but we have a hypothesis that we actually 
 // don't need to reduce values right after every calculation.
 // Instead, we can identify some crucial places in the ristretto255
