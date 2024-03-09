@@ -5,7 +5,7 @@
 // ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
-// ---------------------------version 1.0.1 -------------------------
+// ------------------------version M.C.U 1.0.0 ----------------------
 // --------------------------- 09-03-2024 ---------------------------
 // ******************************************************************
 
@@ -97,7 +97,7 @@ void fneg(field_elem out, field_elem in);
 uint32_t is_neg(field_elem in);
 uint32_t is_neg_bytes(const u8 in[BYTES_ELEM_SIZE]);
 void fabsolute(field_elem io);
-void bytes_to_int(u32* uint32Array, const u8* uint8Array);
-void int_to_bytes(u8* uint8Array, const u32* uint32Array);
+void unpack(u32* uint32Array, const u8* uint8Array);
+void pack(u8* uint8Array, const u32* uint32Array);
 
 #endif //_RISTRETTO255_H

@@ -5,11 +5,19 @@
 // ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
-// ---------------------------version 1.0.1 -------------------------
+// ------------------------version M.C.U 1.0.0 ----------------------
 // --------------------------- 09-03-2024 ---------------------------
 // ******************************************************************
 
-/**
+/** OPAQUE (MCU version -> little endian ONLY) desciption:
+  * The main difference between MCI and default version is that:
+  * pack25519, unpack25519 for little endian does nothing but
+  * copy bytes from uint32_t a[8] to uint8_t b[32] array 
+  * and vice versa. Note that this can be done with simple casting.
+**/
+
+
+/** OPAQUE (default version) desciption:
   * This file is core of our ristretto255 implementation. It is more
   * efficient version of our equivalent TweetNaCl version 
   * of ristretto255 (https://github.com/Alg0ritmus/textbook_ristretto255).
@@ -116,54 +124,22 @@
 #define fselect gf25519Select     // 4B
 #endif
 
-// Setting "order" during pack/unpack w respect to BIGENDIAN_FLAG
-// Note that this version of ristretto255 is endian independent, BUT
-// input values NEED to be in little endian format! Also outputs from
-// this functions are in little endian format. Therefore if you
-// want to use them on Big-endian device, make sure that u conver
-// your inputs before passing them into ristretto functions and
-// then convert bytes back to big-endian order.
 
-// Example for big-endian device
-
-// u8 in[32] -> zour big endian order input bytes
-// u8 out[32] -> temporary array
-
-// in_little_endian := convert 'in' from big to little endian 
-// ristretto255_decode(ristretto_point, in_little_endian)
-// ristretto255_encode(out, ristretto_point) 
-
-// at this point out[32] is filled with bytes
-// in little endian order so it needs to be
-// concerted to big-endian
-
-// out_big_endian := convert 'out' from little to big endian  
-
-
-
-//unpack
-  void bytes_to_int(u32* uint32Array, const u8* uint8Array){
-  for (uint8_t i = 0; i < 8; i++)
-  {
-    uint32Array[i] = (uint8Array[i*4 + 0]<<0) | (uint8Array[i*4 + 1]<<8) | (uint8Array[i*4 + 2]<<16) | (uint8Array[i*4 + 3]<<24);
-  }
-  
-  
+// Note that we are using pack/unpack terminology just for copying data.
+// See our TweetNaCl implementation (https://github.com/Alg0ritmus/textbook_ristretto255),
+// where packing/unpacking takes big role.
+// This is LITTLE-ENDIAN only solution, which is
+// different from default OPAQUE version that is endian agnostic.
+void pack(u8* uint8Array,const u32* uint32Array) { 
+  memcpy(uint8Array, (u8*) uint32Array, 32);
 }
 
-//pack
- void int_to_bytes(u8* uint8Array, const u32* uint32Array){
-  for (uint8_t i = 0; i < 8; i++)
-  {
-    uint8Array[i * 4 + 0] = ((uint32Array[i] >> 0) & 0xFF);
-    uint8Array[i * 4 + 1] = ((uint32Array[i] >> 8) & 0xFF);
-    uint8Array[i * 4 + 2] = ((uint32Array[i] >> 16) & 0xFF);
-    uint8Array[i * 4 + 3] = ((uint32Array[i] >> 24) & 0xFF);
-  }
-  
+void unpack(u32* uint32Array, const u8* uint8Array) {
+  memcpy(uint32Array, uint8Array, 32);
 }
 
-
+#define pack25519 pack
+#define unpack25519 unpack
 
 // Wiping ristretto255 point, using WIPE macro
 // Note that macro WIPE uses wipe_field_elem() function
@@ -175,10 +151,6 @@ static void wipe_ristretto255_point(ristretto255_point* ristretto_in){
   WIPE_BUFFER(ristretto_in->t);
 
 }
-
-
-#define pack25519 int_to_bytes
-#define unpack25519 bytes_to_int
 
 
 
