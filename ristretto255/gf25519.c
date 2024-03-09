@@ -5,8 +5,8 @@
 // ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
-// ---------------------------version M.C.U -------------------------
-// --------------------------- 07-03-2024 ---------------------------
+// ---------------------------version 1.0.1 -------------------------
+// --------------------------- 09-03-2024 ---------------------------
 // ******************************************************************
 
 /**
@@ -80,7 +80,7 @@
  // URL: https://github.com/Oryx-Embedded/CycloneCRYPTO/blob/master/ecc/curve25519.c#L79C6-L79C19
  void gf25519Add(u32 *r, const u32 *a, const u32 *b)
  {
-    size_t i;
+    int32_t i;
     u64 temp;
   
     //Compute R = A + B
@@ -108,7 +108,7 @@
  // URL: https://github.com/Oryx-Embedded/CycloneCRYPTO/blob/master/ecc/curve25519.c#L130
  void gf25519Sub(u32 *r, const u32 *a, const u32 *b)
  {
-    size_t i;
+    int32_t i;
     int64_t temp;
   
     //Compute R = A - 19 - B
@@ -140,8 +140,8 @@
  // URL: https://github.com/Oryx-Embedded/CycloneCRYPTO/blob/master/ecc/curve25519.c#L191 
  void gf25519Mul(u32 *r, const u32 *a, const u32 *b)
  {
-    size_t i;
-    size_t j;
+    int32_t i;
+    int32_t j;
     u64 c;
     u64 temp;
     u32 u[16];
@@ -399,4 +399,3 @@
     //Return 0 if A = B, else 1, NOTE: that we need reversed logic in ristretto.c for our needs
     return (((u32) (mask | (~mask + 1))) >> 31); 
  }
-

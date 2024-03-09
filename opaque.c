@@ -5,12 +5,17 @@
 // ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
-// ---------------------------version M.C.U -------------------------
-// --------------------------- 07-03-2024 ---------------------------
+// ------------------------version M.C.U 1.0.0 ----------------------
+// --------------------------- 09-03-2024 ---------------------------
 // ******************************************************************
 
 // P.Z. A lot of features was removed to use just whats
-// needed for MCU tests.
+// needed for MCU tests. Server-side functions are removed
+// from the MCU version of OPAQUE because we believe that 
+// clients, being potentially low-performance devices, 
+// need optimization. In contrast, servers are typically 
+// more powerful, and they can run the default OPAQUE version from:
+// https://github.com/Alg0ritmus/OPAQUE-C
 
 
 /**
@@ -441,7 +446,7 @@ static uint32_t Recover(
     ecc_concat2(auth_key_info, envelope->nonce, Nn, auth_key_label, 7);
     hkdfExpand(randomized_password,randomized_password_len, auth_key_info, Nn+7, auth_key, Nh);
 
-    hmac(expected_tag, Nn+cleartext_creds_len, auth_key, Nh,  (uint8_t*)envelope->auth_tag);
+    hmac(expected_tag, Nn+cleartext_creds_len, auth_key, Nh,  expected_tag);
 
     crypto_wipe(auth_key, sizeof auth_key);
     crypto_wipe(auth_key_info, sizeof auth_key_info);
@@ -459,13 +464,13 @@ static uint32_t Recover(
     #undef client_public_key
     
     //If !ct_equal(envelope.auth_tag, expected_tag)
-    if (cmp(envelope->auth_tag,expected_tag,Nn+cleartext_creds_len)){
+    if (!cmp(envelope->auth_tag,expected_tag,Nh)){
       printf("Error: auth_tag is not valid! \n");
       crypto_wipe(expected_tag, sizeof expected_tag); 
-      return -1;
+      return OPAQUE_ERROR;
     }
     crypto_wipe(expected_tag, sizeof expected_tag); 
-    return 1;
+    return OPAQUE_OK;
 }
 
 
@@ -1193,7 +1198,7 @@ uint32_t ecc_opaque_ristretto255_sha512_3DH_ClientFinalize(
         //crypto_wipe(preamble_hash, sizeof preamble_hash);
         //crypto_wipe(expected_server_mac, sizeof expected_server_mac);
         #undef preamble_hash
-        return -1;
+        return OPAQUE_ERROR;
     }
 
     // 6. client_mac = MAC(Km3, Hash(concat(preamble, expected_server_mac))
@@ -1237,7 +1242,7 @@ uint32_t ecc_opaque_ristretto255_sha512_3DH_ClientFinalize(
     #undef client_mac_input
     #undef client_mac_
 
-    return 0;
+    return OPAQUE_OK;
 }
 
 
@@ -1305,7 +1310,7 @@ uint32_t ecc_opaque_ristretto255_sha512_GenerateKE3(
 //
     // 3. Output (ke3, session_key)
     if (recover_ret == 0 && finalize_ret == 0)
-        return 0;
+        return OPAQUE_OK;
     else
-        return -1;
+        return OPAQUE_ERROR;
 }

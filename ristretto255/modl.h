@@ -5,8 +5,8 @@
 // ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
-// ---------------------------version M.C.U -------------------------
-// --------------------------- 07-03-2024 ---------------------------
+// ---------------------------version 1.0.1 -------------------------
+// --------------------------- 09-03-2024 ---------------------------
 // ******************************************************************
 
 /**
@@ -34,7 +34,10 @@
 #include "helpers.h" 
 #include "utils.h"
 
-void store32_le_buf(u8 *dst, const u32 *src, size_t size);
+// just to import int_to_bytes() (endian agnostic barret reduction)
+#include "ristretto255.h" 
+
+void store32_le_buf(u8 *dst, const u32 *src, int32_t size);
 void mod_l(u8 reduced[BYTES_ELEM_SIZE], const u32 x[16]);
 void multiply_mod_l(u32 r[8], const u32 a[8], const u32 b[8]);
 int32_t is_above_l(const u32 x[8]);

@@ -5,7 +5,7 @@
 // ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
-// ---------------------------version M.C.U -------------------------
+// ---------------------------version 1.0.0 -------------------------
 // --------------------------- 07-03-2024 ---------------------------
 // ******************************************************************
 
@@ -266,4 +266,3 @@ int32_t hmacResult(HMACContext *context, uint8_t digest[USHAMaxHashSize])
   context->Computed = 1;
   return context->Corrupted = ret;
 }
-

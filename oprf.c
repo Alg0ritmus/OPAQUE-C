@@ -5,17 +5,22 @@
 // ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
-// ---------------------------version M.C.U -------------------------
-// --------------------------- 07-03-2024 ---------------------------
+// ------------------------version M.C.U 1.0.0 ----------------------
+// --------------------------- 09-03-2024 ---------------------------
 // ******************************************************************
 
 // P.Z. A lot of features was removed to use just whats
-// needed for MCU tests.
+// needed for MCU tests. Since we restricted IDENTITY_BYTE_SIZE
+// and MAX_CONTEXT sizes for the MCU, we were able to optimize
+// many functions, such as expand_message_xmd_sha512,
+// DeterministicDeriveKeyPair, 
+// ecc_voprf_ristretto255_sha512_HashToGroupWithDST, 
+// and many more, to use the stack efficiently. 
+// As a result, we saved hundreds of bytes on the stack."
 
 #include <stdio.h>
 #include <stddef.h>
 #include <string.h>
-//#include <math.h> // for expand_message_xmd_sha512 not needed in MCU impl.
 #include "dependencies/sha.h"
 #include "ristretto255/ristretto255.h"
 #include "ristretto255/helpers.h"
@@ -362,24 +367,6 @@ static void ecc_voprf_ristretto255_sha512_HashToScalarWithDST(
     crypto_wipe(expand_message, sizeof expand_message);
  
 }
-
-
-// STACKSIZE: 1534B
-// static void ecc_voprf_ristretto255_sha512_HashToScalar(
-//     uint8_t *out,
-//     const uint8_t *input, const uint32_t inputLen
-// ) {
-//     uint8_t DST[100];
-//     uint8_t DSTPrefix[13] = "HashToScalar-";
-//     const uint32_t DSTsize = createContextString(
-//         DST, 0,
-//         DSTPrefix, sizeof DSTPrefix
-//     );
-
-//     ecc_voprf_ristretto255_sha512_HashToScalarWithDST(out, input, inputLen, DST, DSTsize);
-// }
-
-// END OF STARTIC FUNC BLOCK
 
 
 // https://www.ietf.org/archive/id/draft-irtf-cfrg-voprf-21.html#section-3.2.1

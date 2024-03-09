@@ -5,8 +5,8 @@
 // ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
-// ---------------------------version M.C.U -------------------------
-// --------------------------- 07-03-2024 ---------------------------
+// ---------------------------version 1.0.1 -------------------------
+// --------------------------- 09-03-2024 ---------------------------
 // ******************************************************************
 
 /**
@@ -23,9 +23,9 @@ void print(const field_elem o);
 
 void print_32(const u8* o);
 
-int bytes_eq_32( const u8 a[BYTES_ELEM_SIZE],  const u8 b[BYTES_ELEM_SIZE]);
+uint32_t bytes_eq_32( const u8 a[BYTES_ELEM_SIZE],  const u8 b[BYTES_ELEM_SIZE]);
 
-void crypto_wipe(void *secret, size_t size);
+void crypto_wipe(void *secret, int32_t size);
 
 
 // The macro WIPE_BUFFER is used throughout this file,

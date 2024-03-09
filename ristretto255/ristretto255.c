@@ -5,8 +5,8 @@
 // ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
-// ---------------------------version M.C.U -------------------------
-// --------------------------- 07-03-2024 ---------------------------
+// ---------------------------version 1.0.1 -------------------------
+// --------------------------- 09-03-2024 ---------------------------
 // ******************************************************************
 
 /**
@@ -102,57 +102,68 @@
 // functions redefined below are "renamed" to fit our equivalent 
 // TweetNaCl representation of ristretto255
 #define swap25519 gf25519Swap     // 8B
-#define fsub gf25519Sub           // 60B + 3size_t 
-#define fadd gf25519Add           // 60B + 3size_t 
-#define fmul gf25519Mul           // 132B+ 4size_t
-#define pow2 gf25519Sqr           // 132B + 4size_t
-#define pow_xtimes gf25519Pwr2    // 132B + 5size_t
-#define feq !gf25519Comp          // 4B + size_t
-#define carry25519(out, in) gf25519Red(out, in) //  52B + 2size_t 
-#define b_copy gf25519Copy        // size_t
-#define fcopy gf25519Copy         // size_t
+#define fsub gf25519Sub           // 60B  
+#define fadd gf25519Add           // 60B  
+#define fmul gf25519Mul           // 132B
+#define pow2 gf25519Sqr           // 132B
+#define pow_xtimes gf25519Pwr2    // 132B
+#define feq !gf25519Comp          // 4B
+#define carry25519(out, in) gf25519Red(out, in) //  52B 
+#define b_copy gf25519Copy        
+#define fcopy gf25519Copy         
 
 #ifdef USE_GF25519SELECT
-#define fselect gf25519Select     // 4B + size_t
+#define fselect gf25519Select     // 4B
 #endif
 
 // Setting "order" during pack/unpack w respect to BIGENDIAN_FLAG
-// Note that we are using pack/unpack terminology just for copying data.
-// See our TweetNaCl implementation (https://github.com/Alg0ritmus/textbook_ristretto255),
-// where packing/unpacking takes big role.
-#ifdef BIGENDIAN_FLAG
-// Note: We could use pack impl. written below, but we chose store32_le_buf
-// function that has the same effect -> convert u32 array into u8 array
-// store32_le_buf() implementation can be found in modl.c
-#define unpack(uint32Array, uint8Array) store32_le_buf(uint32Array, uint8Array,8)
+// Note that this version of ristretto255 is endian independent, BUT
+// input values NEED to be in little endian format! Also outputs from
+// this functions are in little endian format. Therefore if you
+// want to use them on Big-endian device, make sure that u conver
+// your inputs before passing them into ristretto functions and
+// then convert bytes back to big-endian order.
 
-// void pack(u8* uint8Array,const u32* uint32Array) {
-//     for (int i = 0; i < 8; ++i) {
-//         uint8Array[i * 4 + 3] = ((uint32Array[i] >> 0) & 0xFF);
-//         uint8Array[i * 4 + 2] = ((uint32Array[i] >> 8) & 0xFF);
-//         uint8Array[i * 4 + 1] = ((uint32Array[i] >> 16) & 0xFF);
-//         uint8Array[i * 4 + 0] = ((uint32Array[i] >> 24) & 0xFF);
-//     }
-// }
+// Example for big-endian device
 
-void unpack(u32* uint32Array, const u8* uint8Array) {
-    for (int i = 0; i < 8; ++i) {
-        uint32Array[i] = (uint8Array[i * 4 + 3] << 0) |
-                         (uint8Array[i * 4 + 2] << 8) |
-                         (uint8Array[i * 4 + 1] << 16)|
-                          uint8Array[i * 4 + 0] << 24;
-    }
+// u8 in[32] -> zour big endian order input bytes
+// u8 out[32] -> temporary array
+
+// in_little_endian := convert 'in' from big to little endian 
+// ristretto255_decode(ristretto_point, in_little_endian)
+// ristretto255_encode(out, ristretto_point) 
+
+// at this point out[32] is filled with bytes
+// in little endian order so it needs to be
+// concerted to big-endian
+
+// out_big_endian := convert 'out' from little to big endian  
+
+
+
+//unpack
+  void bytes_to_int(u32* uint32Array, const u8* uint8Array){
+  for (uint8_t i = 0; i < 8; i++)
+  {
+    uint32Array[i] = (uint8Array[i*4 + 0]<<0) | (uint8Array[i*4 + 1]<<8) | (uint8Array[i*4 + 2]<<16) | (uint8Array[i*4 + 3]<<24);
+  }
+  
+  
 }
-#else
-void pack(u8* uint8Array,const u32* uint32Array) { 
-  memcpy(uint8Array, (u8*) uint32Array, 32);
+
+//pack
+ void int_to_bytes(u8* uint8Array, const u32* uint32Array){
+  for (uint8_t i = 0; i < 8; i++)
+  {
+    uint8Array[i * 4 + 0] = ((uint32Array[i] >> 0) & 0xFF);
+    uint8Array[i * 4 + 1] = ((uint32Array[i] >> 8) & 0xFF);
+    uint8Array[i * 4 + 2] = ((uint32Array[i] >> 16) & 0xFF);
+    uint8Array[i * 4 + 3] = ((uint32Array[i] >> 24) & 0xFF);
+  }
+  
 }
 
-void unpack(u32* uint32Array, const u8* uint8Array) {
-  memcpy(uint32Array, uint8Array, 32);
-}
 
-#endif //BIGENDIAN_FLAG
 
 // Wiping ristretto255 point, using WIPE macro
 // Note that macro WIPE uses wipe_field_elem() function
@@ -166,10 +177,26 @@ static void wipe_ristretto255_point(ristretto255_point* ristretto_in){
 }
 
 
-#define pack25519 pack
-#define unpack25519 unpack
+#define pack25519 int_to_bytes
+#define unpack25519 bytes_to_int
 
 
+
+// For MCUs, we find an efficient calculation that performs
+// calculations in GF(2P) instead of GF(P). After, let's say,
+// multiplication is done, we would reduce the value to 
+// bring it back into GF(P) 'range'. This has shown great results
+// in performance, but we have a hypothesis that we actually 
+// don't need to reduce values right after every calculation.
+// Instead, we can identify some crucial places in the ristretto255
+// process and perform reduction there. Such reduction is carried
+// out by the fe25519_reduce_emil function, and it is 
+// relevant (and really used) only in ristretto255 for the MCU version:
+// https://github.com/Alg0ritmus/OPAQUE-C/tree/MCU_version
+
+// In this implementation, fe25519_reduce_emil does nothing
+// but show the reader where such reduction, in the case of using 2P arithmetic,
+// needs to be performed.
 static void fe25519_reduce_emil(field_elem in){
   // this should reduce input that is in modulo 2P repr.
   // into modulo P repr.
@@ -188,12 +215,13 @@ static void fe25519_reduce_emil(field_elem in){
 // fneg() => creates negative input and "save" it to variable out
 // function uses modular logic where negation of element a -> p-a = -a 
 // inspired by: https://github.com/jedisct1/libsodium/blob/master/src/libsodium/include/sodium/private/ed25519_ref10_fe_51.h#L94
-// *** STACKSIZE: u8[32] = 60B + 3size_t  ***
+// *** STACKSIZE: u8[32] = 60B  ***
 void fneg(field_elem out, field_elem in){
     // To make calculation in 2P correctly, 
     // we need to perform REDC(in) and subsequently perform out = 2^255-19 - in 
+    fe25519_reduce_emil(in);
     fsub(out, F_MODULUS, in);
-    fe25519_reduce_emil(out);
+
 }
 
 
@@ -209,10 +237,11 @@ void fneg(field_elem out, field_elem in){
 // it is used on multiple places in code
 // inspired by: https://github.com/jedisct1/libsodium/blob/master/src/libsodium/include/sodium/private/ed25519_ref10_fe_25_5.h#L302
 // *** STACKSIZE: u8[32] = 32B ***
-int is_neg(field_elem in){
+uint32_t is_neg(field_elem in){
 
     u8 temp[BYTES_ELEM_SIZE];
     pack25519(temp, in);
+
     return temp[0] & 1;
 }
 
@@ -223,17 +252,15 @@ int is_neg(field_elem in){
   * @param[out]  -> Boolean: True/False
 **/
 // equivalent for is_neg for 32-word u8[32] element
-int is_neg_bytes(const u8 in[BYTES_ELEM_SIZE]){
+uint32_t is_neg_bytes(const u8 in[BYTES_ELEM_SIZE]){
     return in[0] & 1;
 }
 
 /**
   * @brief Returns absolute value of field_elem
-  * @param[in]   -> in
-  * @param[out]  -> abs(in)
 **/
 // fabsolute functions gets absolute value of input in constant time 
-// *** STACKSIZE: 1x field_elem = 92B + 3size_t  ***
+// *** STACKSIZE: 1x field_elem = 92B  ***
 void fabsolute(field_elem io){
     field_elem temp;
     fneg(temp,io); // out = ~io
@@ -243,6 +270,7 @@ void fabsolute(field_elem io){
 
     WIPE_BUFFER(temp);
 }
+
 
 
 /**
@@ -265,11 +293,11 @@ void fabsolute(field_elem io){
 // largely inspired by Cyclone's curve25519Sqrt:
 // https://github.com/Oryx-Embedded/CycloneCRYPTO/blob/master/ecc/curve25519.c#L430
 // Logic Inspired by: https://ristretto.group/formulas/invsqrt.html
-// *** STACKSIZE: 196B + 5size_t ***
-static int inv_sqrt(field_elem out,const field_elem a, const field_elem b){
-   int correct_sign_sqrt;
-   int flipped_sign_sqrt;
-   int flipped_sign_sqrt_i;
+// *** STACKSIZE: 196B ***
+static uint8_t inv_sqrt(field_elem out,const field_elem a, const field_elem b){
+   uint8_t correct_sign_sqrt;
+   uint8_t flipped_sign_sqrt;
+   uint8_t flipped_sign_sqrt_i;
    field_elem c; field_elem v;
 
    // Compute the candidate root (A / B)^((p + 3) / 8). This can be
@@ -353,6 +381,7 @@ static int inv_sqrt(field_elem out,const field_elem a, const field_elem b){
 
   // calc v = -r
    fneg(v,out);
+   fe25519_reduce_emil(out);
    // if cond = 1, select first option
    #ifdef USE_GF25519SELECT
    fselect(out, out, v, is_neg(out)); 
@@ -384,10 +413,10 @@ static int inv_sqrt(field_elem out,const field_elem a, const field_elem b){
 // every line with draft specification.
 // DRAFT from 2023-09-18:
 // https://datatracker.ietf.org/doc/draft-irtf-cfrg-ristretto255-decaf448/
-// *** STACKSIZE: 356B + 5size_t + 2x int ***
+// *** STACKSIZE: 356B ***
 static void MAP(ristretto255_point* ristretto_out, const field_elem t){ 
     field_elem tmp1, tmp2, tmp3, tmp4, tmp5;
-    int was_square, wasnt_square;
+    uint32_t was_square, wasnt_square;
 
     #define _r tmp1
     #define out tmp2
@@ -416,7 +445,7 @@ static void MAP(ristretto255_point* ristretto_out, const field_elem t){
     wasnt_square = 1 - was_square;     
 
     fmul(s_prime,s,t);                    // s*t
-    fabsolute(s_prime);           // CT_ABS(s*t)
+    fabsolute(s_prime);                   // CT_ABS(s*t)
     fneg(s_prime,s_prime);                // -CT_ABS(s*t)
 
     swap25519(s,s_prime,wasnt_square);    // s = CT_SELECT(s IF was_square ELSE s_prime)
@@ -471,7 +500,7 @@ static void MAP(ristretto255_point* ristretto_out, const field_elem t){
 
 // Note that we redefined temporary variables multiple times
 // just to make code more readible.
-// *** STACKSIZE: 292B+ 4size_t ***
+// *** STACKSIZE: 292B ***
 void ristretto255_point_addition(ristretto255_point* r,const ristretto255_point* p,const ristretto255_point* q){
     field_elem temp_1,temp_2,temp_3, temp_4, temp_5;
 
@@ -509,11 +538,6 @@ void ristretto255_point_addition(ristretto255_point* r,const ristretto255_point*
     fmul(r->z, g, f);
     fmul(r->t, e, h);
 
-    //fe25519_reduce_emil(r->x);
-    //fe25519_reduce_emil(r->y);
-    //fe25519_reduce_emil(r->z);
-    //fe25519_reduce_emil(r->t);
-
     WIPE_BUFFER(d); WIPE_BUFFER(h); WIPE_BUFFER(g);
     WIPE_BUFFER(f); WIPE_BUFFER(e);
 }
@@ -537,21 +561,18 @@ static void cswap(ristretto255_point* p, ristretto255_point* q,u8 b){
 }
 
 
-// *** STACKSIZE: 52B + 2size_t ***
-#ifdef USE_ASM
-static u32 is_Canonical(const u32 in[FIELED_ELEM_SIZE]){
-  u32 temp[FIELED_ELEM_SIZE];
-  memcpy((u8*) temp, (u8*) in, 32);
-  fe25519_reduce_emil(temp);
-  return feq(temp,in);  
-}
-#else
+/**
+ * Interpret the string as an unsigned integer s in little-endian 
+ * representation. If the length of the string is not 32 bytes or 
+ * if the resulting value is >= p, decoding fails.
+ * Cite from: https://www.rfc-editor.org/rfc/rfc9496.html#section-4.3.1
+*/
 static u32 is_Canonical(const u32 in[FIELED_ELEM_SIZE]){
   u32 temp[FIELED_ELEM_SIZE];
   carry25519(temp,in);
   return feq(temp,in);  
 }
-#endif
+
 
 /**
   * @brief Decode input bytes u8[32] to ristretto255_point
@@ -567,8 +588,8 @@ static u32 is_Canonical(const u32 in[FIELED_ELEM_SIZE]){
 // every line with draft specification.
 // DRAFT from 2023-09-18:
 // https://datatracker.ietf.org/doc/draft-irtf-cfrg-ristretto255-decaf448/
-// *** STACKSIZE: 400B + 5size_t + 3int ***
-int ristretto255_decode(ristretto255_point *ristretto_out, const u8 bytes_in[BYTES_ELEM_SIZE]){
+// *** STACKSIZE: 420B ***
+uint32_t ristretto255_decode(ristretto255_point *ristretto_out, const u8 bytes_in[BYTES_ELEM_SIZE]){
   
   uint32_t was_square, is_canonical, is_negative;
 
@@ -578,18 +599,16 @@ int ristretto255_decode(ristretto255_point *ristretto_out, const u8 bytes_in[BYT
   // field element is canonical
   #define _s temp1
   unpack25519(_s, bytes_in);
- 
-
-  // check if bytes_in == checked_bytes, else abort
   is_canonical = is_Canonical(_s);
+
+  // check if input field element is not negative
   is_negative = is_neg_bytes(bytes_in);
-  
-  //printf("ristretto255_decode: is_canonical=%d, is_negative=%d\n", is_canonical, is_negative);
+
   if (is_canonical == 0 || is_negative==1){
     #ifdef DEBUG_FLAG
         printf("ristretto255_decode: Bad encoding or neg bytes passed to the ristretto255_decode function! is_canonical=%d, is_negative=%d\n", is_canonical, is_negative);
     #endif
-    return 1;
+    return RISTRETTO255_ERROR;
   }
 
   // Step 2 calc ristretto255/ge25519 point
@@ -598,11 +617,9 @@ int ristretto255_decode(ristretto255_point *ristretto_out, const u8 bytes_in[BYT
   #define u1 temp3
   #define u2 temp4
   
-
   pow2(_ss,_s);                           //s^2
   fsub(u1,F_ONE,_ss);                     // u1 = 1 + as^2
-  fadd(u2,F_ONE,_ss);                     // u2 = 1 - as^2
-
+  fadd(u2,F_ONE,_ss);                     // u2 = 1 - as^2 
   
   #define uu1 temp5
   pow2(uu1,u1);                           // u1^2
@@ -612,8 +629,7 @@ int ristretto255_decode(ristretto255_point *ristretto_out, const u8 bytes_in[BYT
   fmul(duu1_positive,EDWARDS_D,uu1);      // D*u1^2
   #define duu1 temp5
   fneg(duu1,duu1_positive);               // -(D * u1^2) 
-  //printf("ristretto255_decode: fneg(duu1,duu1_positive) ==\n  ");
-  //print_32((u8*)duu1);
+  
 
   #define uu2 temp6
   pow2(uu2,u2);                           // u2^2
@@ -625,18 +641,19 @@ int ristretto255_decode(ristretto255_point *ristretto_out, const u8 bytes_in[BYT
   #define _I temp6
   was_square = inv_sqrt(_I,F_ONE,vuu2);   // (was_square, invsqrt) = SQRT_RATIO_M1(1, v * u2_sqr)
 
+
   #define Dx temp5
   fmul(Dx,_I,u2);                         // den_x = invsqrt * u2
   #define Dxv temp4
   fmul(Dxv, Dx, _v);                      // den_x * v
-
+  
 
   #define sDx temp2
   fmul(sDx,_s,Dx);                        // s*den_x
   fadd(ristretto_out->x,sDx,sDx);         // 2*s*den_x
-  fabsolute(ristretto_out->x); // x = CT_ABS(2 * s * den_x)
-  //printf("ristretto255_decode: fabsolute(ristretto_out->x) ==\n  ");
-  //print_32((u8*)ristretto_out->x);
+
+  fabsolute(ristretto_out->x);            // x = CT_ABS(2 * s * den_x)
+
 
   #define Dy temp5
   fmul(Dy, _I, Dxv);                      // den_y = invsqrt * den_x * v
@@ -654,28 +671,25 @@ int ristretto255_decode(ristretto255_point *ristretto_out, const u8 bytes_in[BYT
   WIPE_BUFFER(_s); WIPE_BUFFER(sDx); WIPE_BUFFER(u1);
   WIPE_BUFFER(Dxv); WIPE_BUFFER(Dy); WIPE_BUFFER(_I);
 
-  //printf("ristretto255_decode: was_square = inv_sqrt(_I,F_ONE,vuu2) == %d\n\n",was_square);
   if (was_square == 0){
     #ifdef DEBUG_FLAG
       printf("\n\n\n ristretto255_decode: Bad encoding! was_square=%d \n\n\n",was_square);
     #endif
-    return 1;
+    return RISTRETTO255_ERROR;
   }
-  //printf("ristretto255_decode: is_neg(ristretto_out->t) == %d\n\n",is_neg(ristretto_out->t));
   if (is_neg(ristretto_out->t)){
     #ifdef DEBUG_FLAG
       printf("\n\n\n ristretto255_decode: Bad encoding! is_neg(t)=%d \n\n\n",is_neg(ristretto_out->t));
     #endif
-    return 1;
+    return RISTRETTO255_ERROR;
   }
-  //printf("ristretto255_decode: was_square = feq(ristretto_out->y,F_ZERO) == %d\n\n",feq(ristretto_out->y,F_ZERO));
   if (feq(ristretto_out->y,F_ZERO)){
     #ifdef DEBUG_FLAG
       printf("\n\n\n ristretto255_decode: Bad encoding! feq(y,F_ZERO)=%d \n\n\n",feq(ristretto_out->y,F_ZERO));
     #endif
-    return 1;
+    return RISTRETTO255_ERROR;
   }
-  return 0;
+  return RISTRETTO255_OK;
 }
 
 
@@ -694,8 +708,8 @@ int ristretto255_decode(ristretto255_point *ristretto_out, const u8 bytes_in[BYT
 // every line with draft specification.
 // DRAFT from 2023-09-18:
 // https://datatracker.ietf.org/doc/draft-irtf-cfrg-ristretto255-decaf448/
-// *** STACKSIZE: 420B + 5size_t ***
-int ristretto255_encode(u8 bytes_out[BYTES_ELEM_SIZE], const ristretto255_point* ristretto_in){
+// *** STACKSIZE: 420B ***
+uint32_t ristretto255_encode(u8 bytes_out[BYTES_ELEM_SIZE], const ristretto255_point* ristretto_in){
 
   
   field_elem _temp1,_temp2,_temp3,_temp4,_temp5,_temp6,_temp7;
@@ -737,11 +751,7 @@ int ristretto255_encode(u8 bytes_out[BYTES_ELEM_SIZE], const ristretto255_point*
   // note: we used swap25519 instead of fselect so our logic
   // is little bit different here
   fe25519_reduce_emil(tZinv);
-  //printf("ristretto255_encode: fe25519_reduce_emil(tZinv) ==\n  ");
-  //print_32((u8*)tZinv);
-
-  //printf("ristretto255_encode: 1-is_neg(tZinv) == %d\n\n",1-is_neg(tZinv));
-  int is_tZinv_neg = 1-is_neg(tZinv);     // IS_NEGATIVE(t0 * z_inv)
+  uint32_t is_tZinv_neg = 1-is_neg(tZinv);     // IS_NEGATIVE(t0 * z_inv)
   #define _X _temp4
   #define _Y _temp5
   fcopy(_X,ristretto_in->x);
@@ -759,14 +769,7 @@ int ristretto255_encode(u8 bytes_out[BYTES_ELEM_SIZE], const ristretto255_point*
   fmul(XZ_inv,iY,Zinv);                   // x * z_inv
   #define n_Y _temp2
   fneg(n_Y,iX);                           // -(x * z_inv)
-  //printf("ristretto255_encode: fneg(n_Y,iX) ==\n  ");
-  //print_32((u8*)n_Y);
-  fcopy(iX,iX); 
   fe25519_reduce_emil(XZ_inv);
-  //printf("ristretto255_encode: fe25519_reduce_emil(XZ_inv) ==\n  ");
-  //print_32((u8*)XZ_inv);
-
-  //printf("ristretto255_encode: is_neg(XZ_inv) == %d\n\n",is_neg(XZ_inv));
   swap25519(iX,n_Y,is_neg(XZ_inv));       // y = CT_SELECT(-y IF IS_NEGATIVE(x * z_inv) ELSE y)
 
   #define _Z _temp3
@@ -779,11 +782,11 @@ int ristretto255_encode(u8 bytes_out[BYTES_ELEM_SIZE], const ristretto255_point*
   fmul(temp_s,enchanted_denominator,Z_Y); // den_inv * (z - y)
 
 
-  fabsolute(temp_s);               // s = CT_ABS(den_inv * (z - y))
-  //printf("ristretto255_encode: fe25519_reduce_emil(XZ_inv) ==\n  ");
-  //print_32((u8*)temp_s);
+  fabsolute(temp_s);                      // s = CT_ABS(den_inv * (z - y))
+  
   
   pack25519(bytes_out,temp_s);
+
 
   WIPE_BUFFER(enchanted_denominator); WIPE_BUFFER(Z_Y); WIPE_BUFFER(temp_s);
   WIPE_BUFFER(_X); WIPE_BUFFER(_Y); WIPE_BUFFER(iX);
@@ -811,8 +814,8 @@ int ristretto255_encode(u8 bytes_out[BYTES_ELEM_SIZE], const ristretto255_point*
 // 3) perform addition of 2 edward's point, note that
 // we need to add 2 edwards points so fe25519 arithmetics won't 
 // fit there we need to use function that adds 2 edwards points
-// *** STACKSIZE: 804B + 5size_t + 2x int***
-int hash_to_group(u8 bytes_out[BYTES_ELEM_SIZE], const u8 bytes_in[HASH_BYTES_SIZE]){
+// *** STACKSIZE: 804B***
+uint32_t hash_to_group(u8 bytes_out[BYTES_ELEM_SIZE], const u8 bytes_in[HASH_BYTES_SIZE]){
   ristretto255_point a_point;
   ristretto255_point *a = &a_point;
 
@@ -825,13 +828,14 @@ int hash_to_group(u8 bytes_out[BYTES_ELEM_SIZE], const u8 bytes_in[HASH_BYTES_SI
 
   // make halves
   u8 t1[32], t2[32];
-  b_copy((uint32_t *)t1,(uint32_t *)bytes_in);
-  b_copy((uint32_t *)t2,(uint32_t *) (bytes_in+32));
+  memcpy(t1,bytes_in,32);
+  memcpy(t2,bytes_in+32,32);
 
-  
+ 
   // MASK LSB for each half, this is equivalent to modulo 2**255
   // This step is very important, if skipped, hash_to_group 
   // returns invalid elements
+
   t1[31] &= 0x7F;
   t2[31] &= 0x7F;
 
@@ -853,7 +857,7 @@ int hash_to_group(u8 bytes_out[BYTES_ELEM_SIZE], const u8 bytes_in[HASH_BYTES_SI
   ristretto255_encode(bytes_out, r);
 
   WIPE_PT(&a_point); WIPE_PT(&b_point); WIPE_PT(&r_point);
-  return 0;
+  return RISTRETTO255_OK;
 }
 
 
@@ -867,13 +871,13 @@ int hash_to_group(u8 bytes_out[BYTES_ELEM_SIZE], const u8 bytes_in[HASH_BYTES_SI
 // ristretto_point q * scalar s
 // Note that scalar "s" is represented as u8[32]
 // Inspired by tweetNaCl: https://github.com/dominictarr/tweetnacl/blob/master/tweetnacl.c#L632
-// *** STACKSIZE: 293B+ 4size_t +int***
+// *** STACKSIZE: 293B ***
 void ristretto255_scalarmult(ristretto255_point* p, ristretto255_point* q,const u8 *s){
   fcopy(p->x,F_ZERO);
   fcopy(p->y,F_ONE);
   fcopy(p->z,F_ONE);
   fcopy(p->t,F_ZERO);
-  for (int i = 255;i >= 0;--i) {
+  for (int32_t i = 255;i >= 0;--i) {
     u8 b = (s[i/8]>>(i&7))&1;
     cswap(p,q,b);
     ristretto255_point_addition(q,q,p);
@@ -884,5 +888,4 @@ void ristretto255_scalarmult(ristretto255_point* p, ristretto255_point* q,const 
   fe25519_reduce_emil(p->y);
   fe25519_reduce_emil(p->z);
   fe25519_reduce_emil(p->t);
-  
 }

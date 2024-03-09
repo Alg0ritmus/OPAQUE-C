@@ -5,8 +5,8 @@
 // ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
-// ---------------------------version M.C.U -------------------------
-// --------------------------- 07-03-2024 ---------------------------
+// ---------------------------version 1.0.1 -------------------------
+// --------------------------- 09-03-2024 ---------------------------
 // ******************************************************************
 
 /**
@@ -87,17 +87,17 @@
 
 #include "utils.h"
 
-int ristretto255_decode(ristretto255_point *ristretto_out, const u8 bytes_in[BYTES_ELEM_SIZE]);
-int ristretto255_encode(u8 bytes_out[BYTES_ELEM_SIZE], const ristretto255_point *ristretto_in);
-int hash_to_group(u8 bytes_out[BYTES_ELEM_SIZE], const u8 bytes_in[HASH_BYTES_SIZE]);
+uint32_t ristretto255_decode(ristretto255_point *ristretto_out, const u8 bytes_in[BYTES_ELEM_SIZE]);
+uint32_t ristretto255_encode(u8 bytes_out[BYTES_ELEM_SIZE], const ristretto255_point *ristretto_in);
+uint32_t hash_to_group(u8 bytes_out[BYTES_ELEM_SIZE], const u8 bytes_in[HASH_BYTES_SIZE]);
 void ristretto255_scalarmult(ristretto255_point* p, ristretto255_point* q,const u8 *s);
 void ristretto255_point_addition(ristretto255_point* r,const ristretto255_point* p,const ristretto255_point* q);
-int bytes_eq_32( const u8 a[BYTES_ELEM_SIZE],  const u8 b[BYTES_ELEM_SIZE]);
+uint32_t bytes_eq_32( const u8 a[BYTES_ELEM_SIZE],  const u8 b[BYTES_ELEM_SIZE]);
 void fneg(field_elem out, field_elem in);
-int is_neg(field_elem in);
-int is_neg_bytes(const u8 in[BYTES_ELEM_SIZE]);
+uint32_t is_neg(field_elem in);
+uint32_t is_neg_bytes(const u8 in[BYTES_ELEM_SIZE]);
 void fabsolute(field_elem io);
-void pack(u8* uint8Array,const u32* uint32ArrayIn);
-void unpack(u32* uint32Array, const u8* uint8Array);
+void bytes_to_int(u32* uint32Array, const u8* uint8Array);
+void int_to_bytes(u8* uint8Array, const u32* uint32Array);
 
 #endif //_RISTRETTO255_H

@@ -5,8 +5,8 @@
 // ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
-// ---------------------------version M.C.U -------------------------
-// --------------------------- 07-03-2024 ---------------------------
+// ---------------------------version 1.0.1 -------------------------
+// --------------------------- 09-03-2024 ---------------------------
 // ******************************************************************
 
 /**
@@ -74,5 +74,11 @@ typedef struct ge_point25519 {
 #define FOR(i, start, end)         FOR_T(i, start, end)
 #define COPY(i, dst, src, size)    FOR(i, 0, size) (dst)[i] = (src)[i]
 #define ZERO(i, buf, size)         FOR(i, 0, size) (buf)[i] = 0
+
+
+// Return values unified;
+// returns from functions in ristretto255
+#define RISTRETTO255_OK 1
+#define RISTRETTO255_ERROR 0
 
 #endif //_HELPERS_H

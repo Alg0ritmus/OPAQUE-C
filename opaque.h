@@ -5,8 +5,8 @@
 // ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
-// ---------------------------version M.C.U -------------------------
-// --------------------------- 07-03-2024 ---------------------------
+// ------------------------version M.C.U 1.0.0 ----------------------
+// --------------------------- 09-03-2024 ---------------------------
 // ******************************************************************
 
 // P.Z. A lot of features was removed to use just whats
@@ -53,6 +53,10 @@
 //specific configuration information or parameters that are needed to
 //prevent cross-protocol or downgrade attacks.
 #define MAX_CONTEXT_LEN 255
+
+// opaque function return values 
+#define OPAQUE_OK 1
+#define OPAQUE_ERROR 0
 
 
 /**
