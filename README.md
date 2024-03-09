@@ -1,4 +1,5 @@
 # OPAQUE-MCU version
+
 This repo is a 'trimmed-down' version of our default OPAQUE implementation. It is optimized (memory optimization for MCU) on the client side. It is also suitable for utilizing ASM functions for GF arithmetic, which perform calculations mod 2P and subsequently reduce the results back to mod P 'range' at appropriate locations in the ristretto255 code (see detailed descriptions in the default version). Server-side functions are removed
 from the MCU version of OPAQUE because we believe that 
 clients, being potentially low-performance devices, 
@@ -9,6 +10,7 @@ https://github.com/Alg0ritmus/OPAQUE-C
 # Default (main) OPAQUE implementation
 
 # Introduction
+
 This repo is a part of my Master's thesis. This brach is dedicated
 to optimized version of OPAQUE specifically for Client on MCU (Cortex M4).
 Repository contains implemantation of OPAQUE (aPAKE) protocol.
