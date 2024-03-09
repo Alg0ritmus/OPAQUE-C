@@ -365,9 +365,9 @@ uint8_t _session_key[64] = {
 };
 
 
-static uint8_t compare(uint8_t *a, uint8_t *b, size_t count){
+static uint8_t compare(uint8_t *a, uint8_t *b, int32_t count){
   uint8_t result = 1;
-  for (size_t i = 0; i < count; i++)
+  for (int32_t i = 0; i < count; i++)
   {
     result &= a[i] == b[i];
   }

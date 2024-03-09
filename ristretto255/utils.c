@@ -48,10 +48,10 @@ uint32_t bytes_eq_32( const u8 a[BYTES_ELEM_SIZE],  const u8 b[BYTES_ELEM_SIZE])
     return result;
 }
 
-void crypto_wipe(void *secret, size_t size)
+void crypto_wipe(void *secret, int32_t size)
 {
     volatile u8 *v_secret = (u8*)secret;
-    size_t idx;
+    int32_t idx;
     ZERO(idx, v_secret, size);
 }
 

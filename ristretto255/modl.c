@@ -41,8 +41,8 @@ static void store32_le(u8 out[4], u32 in){
     out[3] = (in >> 24) & 0xff;
 }
 
-void store32_le_buf(u8 *dst, const u32 *src, size_t size) {
-    size_t i;
+void store32_le_buf(u8 *dst, const u32 *src, int32_t size) {
+    int32_t i;
     FOR(i, 0, size) { store32_le(dst + i*4, src[i]); }
 }
 
@@ -66,7 +66,7 @@ static const u32 L[8] = {
 
 //  p = a*b + p
 static void multiply(u32 p[16], const u32 a[8], const u32 b[8]){
-   size_t i, j;
+   int32_t i, j;
     FOR (i, 0, 8) {
         u64 carry = 0;
         FOR (j, 0, 8) {
@@ -79,7 +79,7 @@ static void multiply(u32 p[16], const u32 a[8], const u32 b[8]){
 }
 
 int32_t is_above_l(const u32 x[8]){
-   size_t i;
+   int32_t i;
     // We work with L directly, in a 2's complement encoding
     // (-L == ~L + 1)
     u64 carry = 1;
@@ -95,7 +95,7 @@ int32_t is_above_l(const u32 x[8]){
 // if l <= x 2*l, then r = x-l
 // otherwise the result will be wrong
 static void remove_l(u32 r[8], const u32 x[8]){
-   size_t i;
+   int32_t i;
     u64 carry = (u64)is_above_l(x);
     u32 mask  = ~(u32)carry + 1; // carry == 0 or 1
     FOR (i, 0, 8) {
@@ -107,7 +107,7 @@ static void remove_l(u32 r[8], const u32 x[8]){
 
 // Full reduction modulo L (Barrett reduction)
 void mod_l(u8 reduced[32], const u32 x[16]){
-   size_t i, j;
+   int32_t i, j;
     // r[9] is precomputed value for internal purposes 
     // used during calculation in Barrett reduction algorithm.
     // r :=  b^(2k)/L, where:
@@ -182,8 +182,8 @@ static u32 load32_le(const u8 s[4])
         ((u32)s[3] << 24);
 }
 
-static void load32_le_buf (u32 *dst, const u8 *src, size_t size) {
-    size_t i;
+static void load32_le_buf (u32 *dst, const u8 *src, int32_t size) {
+    int32_t i;
     FOR(i, 0, size) { dst[i] = load32_le(src + i*4); }
 }
 
@@ -217,11 +217,11 @@ static void redc(u32 u[8], u32 x[16])
     // s = x * k (modulo 2^256)
     // This is cheaper than the full multiplication.
     u32 s[8] = {0};
-    size_t idx;
+    int32_t idx;
     
     FOR (idx, 0, 8) {
         u64 carry = 0;
-        size_t jdx;
+        int32_t jdx;
         FOR (jdx, 0, 8-idx) {
             carry  += s[idx+jdx] + (u64)x[idx] * k[jdx];
             s[idx+jdx]  = (u32)carry;
@@ -232,7 +232,7 @@ static void redc(u32 u[8], u32 x[16])
     multiply(t, s, L);
 
     // t = t + x
-    size_t index;
+    int32_t index;
     u64 carry = 0;
     FOR (index, 0, 16) {
         carry  += (u64)t[index] + x[index];
@@ -268,7 +268,7 @@ void crypto_x25519_inverse(u8 out[BYTES_ELEM_SIZE], const u8 in[BYTES_ELEM_SIZE]
     // m_scl = scalar * 2^256 (modulo L)
     u32 m_scl[8];
     {
-        size_t i;
+        int32_t i;
         u32 tmp[16];
         ZERO(i, tmp, 8);
         load32_le_buf(tmp+8, in, 8);
@@ -282,12 +282,12 @@ void crypto_x25519_inverse(u8 out[BYTES_ELEM_SIZE], const u8 in[BYTES_ELEM_SIZE]
     
 
     for (int32_t i = 252; i >= 0; i--) {
-        size_t jdx;
+        int32_t jdx;
         ZERO(jdx, product, 16);
         multiply(product, m_inv, m_inv);
         redc(m_inv, product);
         if (scalar_bit(Lm2, i)) {
-            size_t jdnx; 
+            int32_t jdnx; 
             ZERO(jdnx, product, 16);
             multiply(product, m_inv, m_scl);
             redc(m_inv, product);
@@ -295,8 +295,8 @@ void crypto_x25519_inverse(u8 out[BYTES_ELEM_SIZE], const u8 in[BYTES_ELEM_SIZE]
     }
     // Convert the inverse *out* of Montgomery form
     // scalar = m_inv / 2^256 (modulo L)
-    size_t jdx1;
-    size_t jdx2;
+    int32_t jdx1;
+    int32_t jdx2;
     COPY(jdx1, product, m_inv, 8);
     ZERO(jdx2, product + 8, 8);
     redc(m_inv, product);
@@ -327,8 +327,7 @@ void inverse_mod_l(u8 out[BYTES_ELEM_SIZE], const u8 in[BYTES_ELEM_SIZE]){
 
         }
     }
-    int32_t i;
-    COPY(i ,out, (u8*) m_inv, BYTES_ELEM_SIZE);
+    int_to_bytes(out,m_inv);
     WIPE_BUFFER(m_inv);
 }
 #endif

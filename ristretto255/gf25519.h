@@ -130,7 +130,7 @@ u32 gf25519Comp(const u32 *a, const u32 *b);
 
 // Original name: curve25519Pwr2
 // URL: https://github.com/Oryx-Embedded/CycloneCRYPTO/blob/master/ecc/curve25519.c#L331
-void gf25519Pwr2(u32 *r, const u32 *a, size_t n);
+void gf25519Pwr2(u32 *r, const u32 *a, int32_t n);
 
 //C++ guard
 //#ifdef __cplusplus

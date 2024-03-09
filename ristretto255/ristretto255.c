@@ -102,18 +102,18 @@
 // functions redefined below are "renamed" to fit our equivalent 
 // TweetNaCl representation of ristretto255
 #define swap25519 gf25519Swap     // 8B
-#define fsub gf25519Sub           // 60B + 3size_t 
-#define fadd gf25519Add           // 60B + 3size_t 
-#define fmul gf25519Mul           // 132B+ 4size_t
-#define pow2 gf25519Sqr           // 132B + 4size_t
-#define pow_xtimes gf25519Pwr2    // 132B + 5size_t
-#define feq !gf25519Comp          // 4B + size_t
-#define carry25519(out, in) gf25519Red(out, in) //  52B + 2size_t 
-#define b_copy gf25519Copy        // size_t
-#define fcopy gf25519Copy         // size_t
+#define fsub gf25519Sub           // 60B  
+#define fadd gf25519Add           // 60B  
+#define fmul gf25519Mul           // 132B
+#define pow2 gf25519Sqr           // 132B
+#define pow_xtimes gf25519Pwr2    // 132B
+#define feq !gf25519Comp          // 4B
+#define carry25519(out, in) gf25519Red(out, in) //  52B 
+#define b_copy gf25519Copy        
+#define fcopy gf25519Copy         
 
 #ifdef USE_GF25519SELECT
-#define fselect gf25519Select     // 4B + size_t
+#define fselect gf25519Select     // 4B
 #endif
 
 // Setting "order" during pack/unpack w respect to BIGENDIAN_FLAG
@@ -180,10 +180,23 @@ static void wipe_ristretto255_point(ristretto255_point* ristretto_in){
 #define pack25519 int_to_bytes
 #define unpack25519 bytes_to_int
 
-//#define pack25519 pack
-//#define unpack25519 unpack
 
 
+// For MCUs, we find an efficient calculation that performs
+// calculations in GF(2P) instead of GF(P). After, let's say,
+// multiplication is done, we would reduce the value to 
+// bring it back into GF(P) 'range'. This has shown great results
+// in performance, but we have a hypothesis that we actually 
+// don't need to reduce values right after every calculation.
+// Instead, we can identify some crucial places in the ristretto255
+// process and perform reduction there. Such reduction is carried
+// out by the fe25519_reduce_emil function, and it is 
+// relevant (and really used) only in ristretto255 for the MCU version:
+// https://github.com/Alg0ritmus/OPAQUE-C/tree/MCU_version
+
+// In this implementation, fe25519_reduce_emil does nothing
+// but show the reader where such reduction, in the case of using 2P arithmetic,
+// needs to be performed.
 static void fe25519_reduce_emil(field_elem in){
   // this should reduce input that is in modulo 2P repr.
   // into modulo P repr.
@@ -202,7 +215,7 @@ static void fe25519_reduce_emil(field_elem in){
 // fneg() => creates negative input and "save" it to variable out
 // function uses modular logic where negation of element a -> p-a = -a 
 // inspired by: https://github.com/jedisct1/libsodium/blob/master/src/libsodium/include/sodium/private/ed25519_ref10_fe_51.h#L94
-// *** STACKSIZE: u8[32] = 60B + 3size_t  ***
+// *** STACKSIZE: u8[32] = 60B  ***
 void fneg(field_elem out, field_elem in){
     // To make calculation in 2P correctly, 
     // we need to perform REDC(in) and subsequently perform out = 2^255-19 - in 
@@ -245,24 +258,19 @@ uint32_t is_neg_bytes(const u8 in[BYTES_ELEM_SIZE]){
 
 /**
   * @brief Returns absolute value of field_elem
-  * @param[in]   -> in
-  * @param[out]  -> abs(in)
 **/
 // fabsolute functions gets absolute value of input in constant time 
-// *** STACKSIZE: 1x field_elem = 92B + 3size_t  ***
-void fabsolute(field_elem out, field_elem in){
-    fe25519_reduce_emil(in);
+// *** STACKSIZE: 1x field_elem = 92B  ***
+void fabsolute(field_elem io){
     field_elem temp;
-    fcopy(temp,in); // temp=in, so I dont rewrite in
-    fneg(out,temp); // out = ~in
+    fneg(temp,io); // out = ~io
+    fe25519_reduce_emil(io);
     // CT_SWAP if it is neg.
-    // printf("is_neg: %d",is_neg(in));
-    // print(temp);
-    // print(out);
-    swap25519(out,temp,is_neg(in));
+    swap25519(temp,io,is_neg(io));
 
     WIPE_BUFFER(temp);
 }
+
 
 
 /**
@@ -285,7 +293,7 @@ void fabsolute(field_elem out, field_elem in){
 // largely inspired by Cyclone's curve25519Sqrt:
 // https://github.com/Oryx-Embedded/CycloneCRYPTO/blob/master/ecc/curve25519.c#L430
 // Logic Inspired by: https://ristretto.group/formulas/invsqrt.html
-// *** STACKSIZE: 196B + 5size_t ***
+// *** STACKSIZE: 196B ***
 static uint8_t inv_sqrt(field_elem out,const field_elem a, const field_elem b){
    uint8_t correct_sign_sqrt;
    uint8_t flipped_sign_sqrt;
@@ -405,7 +413,7 @@ static uint8_t inv_sqrt(field_elem out,const field_elem a, const field_elem b){
 // every line with draft specification.
 // DRAFT from 2023-09-18:
 // https://datatracker.ietf.org/doc/draft-irtf-cfrg-ristretto255-decaf448/
-// *** STACKSIZE: 356B + 5size_t + 2x int ***
+// *** STACKSIZE: 356B ***
 static void MAP(ristretto255_point* ristretto_out, const field_elem t){ 
     field_elem tmp1, tmp2, tmp3, tmp4, tmp5;
     uint32_t was_square, wasnt_square;
@@ -437,7 +445,7 @@ static void MAP(ristretto255_point* ristretto_out, const field_elem t){
     wasnt_square = 1 - was_square;     
 
     fmul(s_prime,s,t);                    // s*t
-    fabsolute(s_prime,s_prime);           // CT_ABS(s*t)
+    fabsolute(s_prime);                   // CT_ABS(s*t)
     fneg(s_prime,s_prime);                // -CT_ABS(s*t)
 
     swap25519(s,s_prime,wasnt_square);    // s = CT_SELECT(s IF was_square ELSE s_prime)
@@ -492,7 +500,7 @@ static void MAP(ristretto255_point* ristretto_out, const field_elem t){
 
 // Note that we redefined temporary variables multiple times
 // just to make code more readible.
-// *** STACKSIZE: 292B+ 4size_t ***
+// *** STACKSIZE: 292B ***
 void ristretto255_point_addition(ristretto255_point* r,const ristretto255_point* p,const ristretto255_point* q){
     field_elem temp_1,temp_2,temp_3, temp_4, temp_5;
 
@@ -529,11 +537,6 @@ void ristretto255_point_addition(ristretto255_point* r,const ristretto255_point*
     fmul(r->y, h, g);
     fmul(r->z, g, f);
     fmul(r->t, e, h);
-
-    fe25519_reduce_emil(r->x);
-    fe25519_reduce_emil(r->y);
-    fe25519_reduce_emil(r->z);
-    fe25519_reduce_emil(r->t);
 
     WIPE_BUFFER(d); WIPE_BUFFER(h); WIPE_BUFFER(g);
     WIPE_BUFFER(f); WIPE_BUFFER(e);
@@ -585,7 +588,7 @@ static u32 is_Canonical(const u32 in[FIELED_ELEM_SIZE]){
 // every line with draft specification.
 // DRAFT from 2023-09-18:
 // https://datatracker.ietf.org/doc/draft-irtf-cfrg-ristretto255-decaf448/
-// *** STACKSIZE: 420B + 5size_t + 3int ***
+// *** STACKSIZE: 420B ***
 uint32_t ristretto255_decode(ristretto255_point *ristretto_out, const u8 bytes_in[BYTES_ELEM_SIZE]){
   
   uint32_t was_square, is_canonical, is_negative;
@@ -649,7 +652,7 @@ uint32_t ristretto255_decode(ristretto255_point *ristretto_out, const u8 bytes_i
   fmul(sDx,_s,Dx);                        // s*den_x
   fadd(ristretto_out->x,sDx,sDx);         // 2*s*den_x
 
-  fabsolute(ristretto_out->x,ristretto_out->x); // x = CT_ABS(2 * s * den_x)
+  fabsolute(ristretto_out->x);            // x = CT_ABS(2 * s * den_x)
 
 
   #define Dy temp5
@@ -705,7 +708,7 @@ uint32_t ristretto255_decode(ristretto255_point *ristretto_out, const u8 bytes_i
 // every line with draft specification.
 // DRAFT from 2023-09-18:
 // https://datatracker.ietf.org/doc/draft-irtf-cfrg-ristretto255-decaf448/
-// *** STACKSIZE: 420B + 5size_t ***
+// *** STACKSIZE: 420B ***
 uint32_t ristretto255_encode(u8 bytes_out[BYTES_ELEM_SIZE], const ristretto255_point* ristretto_in){
 
   
@@ -779,7 +782,7 @@ uint32_t ristretto255_encode(u8 bytes_out[BYTES_ELEM_SIZE], const ristretto255_p
   fmul(temp_s,enchanted_denominator,Z_Y); // den_inv * (z - y)
 
 
-  fabsolute(temp_s,temp_s);               // s = CT_ABS(den_inv * (z - y))
+  fabsolute(temp_s);                      // s = CT_ABS(den_inv * (z - y))
   
   
   pack25519(bytes_out,temp_s);
@@ -811,7 +814,7 @@ uint32_t ristretto255_encode(u8 bytes_out[BYTES_ELEM_SIZE], const ristretto255_p
 // 3) perform addition of 2 edward's point, note that
 // we need to add 2 edwards points so fe25519 arithmetics won't 
 // fit there we need to use function that adds 2 edwards points
-// *** STACKSIZE: 804B + 5size_t + 2x int***
+// *** STACKSIZE: 804B***
 uint32_t hash_to_group(u8 bytes_out[BYTES_ELEM_SIZE], const u8 bytes_in[HASH_BYTES_SIZE]){
   ristretto255_point a_point;
   ristretto255_point *a = &a_point;
@@ -846,6 +849,10 @@ uint32_t hash_to_group(u8 bytes_out[BYTES_ELEM_SIZE], const u8 bytes_in[HASH_BYT
   MAP(b,ft2); // map(ristretto_elligator) second hal
 
   ristretto255_point_addition(r,a,b); // addition of 2 Edward's point
+  fe25519_reduce_emil(r->x);
+  fe25519_reduce_emil(r->y);
+  fe25519_reduce_emil(r->z);
+  fe25519_reduce_emil(r->t);
 
   ristretto255_encode(bytes_out, r);
 
@@ -864,7 +871,7 @@ uint32_t hash_to_group(u8 bytes_out[BYTES_ELEM_SIZE], const u8 bytes_in[HASH_BYT
 // ristretto_point q * scalar s
 // Note that scalar "s" is represented as u8[32]
 // Inspired by tweetNaCl: https://github.com/dominictarr/tweetnacl/blob/master/tweetnacl.c#L632
-// *** STACKSIZE: 293B+ 4size_t +int***
+// *** STACKSIZE: 293B ***
 void ristretto255_scalarmult(ristretto255_point* p, ristretto255_point* q,const u8 *s){
   fcopy(p->x,F_ZERO);
   fcopy(p->y,F_ONE);
@@ -877,4 +884,8 @@ void ristretto255_scalarmult(ristretto255_point* p, ristretto255_point* q,const 
     ristretto255_point_addition(p,p,p);
     cswap(p,q,b);
   }
+  fe25519_reduce_emil(p->x);
+  fe25519_reduce_emil(p->y);
+  fe25519_reduce_emil(p->z);
+  fe25519_reduce_emil(p->t);
 }

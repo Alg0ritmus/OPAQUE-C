@@ -362,7 +362,7 @@ uint32_t DeterministicDeriveKeyPair(
   ecc_concat2(&deriveInput[deriveInputLen], info, infoLen, NULL, 0);
   deriveInputLen += infoLen;
 
-  uint32_t counter = 0; //possibly uint8_t or size_t
+  uint32_t counter = 0;
   //sKs = 0
   memset(skS, 0, Nsk);
   uint8_t DST[41]; // will be filled w "DeriveKeyPair"|| "OPRFV1-" || "00" || "-" || "ristretto255-SHA512"

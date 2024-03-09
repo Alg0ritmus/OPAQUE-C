@@ -96,7 +96,7 @@ uint32_t bytes_eq_32( const u8 a[BYTES_ELEM_SIZE],  const u8 b[BYTES_ELEM_SIZE])
 void fneg(field_elem out, field_elem in);
 uint32_t is_neg(field_elem in);
 uint32_t is_neg_bytes(const u8 in[BYTES_ELEM_SIZE]);
-void fabsolute(field_elem out, field_elem in);
+void fabsolute(field_elem io);
 void bytes_to_int(u32* uint32Array, const u8* uint8Array);
 void int_to_bytes(u8* uint8Array, const u32* uint32Array);
 

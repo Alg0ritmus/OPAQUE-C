@@ -14,10 +14,8 @@
 	* unset certain FLAGS based on your preference, enabling or 
 	* disabling them as needed. Above each FLAG, you'll find
 	* a short description to help you understand its specific
-	* purpose. Feel free to experiment with these flags, but
-	* please note that even if BIGENDIAN_FLAG is present,
-	* we do not recommend using it because it is very likely
-	* not working properly YET.
+	* purpose. Feel free to experiment with these flags, as
+	* you wish.
 **/
 
 #ifndef _CONFIG_H
@@ -42,24 +40,6 @@
 //#define USE_GF25519SELECT
 
 
-
-
-/** *****************************************************************
-	* Choose between Little/Big endian with this flag. Be highly
-	* aware that, for now, this flag is not well-tested, and we
-	* do not recommend enabling it (uncommenting it). So far, our
-	* implementation is not fully suitable for Big Endian systems.
-	*
-	* Uncomment if you want to use Big Endian implementation
-	* of our ristretto255 impl. Be aware that our impl. is not
-	* well-tested (probably not fully functioning) on Big Endian
-	* architectures.
-**/
-//#define BIGENDIAN_FLAG 
-
-
-
-
 /** *****************************************************************
 	*	DEBUG_FLAG enables comments in ristretto255 impl. In other words,
 	* when logical codition is not met, enable DEBUG_FLAG flag turns on
@@ -68,7 +48,7 @@
 	* Uncomment this, if you want to enable error messages.
 **/
 
-#define DEBUG_FLAG 
+//#define DEBUG_FLAG 
 
 
 
