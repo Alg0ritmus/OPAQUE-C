@@ -477,6 +477,9 @@ XXH32_state_t *state = &stateX;
 
     };
 
+// IF SET TO 0, main() is commented (collison with OPAQUE's main)
+// if you want to test ristretto here (locally), please set this to 1
+#if 0
 int main(){
     ///////////////////////////////////////////////////
     //
@@ -824,5 +827,5 @@ int main(){
     #endif
     return 0;
 }
-
+#endif // uncomment main
 

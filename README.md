@@ -1,5 +1,16 @@
+# OPAQUE-MCU version
+This repo is a 'trimmed-down' version of our default OPAQUE implementation. It is optimized (memory optimization for MCU) on the client side. It is also suitable for utilizing ASM functions for GF arithmetic, which perform calculations mod 2P and subsequently reduce the results back to mod P 'range' at appropriate locations in the ristretto255 code (see detailed descriptions in the default version). Server-side functions are removed
+from the MCU version of OPAQUE because we believe that 
+clients, being potentially low-performance devices, 
+need optimization. In contrast, servers are typically 
+more powerful, and they can run the default OPAQUE version from:
+https://github.com/Alg0ritmus/OPAQUE-C
+---
+# Default (main) OPAQUE implementation
+
 # Introduction
-This repo is a part of my Master's thesis.
+This repo is a part of my Master's thesis. This brach is dedicated
+to optimized version of OPAQUE specifically for Client on MCU (Cortex M4).
 Repository contains implemantation of OPAQUE (aPAKE) protocol.
 NOTE that this implementation should be as closest to RFC
 implementation as possible, so you should be able to follow
@@ -15,17 +26,18 @@ https://www.ietf.org/archive/id/draft-irtf-cfrg-opaque-12.txt
 
 In other words, we are implementing an elliptic curve solution based on Bernstein's elliptic curve c25519 with ristretto255 mapping.
 
-> **Warning:** Please note that this is not a production .
 
 Feel free to submit pull requests for any issues or questions you may have
 
 # Pure C
-We aimed to implement all underlying functions and logic in pure C without big libraries like libsodium etc. Therefore whole repo from finite field atirhmetic across ristretto255, sha512, OPRF protocol to OPAQUE is written here without using any library. We acctually extraced code snippets from libraries like CycloneCRYPTO, TeetNaCl etc.
+We aimed to implement all underlying functions and logic in pure C without big libraries like libsodium etc. Therefore whole repo from finite field atirhmetic across ristretto255, sha512, OPRF protocol to OPAQUE is written here without using any library. We acctually extraced code snippets from libraries like CycloneCRYPTO, TweetNacl etc.
 
 # Big endian independance
 We drew inspiration from [The byte order fallacy](https://commandcenter.blogspot.com/2012/04/byte-order-fallacy.html)and wrote our code with respect to endianness. The newest version of this repository (v1.0.0+) supports both little and big endian. This introduced a slight overhead (because we perform some corrections in places where they aren't needed when using little endian), but we find it worthwhile in terms of 'clean code.' This means that there is no need to perform any special conditional compilation for big-endian devices.
 
 We also tested our implementation in the QEMU emulator on the Debian distro. A great introduction to testing big-endian implementations on Windows with QEMU is summarized by Stephan Brumme [here](https://create.stephan-brumme.com/big-endian/).
+
+> NOTE: Endian-agnostic implementation is available only for `ristretto255/` NOT for whole OPAQUE protocol!
 
 # Client/Server interface
 We provide a Client/Server interface, eliminating the need for a deep understanding of the OPAQUE protocol to use our implementation. All functions required for proper Client-Server Authentication are available in `client_side.c` or `server_side.c`, respectively. While we have simplified the usage of our library, we have also created an `opaque_in_details` folder where the OPAQUE protocol is explained in detail, along with code examples based on this implementation.
@@ -43,8 +55,6 @@ There are three executables that can be built:<br>
 *`simulation` -> runs educational simulations (see opaque_in_details/)
 > `make simulation`
 
-*`main` -> dummy developer's playground (not needed for most users)
-> `make main`
 
 > ⚠️ **Important Note:**
 > 

@@ -11,10 +11,6 @@ SRCS += $(wildcard ristretto255/*.c)
 #$(CC) $(CFLAGS) $(SRCS) client.c -o client
 #$(CC) $(CFLAGS) $(SRCS) server.c -o server
 
-all: SRCS += main.c 
-all:
-	$(CC) $(CFLAGS) $(SRCS) -o main
-
 simulation: SRCS += client_side.c server_side.c opaque_in_details/opaque_simulation.c
 simulation:
 	$(CC) $(CFLAGS) $(SRCS) -o simulation
