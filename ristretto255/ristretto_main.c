@@ -6,7 +6,7 @@
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
 // ---------------------------version 1.0.1 -------------------------
-// --------------------------- 09-03-2024 ---------------------------
+// --------------------------- 13-03-2024 ---------------------------
 // ******************************************************************
 
 /**
@@ -479,7 +479,7 @@ XXH32_state_t *state = &stateX;
 
 // IF SET TO 0, main() is commented (collison with OPAQUE's main)
 // if you want to test ristretto here (locally), please set this to 1
-#if 0
+#if 1
 int main(){
     ///////////////////////////////////////////////////
     //
@@ -572,7 +572,7 @@ int main(){
     // testing non-canonical vectors -> should result in error during decoding
     for (int i = 0; i < 4; ++i)
     {
-        subresult = 1 - ristretto255_decode(out_rist,non_canonical_vectors[i]);
+        subresult = ristretto255_decode(out_rist,non_canonical_vectors[i]);   
         result &= subresult;
 
         #ifdef VERBOSE_FLAG
@@ -588,7 +588,7 @@ int main(){
     // testing Non-square x^2 vectors -> should result in error during decoding
     for (int i = 0; i < 8; ++i)
     {
-        subresult = 1 - ristretto255_decode(out_rist,non_square_x2[i]);
+        subresult = ristretto255_decode(out_rist,non_square_x2[i]);   
         result &= subresult;
 
         #ifdef VERBOSE_FLAG
@@ -604,7 +604,7 @@ int main(){
     // testing Negative xy value vectors -> should result in error during decoding
     for (int i = 0; i < 8; ++i)
     {
-        subresult = 1 - ristretto255_decode(out_rist,negative_xy[i]);
+        subresult = ristretto255_decode(out_rist,negative_xy[i]);   
         result &= subresult;
 
         #ifdef VERBOSE_FLAG
@@ -651,7 +651,7 @@ int main(){
 
 
     // testing s = -1, which causes y = 0.
-    result &= 1 - ristretto255_decode(out_rist,s_minus_1);
+    result &=  ristretto255_decode(out_rist,s_minus_1);   
 
     #ifdef VERBOSE_FLAG
     if (!result){
@@ -724,7 +724,7 @@ int main(){
     s_rand(radnom_seed); // this is defined in prng.c
 
     int ristretto_point_obtained = 1;
-    while (ristretto_point_obtained == RISTRETTO255_ERROR)
+    while (ristretto_point_obtained != RISTRETTO255_OK)
     {
         rand_32_bytes(TEST);
         gf25519Copy((u32*)TEST_ORIGIN_POINT,(u32*)TEST);
@@ -756,7 +756,7 @@ int main(){
 
         ristretto255_encode(NEW_POINT,bodB);
         ristretto_point_obtained = ristretto255_decode(bodB,NEW_POINT);
-        if (ristretto_point_obtained == RISTRETTO255_ERROR){
+        if (ristretto_point_obtained != RISTRETTO255_OK){
             printf("idx: %d.) ERROR during test in decode\n",i);
             printf(">>>>Detailed answer:\n");
             printf(">>>>Error while decoding byte-string:");print_32(NEW_POINT);

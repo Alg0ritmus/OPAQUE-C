@@ -6,7 +6,7 @@
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
 // ---------------------------version 1.0.1 -------------------------
-// --------------------------- 09-03-2024 ---------------------------
+// --------------------------- 13-03-2024 ---------------------------
 // ******************************************************************
 
 /**
@@ -791,7 +791,7 @@ uint32_t ristretto255_encode(u8 bytes_out[BYTES_ELEM_SIZE], const ristretto255_p
   WIPE_BUFFER(enchanted_denominator); WIPE_BUFFER(Z_Y); WIPE_BUFFER(temp_s);
   WIPE_BUFFER(_X); WIPE_BUFFER(_Y); WIPE_BUFFER(iX);
   WIPE_BUFFER(iY);
-  return 0;
+  return RISTRETTO255_OK;   
 }
 
 
