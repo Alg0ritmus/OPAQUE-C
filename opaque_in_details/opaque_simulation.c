@@ -5,8 +5,8 @@
 // ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
-// ---------------------------version 1.0.0 -------------------------
-// --------------------------- 07-03-2024 ---------------------------
+// ---------------------------version 1.0.1 -------------------------
+// --------------------------- 13-03-2024 ---------------------------
 // ******************************************************************
 
 #include "importer.h"
@@ -300,6 +300,11 @@ int main(){
     print_structure((uint8_t*) &server_state.expected_client_mac, Nh);
 
 
-    printf("result: %d, if 1, successfully logged in.",r);
+    if (r == OPAQUE_OK){
+        printf("Successfully logged in.\n");
+    }
+    else {
+        printf("Authentification failed with error code:%d !\n", r);
+    }
     return 0;
 }
