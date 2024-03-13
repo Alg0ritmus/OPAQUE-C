@@ -6,7 +6,7 @@
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
 // ---------------------------version 1.0.1 -------------------------
-// --------------------------- 09-03-2024 ---------------------------
+// --------------------------- 13-03-2024 ---------------------------
 // ******************************************************************
 
 /**
@@ -78,7 +78,7 @@ typedef struct ge_point25519 {
 
 // Return values unified;
 // returns from functions in ristretto255
-#define RISTRETTO255_OK 1
-#define RISTRETTO255_ERROR 0
+#define RISTRETTO255_OK 0         
+#define RISTRETTO255_ERROR 1      
 
 #endif //_HELPERS_H

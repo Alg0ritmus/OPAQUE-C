@@ -10,6 +10,9 @@
 // ******************************************************************
 
 
+13.3.2024:
+zmenil som navratove hodnoty RISTRETTO_OK/ERROR atd..
+
 27.2.2024:
 1.) zmenene funkcie na konstanty v dependencies/sha.h a /usha.c
 USHABlockSize; USHAHashSize; USHAHashSizeBits; USHAHashName;

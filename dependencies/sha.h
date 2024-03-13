@@ -5,8 +5,8 @@
 // ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
-// ---------------------------version 1.0.0 -------------------------
-// --------------------------- 07-03-2024 ---------------------------
+// ---------------------------version 1.0.1 -------------------------
+// --------------------------- 13-03-2024 ---------------------------
 // ******************************************************************
 
 // P.Z. A lot of function was removed or adjusted to use just whats
@@ -244,13 +244,14 @@ extern int32_t hmac(
  * for all SHAs.
  * This interface allows any length of text input to be used.
  */
-extern int hmacReset(HMACContext *context,
+
+extern int32_t hmacReset(HMACContext *context,
                      const uint8_t *key, int32_t key_len);
-extern int hmacInput(HMACContext *context, const uint8_t *text,
+extern int32_t hmacInput(HMACContext *context, const uint8_t *text,
                      int32_t text_len);
-extern int hmacFinalBits(HMACContext *context, uint8_t bits,
+extern int32_t hmacFinalBits(HMACContext *context, uint8_t bits,
                          uint32_t bit_count);
-extern int hmacResult(HMACContext *context,
+extern int32_t hmacResult(HMACContext *context,
                       uint8_t digest[USHAMaxHashSize]);
 
 
