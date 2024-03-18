@@ -6,7 +6,7 @@
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
 // ---------------------------version 1.0.1 -------------------------
-// --------------------------- 13-03-2024 ---------------------------
+// --------------------------- 17-03-2024 ---------------------------
 // ******************************************************************
 
 /**
@@ -41,8 +41,8 @@
 #define unpack25519 bytes_to_int
 
 // GENERAL TEST-VARIABLES 
-int result = 1;
-int subresult = 1;
+int error = 0; // result of test if result is error==0, everything is OK
+int sub_error = 0;
 //temporary variables
 u8 bytes_out_[BYTES_ELEM_SIZE] = {0};
 field_elem in;
@@ -500,15 +500,16 @@ int main(){
         ristretto255_decode(out_rist,RISTRETTO255_BASEPOINT);
         ristretto255_scalarmult(out_rist2, out_rist,INTG);
         ristretto255_encode(bytes_out_,out_rist2);
-        subresult = bytes_eq_32(bytes_out_, SMALL_MULTIPLES_OF_GENERATOR_VECTORS[i]);
-        result &= subresult;
+        sub_error = bytes_eq_32(bytes_out_, SMALL_MULTIPLES_OF_GENERATOR_VECTORS[i]);
+        error |= sub_error;
 
         #ifdef VERBOSE_FLAG
-        if (!subresult){
-                printf("SMALL_MULTIPLES_OF_GENERATOR TEST no.%d: FAILED! Error was found when comparing result to SMALL_MULTIPLES_OF_GENERATOR_VECTORS[%d]\n",i,i);
+        if (!sub_error){
+            printf("SMALL_MULTIPLES_OF_GENERATOR TEST no.%d: SUCCESS!\n",i);
         }
         else{
-            printf("SMALL_MULTIPLES_OF_GENERATOR TEST no.%d: SUCCESS!\n",i);
+            printf("SMALL_MULTIPLES_OF_GENERATOR TEST no.%d: FAILED! Error was found when comparing result to SMALL_MULTIPLES_OF_GENERATOR_VECTORS[%d]\n",i,i);
+
         }
         #endif  
     }
@@ -519,15 +520,15 @@ int main(){
 
         hash_to_group(bytes_out_, MAP_VECTORS[i]);
         
-        subresult = bytes_eq_32(bytes_out_, MAP_VECTORS_RESULT[i]); // returns 1 if two are eq
-        result &= subresult;
+        sub_error = bytes_eq_32(bytes_out_, MAP_VECTORS_RESULT[i]); // returns 1 if two are eq
+        error |= sub_error;
 
         #ifdef VERBOSE_FLAG
-        if (!subresult){
-                printf("HASH_TO_GROUP TEST no.%d: FAILED! Error was found when testing vector MAP_VECTORS[%d]\n",i,i);
+        if (!sub_error){
+            printf("HASH_TO_GROUP TEST no.%d: SUCCESS!\n",i);
         }
         else{
-            printf("HASH_TO_GROUP TEST no.%d: SUCCESS!\n",i);
+            printf("HASH_TO_GROUP TEST no.%d: FAILED! Error was found when testing vector MAP_VECTORS[%d]\n",i,i);
         }
         #endif      
     }
@@ -537,15 +538,16 @@ int main(){
     for (int i = 0; i < 8; ++i){
         unpack25519(in,test_negative_vectors[i]);
 
-        subresult = is_neg(in);
-        result &= subresult; // returns 1 if two are eq
+        sub_error = !is_neg(in);
+        error |= sub_error; 
 
+        
         #ifdef VERBOSE_FLAG
-        if (!subresult){
-                printf("NEGATIVITY VECTOR TEST no.%d: FAILED! Error was found when testing vector test_negative_vectors[%d]\n",i,i);
+        if (!sub_error){
+            printf("NEGATIVITY VECTOR TEST no.%d: SUCCESS!\n",i);
         }
         else{
-            printf("NEGATIVITY VECTOR TEST no.%d: SUCCESS!\n",i);
+            printf("NEGATIVITY VECTOR TEST no.%d: FAILED! Error was found when testing vector test_negative_vectors[%d]\n",i,i);
         }
         #endif          
     }
@@ -554,16 +556,16 @@ int main(){
     for (int i = 0; i < 8; ++i){
         
         unpack25519(in,test_negative_vectors_compl[i]);
-        subresult = 1-is_neg(in);
-        result &= subresult; // returns 1 if two are eq
+        sub_error = is_neg(in);
+        error |= sub_error; 
 
 
         #ifdef VERBOSE_FLAG
-        if (!subresult){
-                printf("P-NEGATIVE VECTOR TEST no.%d: FAILED! Error was found when testing vector test_negative_vectors_compl[%d]\n",i,i);
+        if (!sub_error){
+            printf("P-NEGATIVE VECTOR TEST no.%d: SUCCESS!\n",i);
         }
         else{
-            printf("P-NEGATIVE VECTOR TEST no.%d: SUCCESS!\n",i);
+            printf("P-NEGATIVE VECTOR TEST no.%d: FAILED! Error was found when testing vector test_negative_vectors_compl[%d]\n",i,i);
         }
         #endif      
     }
@@ -572,15 +574,15 @@ int main(){
     // testing non-canonical vectors -> should result in error during decoding
     for (int i = 0; i < 4; ++i)
     {
-        subresult = ristretto255_decode(out_rist,non_canonical_vectors[i]);   
-        result &= subresult;
+        sub_error = (RISTRETTO255_OK == ristretto255_decode(out_rist,non_canonical_vectors[i]));   
+        error |= sub_error;
 
         #ifdef VERBOSE_FLAG
-        if (!subresult){
-                printf("non-canonical VECTOR TEST no.%d: FAILED! Error was found when testing vector non_canonical_vectors[%d]\n",i,i);
+        if (!sub_error){
+            printf("non-canonical VECTOR TEST no.%d: SUCCESS!\n",i);
         }
         else{
-            printf("non-canonical VECTOR TEST no.%d: SUCCESS!\n",i);
+            printf("non-canonical VECTOR TEST no.%d: FAILED! Error was found when testing vector non_canonical_vectors[%d]\n",i,i);
         }
         #endif  
     }
@@ -588,15 +590,15 @@ int main(){
     // testing Non-square x^2 vectors -> should result in error during decoding
     for (int i = 0; i < 8; ++i)
     {
-        subresult = ristretto255_decode(out_rist,non_square_x2[i]);   
-        result &= subresult;
+        sub_error = (RISTRETTO255_OK == ristretto255_decode(out_rist,non_square_x2[i]));   
+        error |= sub_error;
 
         #ifdef VERBOSE_FLAG
-        if (!subresult){
-                printf("Non-square x^2 VECTOR TEST no.%d: FAILED! Error was found when testing vector non_square_x2[%d]\n",i,i);
+        if (!sub_error){
+            printf("Non-square x^2 VECTOR TEST no.%d: SUCCESS!\n",i);
         }
         else{
-            printf("Non-square x^2 VECTOR TEST no.%d: SUCCESS!\n",i);
+            printf("Non-square x^2 VECTOR TEST no.%d: FAILED! Error was found when testing vector non_square_x2[%d]\n",i,i);
         }
         #endif  
     }
@@ -604,15 +606,15 @@ int main(){
     // testing Negative xy value vectors -> should result in error during decoding
     for (int i = 0; i < 8; ++i)
     {
-        subresult = ristretto255_decode(out_rist,negative_xy[i]);   
-        result &= subresult;
+        sub_error = (RISTRETTO255_OK == ristretto255_decode(out_rist,negative_xy[i]));   
+        error |= sub_error;
 
         #ifdef VERBOSE_FLAG
-        if (!subresult){
-                printf("Negative xy VECTOR TEST no.%d: FAILED! Error was found when testing vector negative_xy[%d]\n",i,i);
+        if (!sub_error){
+            printf("Negative xy VECTOR TEST no.%d: SUCCESS!\n",i);
         }
         else{
-            printf("Negative xy VECTOR TEST no.%d: SUCCESS!\n",i);
+            printf("Negative xy VECTOR TEST no.%d: FAILED! Error was found when testing vector negative_xy[%d]\n",i,i);
         }
         #endif      
     }
@@ -638,43 +640,44 @@ int main(){
       }
    }    
 
-    subresult = bytes_eq_32(iner, modL_test_vec); // returns 1 if two are eq
-    result &= subresult;
+    sub_error = bytes_eq_32(iner, modL_test_vec); // returns 1 if two are not eq
+    error |= sub_error;
     #ifdef VERBOSE_FLAG
-    if (!subresult){
-            printf("ModL VECTOR TEST : FAILED! Error was found when testing vector for mod L\n");
+    if (!sub_error){
+        printf("ModL VECTOR TEST: SUCCESS!\n");
     }
     else{
-        printf("ModL VECTOR TEST: SUCCESS!\n");
+        printf("ModL VECTOR TEST : FAILED! Error was found when testing vector for mod L\n");
     }
     #endif   
 
 
-    // testing s = -1, which causes y = 0.
-    result &=  ristretto255_decode(out_rist,s_minus_1);   
+    // testing s = -1, which causes y = 0. -> should result in error during decoding
+    sub_error = (RISTRETTO255_OK == ristretto255_decode(out_rist,s_minus_1));  
+    error |= sub_error;
 
     #ifdef VERBOSE_FLAG
-    if (!result){
-            printf("s = -1 VECTOR TEST: FAILED!\n");
+    if (!sub_error){
+        printf("s = -1 VECTOR TEST: SUCCESS!\n");
     }
     else{
-        printf("s = -1 VECTOR TEST: SUCCESS!\n");
+        printf("s = -1 VECTOR TEST: FAILED!\n");
     }
     #endif  
 
     // total result
-    if (result != 1)
+    if (!error)
     {
-        printf("\n**********************\n");
-        printf("------CONCLUSION------\n\n");
-        printf("     TESTS FAILED!    \n");
-        printf("**********************\n");
-    }
-    else{
         printf("\n*************************\n");
         printf("---------CONCLUSION--------\n\n");
         printf("ALL TESTS RAN SUCCESSFULLY!\n");
         printf("***************************\n");
+    }
+    else{
+        printf("\n**********************\n");
+        printf("------CONCLUSION------\n\n");
+        printf("     TESTS FAILED!    \n");
+        printf("**********************\n");
     }
 
 
@@ -778,8 +781,8 @@ int main(){
         // check if: P1*k*k^-1 ?= P1
         ristretto255_encode(TEST,bodC);
         
-        
-        if (!bytes_eq_32(bytes_out_,TEST)){// return 1 if eq
+        error = bytes_eq_32(bytes_out_,TEST); // bytes_eq_32 returns 0 if eq
+        if (error){
             printf("\nERROR when running test %d)\n",i);
             printf(">>>>Detailed answer: -> Check if P1*k*k^-1 ?= P1 \n");
             printf(">>>>Expected:");print_32(bytes_out_);
@@ -805,18 +808,18 @@ int main(){
     // hash last point 
     XXH32_update(state, bytes_out_, BYTES_ELEM_SIZE);
     
-    int comparison_result = bytes_eq_32(bytes_out_,TEST_ORIGIN_POINT); // return 1 if eq
-    if (!comparison_result)
+    error = bytes_eq_32(bytes_out_,TEST_ORIGIN_POINT); 
+    if (!error)
     {
         printf("\n*************************\n");
         printf("-------COMPLEX TEST------\n\n");
-        printf("        TESTS FAILED!      \n");
+        printf("ALL TESTS RAN SUCCESSFULLY!\n");
         printf("***************************\n");
     }
     else{
         printf("\n*************************\n");
         printf("-------COMPLEX TEST------\n\n");
-        printf("ALL TESTS RAN SUCCESSFULLY!\n");
+        printf("        TESTS FAILED!      \n");
         printf("***************************\n");
     }
 

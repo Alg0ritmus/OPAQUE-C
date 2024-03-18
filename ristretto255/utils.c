@@ -6,7 +6,7 @@
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
 // ---------------------------version 1.0.1 -------------------------
-// --------------------------- 13-03-2024 ---------------------------
+// --------------------------- 17-03-2024 ---------------------------
 // ******************************************************************
 
 
@@ -36,13 +36,13 @@ void print_32(const u8* o){
     printf("\n");
 }
 
-// return 1 if they're equal
+// return 0 if they're equal
 // checking if two u8[32] are eq
 uint32_t bytes_eq_32( const u8 a[BYTES_ELEM_SIZE],  const u8 b[BYTES_ELEM_SIZE]){
-    uint32_t result = 1;
+    uint32_t result = 0;
 
     for (int i = 0; i < BYTES_ELEM_SIZE; ++i){
-        result &= a[i] == b[i];
+        result |= a[i] != b[i];
     }
 
     return result;

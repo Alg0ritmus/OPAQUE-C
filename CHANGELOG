@@ -10,6 +10,10 @@
 // ******************************************************************
 
 
+17.3.
+mensia uprava vyhodnocovania navratovych hodnot tak, 
+aby boli NEZAVISLE na systeme kodovania hodnot OK a ERROR
+
 13.3.
 zmenil som nevratove typy RISTRETTO_OK/ERROR atd..
 simulation.c  - minor changes due to return types
