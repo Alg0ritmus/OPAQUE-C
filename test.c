@@ -271,6 +271,16 @@ uint8_t _session_key[64] = {
     0xed, 0xfc, 0xbd, 0xfd, 0xa2, 0x15, 0xb9, 0x6f
 };
 
+// Returns 0 if a==b, otherwise 1
+static uint8_t compare(uint8_t *a, uint8_t *b, int32_t count){
+  uint8_t result = 0;
+  for (int32_t i = 0; i < count; i++)
+  {
+    result |= a[i] != b[i];
+  }
+  return result;
+}
+
 int main(){
   s_rand(1234);
 
@@ -279,8 +289,8 @@ int main(){
   // --------------- OPAQUE ------------
   // -----------------------------------   
 
-uint8_t result=1;
-uint8_t test_result = 1;
+  uint8_t error = 0; // result of testing, if 0 everything is OK, else 1
+  uint8_t suberror = 0;
 
   //////////////////////////
   //  REGISTRATION
@@ -292,9 +302,10 @@ uint8_t test_result = 1;
     password, password_len
   );
 
-  test_result = cmp(request.blinded_message,_registration_request,32);
-  if (test_result==0){printf("ERROR: CreateRegistrationRequest->blinded_message\n");}
-  else {printf("SUCCESS: CreateRegistrationRequest->blinded_message\n");}
+  suberror = compare(request.blinded_message,_registration_request,32);
+  error |= suberror;
+  if (!suberror){printf("SUCCESS: CreateRegistrationRequest->blinded_message\n");}
+  else {printf("ERROR: CreateRegistrationRequest->blinded_message\n");}
 
   RegistrationRecord record;
   uint8_t export_key_reg[64];
@@ -308,12 +319,14 @@ uint8_t test_result = 1;
    client_identity, client_identity_len
   );
 
-  test_result = cmp(export_key_reg,_export_key,64);
-  if (test_result==0){printf("ERROR: FinalizeRegistrationRequest->export_key\n");}
-  else {printf("SUCCESS: FinalizeRegistrationRequest->export_key\n");}
-  test_result = cmp((uint8_t*) &record,_registration_upload,192);
-  if (test_result==0){printf("ERROR: FinalizeRegistrationRequest->record\n");}
-  else {printf("SUCCESS: FinalizeRegistrationRequest->record\n");}
+  suberror = compare(export_key_reg,_export_key,64);
+  error |= suberror;
+  if (!suberror){printf("SUCCESS: FinalizeRegistrationRequest->export_key\n");}
+  else {printf("ERROR: FinalizeRegistrationRequest->export_key\n");}
+  suberror = compare((uint8_t*) &record,_registration_upload,192);
+  error |= suberror;
+  if (!suberror){printf("SUCCESS: FinalizeRegistrationRequest->record\n");}
+  else {printf("ERROR: FinalizeRegistrationRequest->record\n");}
 
   //////////////////////////
   //  LOGIN
@@ -330,10 +343,10 @@ uint8_t test_result = 1;
     client_keyshare_seed
     );
 
-  test_result = cmp((uint8_t*) &ke1,_KE1,96);
-  result &= test_result;
-  if (test_result==0){printf("ERROR: GenerateKE1->KE1\n");}
-  else {printf("SUCCESS: GenerateKE1->KE1\n");}
+  suberror = compare((uint8_t*) &ke1,_KE1,96);
+  error |= suberror;
+  if (!suberror){printf("SUCCESS: GenerateKE1->KE1\n");}
+  else {printf("ERROR: GenerateKE1->KE1\n");}
 	
   KE3 ke3;
   uint8_t client_session_key[64];
@@ -349,23 +362,23 @@ uint8_t test_result = 1;
     context, 10
   );
 
-  test_result = cmp((uint8_t*) &ke3,_KE3,64);
-  result &= test_result;
-  if (test_result==0){printf("ERROR: GenerateKE3->KE3\n");}
-  else {printf("SUCCESS: GenerateKE3->KE3\n");}
+  suberror = compare((uint8_t*) &ke3,_KE3,64);
+  error |= suberror;
+  if (!suberror){printf("SUCCESS: GenerateKE3->KE3\n");}
+  else {printf("ERROR: GenerateKE3->KE3\n");}
   
-  test_result = cmp(client_session_key,_session_key,64);
-  result &= test_result;
-  if (test_result==0){printf("ERROR: GenerateKE3->client_session_key\n");}
-  else {printf("SUCCESS: GenerateKE3->client_session_key\n");}
+  suberror = compare(client_session_key,_session_key,64);
+  error |= suberror;
+  if (!suberror){printf("SUCCESS: GenerateKE3->client_session_key\n");}
+  else {printf("ERROR: GenerateKE3->client_session_key\n");}
   
-  test_result = cmp(export_key,_export_key,64);
-  result &= test_result;
-  if (test_result==0){printf("ERROR: GenerateKE3->export_key\n");}
-  else {printf("SUCCESS: GenerateKE3->export_key\n");}
+  suberror = compare(export_key,_export_key,64);
+  error |= suberror;
+  if (!suberror){printf("SUCCESS: GenerateKE3->export_key\n");}
+  else {printf("ERROR: GenerateKE3->export_key\n");}
 
 
-  if (result){
+  if (!error){
     printf("TEST RESULT: SUCCESS");
   }
   else{

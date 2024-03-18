@@ -9,6 +9,9 @@
 // --------------------------- 11-10-2023 ---------------------------
 // ******************************************************************
 
+18.3.2024:
+zmeny v test.c, kvoli navratovym hodnotam (prisposobene pre default
+ balik)
 
 13.3.2024:
 zmenil som navratove hodnoty RISTRETTO_OK/ERROR atd..
