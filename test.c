@@ -383,6 +383,7 @@ int main(){
   // -----------------------------------   
 
 uint8_t error = 0; // result of testing, if 0 everything is OK, else 1
+uint8_t sub_error = 0;
 
 uint8_t randomized_password[64] = {0xaa,0xc4,0x8c,0x25,0xab,0x03,0x6e,0x30,0x75,0x08,0x39,0xd3,0x1d,0x6e,0x73,0x00,0x73,0x44,0xcb,0x11,0x55,0x28,0x9f,0xb7,0xd3,0x29,0xbe,0xb9,0x32,0xe9,0xad,0xee,0xa7,0x3d,0x5d,0x5c,0x22,0xa0,0xce,0x19,0x52,0xf8,0xab,0xa6,0xd6,0x60,0x07,0x61,0x5c,0xd1,0x69,0x8d,0x4a,0xc8,0x5e,0xf1,0xfc,0xf1,0x50,0x03,0x1d,0x14,0x35,0xd9};
 uint32_t randomized_password_len = 64;
@@ -404,18 +405,22 @@ uint32_t randomized_password_len = 64;
       );
 
   
-  error = compare((uint8_t*)&envelope, _envelope,96);
-  if (error!=0){printf("ERROR: Store->envelope\n");}
+  sub_error = compare((uint8_t*)&envelope, _envelope,96);
+  error |= sub_error;
+  if (sub_error!=0){printf("ERROR: Store->envelope\n");}
   else {printf("SUCCESS: Store->envelope\n");}
 
-  error = compare(export_key,_export_key,64);
-  if (error!=0){printf("ERROR: Store->export_key\n");}
+  sub_error = compare(export_key,_export_key,64);
+  error |= sub_error;
+  if (sub_error!=0){printf("ERROR: Store->export_key\n");}
   else {printf("SUCCESS: Store->export_key\n");}
-  error = compare(client_public_key,_client_public_key,32);
-  if (error!=0){printf("ERROR: Store->client_public_key\n");}
+  sub_error = compare(client_public_key,_client_public_key,32);
+  error |= sub_error;
+  if (sub_error!=0){printf("ERROR: Store->client_public_key\n");}
   else {printf("SUCCESS: Store->client_public_key\n");}
-  error = compare(masking_key,_masking_key,64);
-  if (error!=0){printf("ERROR: Store->masking_key\n");}
+  sub_error = compare(masking_key,_masking_key,64);
+  error |= sub_error;
+  if (sub_error!=0){printf("ERROR: Store->masking_key\n");}
   else {printf("SUCCESS: Store->masking_key\n");}
 
   RegistrationRequest request;
@@ -425,8 +430,9 @@ uint32_t randomized_password_len = 64;
     password, password_len
   );
 
-  error = compare(request.blinded_message,_registration_request,32);
-  if (error!=0){printf("ERROR: CreateRegistrationRequest->blinded_message\n");}
+  sub_error = compare(request.blinded_message,_registration_request,32);
+  error |= sub_error;
+  if (sub_error!=0){printf("ERROR: CreateRegistrationRequest->blinded_message\n");}
   else {printf("SUCCESS: CreateRegistrationRequest->blinded_message\n");}
 
   RegistrationResponse response;
@@ -438,8 +444,9 @@ uint32_t randomized_password_len = 64;
     oprf_seed
   );
 
-  error = compare((uint8_t*) &response,_registration_response,64);
-  if (error!=0){printf("ERROR: CreateRegistrationResponse->response\n");}
+  sub_error = compare((uint8_t*) &response,_registration_response,64);
+  error |= sub_error;
+  if (sub_error!=0){printf("ERROR: CreateRegistrationResponse->response\n");}
   else {printf("SUCCESS: CreateRegistrationResponse->response\n");}
 
   RegistrationRecord record;
@@ -453,11 +460,13 @@ uint32_t randomized_password_len = 64;
    client_identity, client_identity_len
   );
 
-  error = compare(export_key,_export_key,64);
-  if (error!=0){printf("ERROR: FinalizeRegistrationRequest->export_key\n");}
+  sub_error = compare(export_key,_export_key,64);
+  error |= sub_error;
+  if (sub_error!=0){printf("ERROR: FinalizeRegistrationRequest->export_key\n");}
   else {printf("SUCCESS: FinalizeRegistrationRequest->export_key\n");}
-  error = compare((uint8_t*) &record,_registration_upload,192);
-  if (error!=0){printf("ERROR: FinalizeRegistrationRequest->record\n");}
+  sub_error = compare((uint8_t*) &record,_registration_upload,192);
+  error |= sub_error;
+  if (sub_error!=0){printf("ERROR: FinalizeRegistrationRequest->record\n");}
   else {printf("SUCCESS: FinalizeRegistrationRequest->record\n");}
 
   //////////////////////////
@@ -475,8 +484,9 @@ uint32_t randomized_password_len = 64;
     client_keyshare_seed
     );
 
-  error = compare((uint8_t*) &ke1,_KE1,96);
-  if (error!=0){printf("ERROR: GenerateKE1->KE1\n");}
+  sub_error = compare((uint8_t*) &ke1,_KE1,96);
+  error |= sub_error;
+  if (sub_error!=0){printf("ERROR: GenerateKE1->KE1\n");}
   else {printf("SUCCESS: GenerateKE1->KE1\n");}
 	
 
@@ -500,8 +510,9 @@ uint32_t randomized_password_len = 64;
     server_keyshare_seed
   );
 
-  error = compare((uint8_t*) &ke2,_KE2,256);
-  if (error!=0){printf("ERROR: GenerateKE2->KE2\n");}
+  sub_error = compare((uint8_t*) &ke2,_KE2,256);
+  error |= sub_error;
+  if (sub_error!=0){printf("ERROR: GenerateKE2->KE2\n");}
   else {printf("SUCCESS: GenerateKE2->KE2\n");}
 
   KE3 ke3;
@@ -517,14 +528,17 @@ uint32_t randomized_password_len = 64;
     context, 10
   );
 
-  error = compare((uint8_t*) &ke3,_KE3,64);
-  if (error!=0){printf("ERROR: GenerateKE3->KE3\n");}
+  sub_error = compare((uint8_t*) &ke3,_KE3,64);
+  error |= sub_error;
+  if (sub_error!=0){printf("ERROR: GenerateKE3->KE3\n");}
   else {printf("SUCCESS: GenerateKE3->KE3\n");}
-  error = compare(client_session_key,_session_key,64);
-  if (error!=0){printf("ERROR: GenerateKE3->client_session_key\n");}
+  sub_error = compare(client_session_key,_session_key,64);
+  error |= sub_error;
+  if (sub_error!=0){printf("ERROR: GenerateKE3->client_session_key\n");}
   {printf("SUCCESS: GenerateKE3->client_session_key\n");}
-  error = compare(export_key,_export_key,64);
-  if (error!=0){printf("ERROR: GenerateKE3->export_key\n");}
+  sub_error = compare(export_key,_export_key,64);
+  error |= sub_error;
+  if (sub_error!=0){printf("ERROR: GenerateKE3->export_key\n");}
   else {printf("SUCCESS: GenerateKE3->export_key\n");}
 
 
@@ -535,8 +549,9 @@ uint32_t randomized_password_len = 64;
     &ke3
   );
 
-  error = compare(session_key,_session_key,64);
-  if (error!=0){printf("ERROR: ServerFinish->session_key\n");}
+  sub_error = compare(session_key,_session_key,64);
+  error |= sub_error;
+  if (sub_error!=0){printf("ERROR: ServerFinish->session_key\n");}
   else{printf("SUCCESS: ServerFinish->session_key\n");}
 
 
