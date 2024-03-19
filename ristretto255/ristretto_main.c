@@ -479,7 +479,7 @@ XXH32_state_t *state = &stateX;
 
 // IF SET TO 0, main() is commented (collison with OPAQUE's main)
 // if you want to test ristretto here (locally), please set this to 1
-#if 0
+#if 1
 int main(){
     ///////////////////////////////////////////////////
     //
@@ -726,7 +726,7 @@ int main(){
     int32_t radnom_seed = 0;
     s_rand(radnom_seed); // this is defined in prng.c
 
-    int ristretto_point_obtained = 1;
+    int ristretto_point_obtained = RISTRETTO255_OK;
     while (ristretto_point_obtained != RISTRETTO255_OK)
     {
         rand_32_bytes(TEST);
