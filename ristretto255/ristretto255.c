@@ -5,8 +5,8 @@
 // ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
-// ------------------------version M.C.U 1.0.1 ----------------------
-// --------------------------- 09-03-2024 ---------------------------
+// ------------------------version M.C.U 1.1.0 ----------------------
+// --------------------------- 20-03-2024 ---------------------------
 // ******************************************************************
 
 /** OPAQUE (MCU version -> little endian ONLY) desciption:
@@ -190,9 +190,20 @@ static void fe25519_reduce_emil(field_elem in){
 // *** STACKSIZE: u8[32] = 60B  ***
 void fneg(field_elem out, field_elem in){
     // To make calculation in 2P correctly, 
-    // we need to perform REDC(in) and subsequently perform out = 2^255-19 - in 
-    fe25519_reduce_emil(in);
+    // we need to perform REDC(in) and subsequently perform out = 2^255-19 - in
+
+    //NOTE we are reducing input as well as output.
+    // We identified places where we need to reduce values that are
+    // passed to this function as inputs before we actually
+    // call the fneg() function. Therefore, we decided to incorporate
+    // reduction inside the fneg() function.
+    // As we are reducing input, we are introducing a little
+    // overhead because there are 2 places in the code where we do not need
+    // to reduce inputs; however, we find the code cleaner with this approach.
+
+    fe25519_reduce_emil(in); 
     fsub(out, F_MODULUS, in);
+    fe25519_reduce_emil(out);
 
 }
 
@@ -236,7 +247,11 @@ uint32_t is_neg_bytes(const u8 in[BYTES_ELEM_SIZE]){
 void fabsolute(field_elem io){
     field_elem temp;
     fneg(temp,io); // out = ~io
-    fe25519_reduce_emil(io);
+
+    // we can skip reduction, bcs. we are reducing 'io' inside 
+    //fneg() function.
+    // fe25519_reduce_emil(io); 
+  
     // CT_SWAP if it is neg.
     swap25519(temp,io,is_neg(io));
 
@@ -353,7 +368,9 @@ static uint8_t inv_sqrt(field_elem out,const field_elem a, const field_elem b){
 
   // calc v = -r
    fneg(v,out);
-   fe25519_reduce_emil(out);
+   // we can skip reduction, bcs. we are reducing 'out' inside 
+   //fneg() function.
+   //fe25519_reduce_emil(out);
    // if cond = 1, select first option
    #ifdef USE_GF25519SELECT
    fselect(out, out, v, is_neg(out)); 
@@ -539,11 +556,20 @@ static void cswap(ristretto255_point* p, ristretto255_point* q,u8 b){
  * if the resulting value is >= p, decoding fails.
  * Cite from: https://www.rfc-editor.org/rfc/rfc9496.html#section-4.3.1
 */
+#ifdef USE_ASM
+static u32 is_Canonical(const u32 in[FIELED_ELEM_SIZE]){
+  u32 temp[FIELED_ELEM_SIZE];
+  memcpy((u8*) temp, (u8*) in, 32);
+  fe25519_reduce_emil(temp);
+  return feq(temp,in);  
+}
+#else
 static u32 is_Canonical(const u32 in[FIELED_ELEM_SIZE]){
   u32 temp[FIELED_ELEM_SIZE];
   carry25519(temp,in);
   return feq(temp,in);  
 }
+#endif
 
 
 /**

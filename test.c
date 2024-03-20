@@ -5,8 +5,8 @@
 // ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
-// ------------------------version M.C.U 1.0.0 ----------------------
-// --------------------------- 07-03-2024 ---------------------------
+// ------------------------version M.C.U 1.1.0 ----------------------
+// --------------------------- 20-03-2024 ---------------------------
 // ******************************************************************
 
 // P.Z. A lot of features was removed to use just whats
@@ -272,8 +272,8 @@ uint8_t _session_key[64] = {
 };
 
 // Returns 0 if a==b, otherwise 1
-static uint8_t compare(uint8_t *a, uint8_t *b, int32_t count){
-  uint8_t result = 0;
+static bool compare(uint8_t *a, uint8_t *b, int32_t count){
+  bool result = false;
   for (int32_t i = 0; i < count; i++)
   {
     result |= a[i] != b[i];
@@ -289,8 +289,8 @@ int main(){
   // --------------- OPAQUE ------------
   // -----------------------------------   
 
-  uint8_t error = 0; // result of testing, if 0 everything is OK, else 1
-  uint8_t suberror = 0;
+  bool error = 0;
+  bool suberror = 0;
 
   //////////////////////////
   //  REGISTRATION
