@@ -4,6 +4,7 @@
         "client_side.h": "c",
         "sha.h": "c",
         "prng.h": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "utils.h": "c"
     }
 }
