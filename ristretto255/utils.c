@@ -38,8 +38,8 @@ void print_32(const u8* o){
 
 // return 0 if they're equal
 // checking if two u8[32] are eq
-uint32_t bytes_eq_32( const u8 a[BYTES_ELEM_SIZE],  const u8 b[BYTES_ELEM_SIZE]){
-    uint32_t result = 0;
+bool bytes_eq_32( const u8 a[BYTES_ELEM_SIZE],  const u8 b[BYTES_ELEM_SIZE]){
+    bool result = 0;
 
     for (int i = 0; i < BYTES_ELEM_SIZE; ++i){
         result |= a[i] != b[i];

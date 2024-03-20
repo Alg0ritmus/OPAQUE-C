@@ -16,6 +16,7 @@
 #ifndef _UTILS_H
 #define _UTILS_H
 
+#include <stdbool.h>
 #include "helpers.h"
 
 /*      UTILS       */
@@ -23,7 +24,7 @@ void print(const field_elem o);
 
 void print_32(const u8* o);
 
-uint32_t bytes_eq_32( const u8 a[BYTES_ELEM_SIZE],  const u8 b[BYTES_ELEM_SIZE]);
+bool bytes_eq_32( const u8 a[BYTES_ELEM_SIZE],  const u8 b[BYTES_ELEM_SIZE]);
 
 void crypto_wipe(void *secret, int32_t size);
 

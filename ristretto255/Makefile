@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS= -c -Os -Wall -Werror -Wextra -pedantic
+CFLAGS= -c -Os -Wall -Werror -Wextra -pedantic -DRISTRETTO_TEST
 # NOTE: You can set various additional internal
 # flags in config.h
 SOURCES=ristretto_main.c gf25519.c utils.c modl.c ristretto255.c prng.c xxhash.c

@@ -28,7 +28,6 @@
   * The details are described below in the section 'CPLX' tests.
 **/
 
-
 #include "ristretto255.h"
 #include "gf25519.h"
 #include "modl.h"
@@ -41,8 +40,8 @@
 #define unpack25519 bytes_to_int
 
 // GENERAL TEST-VARIABLES 
-int error = 0; // result of test if result is error==0, everything is OK
-int sub_error = 0;
+bool error = 0; // result of test if result is error==0, everything is OK
+bool sub_error = 0;
 //temporary variables
 u8 bytes_out_[BYTES_ELEM_SIZE] = {0};
 field_elem in;
@@ -477,9 +476,10 @@ XXH32_state_t *state = &stateX;
 
     };
 
-// IF SET TO 0, main() is commented (collison with OPAQUE's main)
-// if you want to test ristretto here (locally), please set this to 1
-#if 1
+// If RISTRETTO_TEST flag is not set, test wont be executed.
+// RISTRETTO_TEST flag can be set in Makefile
+// This is here due to possible collision with OPAQUE's main.
+#if RISTRETTO_TEST
 int main(){
     ///////////////////////////////////////////////////
     //
@@ -538,7 +538,7 @@ int main(){
     for (int i = 0; i < 8; ++i){
         unpack25519(in,test_negative_vectors[i]);
 
-        sub_error = !is_neg(in);
+        sub_error = (false==is_neg(in));
         error |= sub_error; 
 
         
@@ -711,7 +711,6 @@ int main(){
  * is performed multiple times in a round.
  */
 
-    #if 1
     // INIT xxHASH
     XXH32_createState(state);
     uint32_t result_of_complex_tests;
@@ -726,9 +725,10 @@ int main(){
     int32_t radnom_seed = 0;
     s_rand(radnom_seed); // this is defined in prng.c
 
-    int ristretto_point_obtained = RISTRETTO255_OK;
+    int ristretto_point_obtained = RISTRETTO255_ERROR;
     while (ristretto_point_obtained != RISTRETTO255_OK)
     {
+        // generating valid ristretto point
         rand_32_bytes(TEST);
         gf25519Copy((u32*)TEST_ORIGIN_POINT,(u32*)TEST);
         ristretto_point_obtained = ristretto255_decode(bodA,TEST);
@@ -773,7 +773,7 @@ int main(){
         // CNT can be set in config.h
         if (i % CNT == 0){
             result_of_complex_tests = XXH32_digest(state);  
-             printf("Test no.%d, xxHash: %08x\n",i,result_of_complex_tests);
+            printf("Test no.%d, xxHash: %08x\n",i,result_of_complex_tests);
         }
 
         ristretto255_scalarmult(bodC, bodB,SCALAR_INV); // P1*k*k^-1 = P1
@@ -827,7 +827,7 @@ int main(){
     result_of_complex_tests = XXH32_digest(state);   
 
     printf("\nFinal xxHash Digest: %08x",result_of_complex_tests);   
-    #endif
+
     return 0;
 }
 #endif // uncomment main
