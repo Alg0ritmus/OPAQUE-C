@@ -271,6 +271,23 @@ uint8_t _session_key[64] = {
     0xed, 0xfc, 0xbd, 0xfd, 0xa2, 0x15, 0xb9, 0x6f
 };
 
+
+
+
+static void measure_start(uint32_t number){
+    printf("%d)START MEASUREMENTS!\n\n",number);
+}
+
+static void measure_end(uint32_t number){
+    printf("%d)END OF MEASUREMENTS!\n\n",number);
+}
+
+// uncomment this if you want to acctually run the tests,
+// it is disabled due to performance measurements of individual
+// clien-side OPAQUE functions. 
+//#define ENABLE_TEST
+
+#ifdef ENABLE_TEST
 // Returns 0 if a==b, otherwise 1
 static bool compare(uint8_t *a, uint8_t *b, int32_t count){
   bool result = false;
@@ -280,6 +297,7 @@ static bool compare(uint8_t *a, uint8_t *b, int32_t count){
   }
   return result;
 }
+#endif
 
 int main(){
   s_rand(1234);
@@ -288,13 +306,15 @@ int main(){
   // ------------- TESTING OF ----------
   // --------------- OPAQUE ------------
   // -----------------------------------   
-
+#ifdef ENABLE_TEST
   bool error = 0;
   bool suberror = 0;
+#endif
 
   //////////////////////////
   //  REGISTRATION
   //////
+  measure_start(1);
   RegistrationRequest request;
   CreateRegistrationRequestWithBlind( 
     blind_registration, 
@@ -302,10 +322,12 @@ int main(){
     password, password_len
   );
 
+#ifdef ENABLE_TEST
   suberror = compare(request.blinded_message,_registration_request,32);
   error |= suberror;
   if (!suberror){printf("SUCCESS: CreateRegistrationRequest->blinded_message\n");}
   else {printf("ERROR: CreateRegistrationRequest->blinded_message\n");}
+#endif
 
   RegistrationRecord record;
   uint8_t export_key_reg[64];
@@ -318,7 +340,9 @@ int main(){
    server_identity, server_identity_len,
    client_identity, client_identity_len
   );
+measure_end(1);
 
+#ifdef ENABLE_TEST
   suberror = compare(export_key_reg,_export_key,64);
   error |= suberror;
   if (!suberror){printf("SUCCESS: FinalizeRegistrationRequest->export_key\n");}
@@ -327,11 +351,12 @@ int main(){
   error |= suberror;
   if (!suberror){printf("SUCCESS: FinalizeRegistrationRequest->record\n");}
   else {printf("ERROR: FinalizeRegistrationRequest->record\n");}
+#endif
 
   //////////////////////////
   //  LOGIN
   //////
-
+measure_start(2);
   KE1 ke1;
   ClientState state;
 
@@ -343,11 +368,13 @@ int main(){
     client_keyshare_seed
     );
 
+#ifdef ENABLE_TEST
   suberror = compare((uint8_t*) &ke1,_KE1,96);
   error |= suberror;
   if (!suberror){printf("SUCCESS: GenerateKE1->KE1\n");}
   else {printf("ERROR: GenerateKE1->KE1\n");}
-	
+#endif
+
   KE3 ke3;
   uint8_t client_session_key[64];
   uint8_t export_key[64];
@@ -361,7 +388,9 @@ int main(){
     (KE2*)_KE2, // change to in case u are testing with serverside outúuts also &ke2
     context, 10
   );
+  measure_end(2);
 
+#ifdef ENABLE_TEST
   suberror = compare((uint8_t*) &ke3,_KE3,64);
   error |= suberror;
   if (!suberror){printf("SUCCESS: GenerateKE3->KE3\n");}
@@ -384,6 +413,73 @@ int main(){
   else{
     printf("TEST RESULT: ERROR");
   }
+#endif
+
+
+
+// MEASUREMENTS SEPARATELLY BLOCK BY BLOCK
+
+ //////////////////////////
+  //  REGISTRATION
+  //////
+  RegistrationRequest request_t;
+  measure_start(3);
+  CreateRegistrationRequestWithBlind( 
+    blind_registration, 
+    &request_t, 
+    password, password_len
+  );
+  measure_end(3);
+
+
+  RegistrationRecord record_t;
+  uint8_t export_key_reg_t[64];
+  measure_start(4);
+  FinalizeRegistrationRequest(
+   &record_t,
+   export_key_reg_t,
+   password, password_len,
+   blind_registration,
+   (RegistrationResponse*)_registration_response,
+   server_identity, server_identity_len,
+   client_identity, client_identity_len
+  );
+  measure_end(4);
+
+
+  //////////////////////////
+  //  LOGIN
+  //////
+
+  KE1 ke1_t;
+  ClientState state_t;
+  measure_start(5);
+  GenerateKE1(
+    &ke1_t, &state_t,
+    password, password_len,
+    blind_login,
+    client_nonce,
+    client_keyshare_seed
+    );
+  measure_end(5);
+
+
+  KE3 ke3_t;
+  uint8_t client_session_key_t[64];
+  uint8_t export_key_t[64];
+  measure_start(6);
+  ecc_opaque_ristretto255_sha512_GenerateKE3(
+    &ke3_t,
+    client_session_key_t,
+    export_key_t, // 64
+    &state, // from KE1
+    client_identity, client_identity_len,
+    server_identity, server_identity_len,
+    (KE2*)_KE2, // change to in case u are testing with serverside outputs also &ke2
+    context, 10
+  );
+  measure_end(6);
+
   return 0;
 
 }
