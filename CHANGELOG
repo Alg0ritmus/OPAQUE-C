@@ -10,6 +10,9 @@
 // ******************************************************************
 
 
+17.4. trosku som upravil modl aj testy pre ristretto kvoli bugu pre 
+big endian platformu
+
 20.3. pridal som boolean + fixol bug v xxHash teste 
 
 17.3.

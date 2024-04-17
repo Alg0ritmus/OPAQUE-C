@@ -5,8 +5,8 @@
 // ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
-// ---------------------------version 1.1.0 -------------------------
-// --------------------------- 20-03-2024 ---------------------------
+// ---------------------------version 1.1.1 -------------------------
+// --------------------------- 17-04-2024 ---------------------------
 // ******************************************************************
 
 /**
@@ -87,7 +87,7 @@ int32_t is_above_l(const u32 x[8]){
         carry  += (u64)x[i] + (~L[i] & 0xffffffff);
         carry >>= 32;
     }
-    return (int32_t)carry; // carry is either 0 or 1
+    return (int32_t)carry; // carry is either 0 o;r 1
 }
 
 // Final reduction modulo L, by conditionally removing L.
@@ -159,8 +159,11 @@ void mod_l(u8 reduced[32], const u32 x[16]){
 
 void multiply_mod_l(u32 r[8], const u32 a[8], const u32 b[8]){
     u32 c[16] = {0};
+    u8 temp_r[32] = {0}; 
     multiply(c, a, b);
-    mod_l((u8*) r, c);
+    mod_l(temp_r, c);
+    bytes_to_int(r, temp_r);
+
     WIPE_BUFFER(c);
 }
 

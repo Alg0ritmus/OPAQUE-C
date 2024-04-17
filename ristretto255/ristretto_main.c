@@ -5,8 +5,8 @@
 // ------------ THIS CODE IS A PART OF A MASTER'S THESIS ------------
 // ------------------------- Master thesis --------------------------
 // -----------------Patrik Zelenak & Milos Drutarovsky --------------
-// ---------------------------version 1.1.0 -------------------------
-// --------------------------- 20-03-2024 ---------------------------
+// ---------------------------version 1.1.1 -------------------------
+// --------------------------- 17-04-2024 ---------------------------
 // ******************************************************************
 
 /**
@@ -52,11 +52,13 @@ ristretto255_point *out_rist2 = &output_ristretto_point2;
 
 // AUXILIARY COMPLEX TEST VARIABLES
 u8 TEST[BYTES_ELEM_SIZE]; // rng bytes -> to ristretto point
-u8 SCALAR[BYTES_ELEM_SIZE]; // rng scalar
+u8 SCALAR[BYTES_ELEM_SIZE] = {9,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 u8 SCALAR_INV[BYTES_ELEM_SIZE]; // rng scalar inverse
 u8 SCALAR_STORAGE[BYTES_ELEM_SIZE] = {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 u8 TEST_ORIGIN_POINT[BYTES_ELEM_SIZE];
 u8 NEW_POINT[BYTES_ELEM_SIZE];
+u32 TEMP_SCALAR_STORAGE[FIELED_ELEM_SIZE] = {0,0,0,0,0,0,0,0};
+u32 TEMP_SCALAR[FIELED_ELEM_SIZE] = {0,0,0,0,0,0,0,0};
 
 ristretto255_point output_ristretto_pointX;
 ristretto255_point *bodA = &output_ristretto_pointX;
@@ -744,7 +746,7 @@ int main(){
     for (int i = 0; i < COMPLEX_TEST_INERATIONS; i++)
     {
         rand_32_bytes(SCALAR); 
-        
+       
        
         modl_l_inverse(SCALAR_INV,SCALAR);
 
@@ -755,6 +757,7 @@ int main(){
         ristretto255_encode(bytes_out_,bodA); // save bytes of P1 to comparison later
         // NOTE that multiplying mutates values for both points 
         ristretto255_scalarmult(bodB, bodA,SCALAR); // P1*k = P2
+
         
 
         ristretto255_encode(NEW_POINT,bodB);
@@ -793,8 +796,16 @@ int main(){
         // assign P1 = P2 to repeat process
         ristretto255_decode(bodA, NEW_POINT);
 
+        bytes_to_int(TEMP_SCALAR_STORAGE, SCALAR_STORAGE);
+        bytes_to_int(TEMP_SCALAR, SCALAR);
+        //print_32(SCALAR_STORAGE);800
+        //print(TEMP_SCALAR_STORAGE);
+
         // store scalar
-        multiply_mod_l((u32*)SCALAR_STORAGE,(u32*)SCALAR_STORAGE,(u32*)SCALAR);
+        multiply_mod_l(TEMP_SCALAR_STORAGE,TEMP_SCALAR_STORAGE,TEMP_SCALAR);
+        int_to_bytes(SCALAR_STORAGE,TEMP_SCALAR_STORAGE);
+        //print_32(SCALAR_STORAGE);
+        //print(TEMP_SCALAR_STORAGE);
 
     }
 
@@ -809,6 +820,9 @@ int main(){
     XXH32_update(state, bytes_out_, BYTES_ELEM_SIZE);
     
     error = bytes_eq_32(bytes_out_,TEST_ORIGIN_POINT); 
+    //printf("%d\n",error);
+    //print_32(bytes_out_);
+    //print_32(TEST_ORIGIN_POINT);
     if (!error)
     {
         printf("\n*************************\n");
