@@ -209,7 +209,7 @@ static uint32_t serializeCleartextCredentials(uint8_t *out, CleartextCredentials
 
 // https://www.ietf.org/archive/id/draft-irtf-cfrg-opaque-12.html
 // STACKSIZE BEFORE CLEANING: 3030B // we can set as global variable ?
-// STACKSIZE AFTER CLEANING: 2112B
+// STACKSIZE AFTER CLEANING: 2283B
 void Store(
     Envelope *envelope, 
     uint8_t client_public_key[Npk],
@@ -353,7 +353,7 @@ void Store(
 **/
 
 // STACKSIZE BEFORE CLEANING: 2500B
-// STACKSIZE AFTER CLEANING: 2075B
+// STACKSIZE AFTER CLEANING: 1949B
 static uint32_t Recover(
     uint8_t client_private_key[Npk],
     CleartextCredentials *cleartext_credentials,
@@ -492,7 +492,7 @@ static uint32_t Recover(
   * @param[in]    ->  password    -> an opaque byte string containing the client's password.
   * @param[out]   ->  request     -> a RegistrationRequest structure.
   * @param[out]   ->  blind       -> an OPRF scalar value.
-  * STACKSIZE: 1212B
+  * STACKSIZE: 1191B
 **/
 void CreateRegistrationRequestWithBlind( 
     const uint8_t blind[32], 
@@ -543,7 +543,7 @@ void CreateRegistrationRequestWithBlind(
 //           server_identity, client_identity)
 //   Create RegistrationRecord record with (client_public_key, masking_key, envelope)
 //   return (record, export_key)
-// STACKSIZE: ~1270B
+// STACKSIZE: ~1963B
 void FinalizeRegistrationRequest(
    RegistrationRecord *record,
    uint8_t export_key[Nh],
@@ -645,7 +645,7 @@ def CreateCredentialRequest(password):
 **/
 
 
-// STACKSIZE: 1501B
+// STACKSIZE: 1159B
 static void CreateCredentialRequest(
     uint8_t *password, uint32_t password_len,
     CredentialRequest *request,
@@ -657,7 +657,7 @@ static void CreateCredentialRequest(
 }
 
 
-//STACKSIZE: 1697B
+//STACKSIZE: 1234B
 void ecc_opaque_ristretto255_sha512_DeriveDiffieHellmanKeyPair(
     uint8_t private_key[Nsk], uint8_t public_key[Npk],
     uint8_t seed[Nseed]
@@ -673,7 +673,7 @@ void ecc_opaque_ristretto255_sha512_DeriveDiffieHellmanKeyPair(
 
 
 
-//STACKSIZE: 1761B
+//STACKSIZE: 1298B
 void ecc_opaque_ristretto255_sha512_3DH_StartWithSeed(
     KE1 *ke1,
     ClientState *state,
@@ -733,7 +733,7 @@ void ecc_opaque_ristretto255_sha512_3DH_StartWithSeed(
 **/
 
 
-// STACKSIZE: 1793B
+// STACKSIZE: 1330B
 void GenerateKE1(
   KE1 *ke1,
   ClientState *state,
@@ -838,7 +838,7 @@ uint32_t ecc_opaque_ristretto255_sha512_3DH_Preamble(
     return n;
 }
 
-// STACKSIZE: 776B
+// STACKSIZE: 787B
 void ecc_opaque_ristretto255_sha512_3DH_TripleDHIKM(
     uint8_t *ikm, // 96
     const uint8_t *sk1, const uint8_t *pk1,
@@ -873,7 +873,7 @@ void ecc_opaque_ristretto255_sha512_3DH_TripleDHIKM(
 
 
 
-// STACKSIZE BEFORE CLEANING: 1141B
+// STACKSIZE : 1371B
 void ecc_opaque_ristretto255_sha512_3DH_Expand_Label(
     uint8_t *out, // 64
     const uint8_t *secret,
@@ -908,7 +908,7 @@ void ecc_opaque_ristretto255_sha512_3DH_Expand_Label(
 }
 
 
-// STACKSIZE BEFORE CLEANING: 1657B
+// STACKSIZE BEFORE CLEANING: 1606B
 void ecc_opaque_ristretto255_sha512_3DH_DeriveKeys(
     uint8_t *km2, // 64
     uint8_t *km3, // 64
@@ -983,7 +983,7 @@ void ecc_opaque_ristretto255_sha512_3DH_DeriveKeys(
 
 
 // STACKSIZE BEFORE CLEANING: 4384B
-// STACKSIZE AFTER CLEANING: 2999B
+// STACKSIZE AFTER CLEANING: 2873B
 uint32_t ecc_opaque_ristretto255_sha512_RecoverCredentials(
     uint8_t client_private_key[32],
     uint8_t server_public_key[32],
@@ -1095,7 +1095,7 @@ uint32_t ecc_opaque_ristretto255_sha512_RecoverCredentials(
 
 
 // STACKSIZE BEFORE CLEANING: 3501B
-// STACKSIZE AFTER CLEANING: 3029B
+// STACKSIZE AFTER CLEANING: 2982B
 uint32_t ecc_opaque_ristretto255_sha512_3DH_ClientFinalize(
     KE3 *ke3_raw, // 64
     uint8_t session_key[64],
@@ -1251,7 +1251,7 @@ uint32_t ecc_opaque_ristretto255_sha512_3DH_ClientFinalize(
 // GENERATE KE3
 
 // STACKSIZE BEFORE CLEANING: 4448B
-// STACKSIZE AFTER CLEANING: 3093B
+// STACKSIZE AFTER CLEANING: 3046B
 uint32_t ecc_opaque_ristretto255_sha512_GenerateKE3(
     KE3 *ke3_raw,
     uint8_t session_key[64], // client_session_key

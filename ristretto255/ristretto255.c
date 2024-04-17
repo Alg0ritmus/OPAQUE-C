@@ -109,7 +109,7 @@
 #define WIPE_PT(rpoint) wipe_ristretto255_point(rpoint)
 // functions redefined below are "renamed" to fit our equivalent 
 // TweetNaCl representation of ristretto255
-#define swap25519 gf25519Swap     // 8B
+#define swap25519 gf25519Swap     // 12B
 #define fsub gf25519Sub           // 60B  
 #define fadd gf25519Add           // 60B  
 #define fmul gf25519Mul           // 132B
@@ -280,7 +280,7 @@ void fabsolute(field_elem io){
 // largely inspired by Cyclone's curve25519Sqrt:
 // https://github.com/Oryx-Embedded/CycloneCRYPTO/blob/master/ecc/curve25519.c#L430
 // Logic Inspired by: https://ristretto.group/formulas/invsqrt.html
-// *** STACKSIZE: 196B ***
+// *** STACKSIZE: 211B ***
 static uint8_t inv_sqrt(field_elem out,const field_elem a, const field_elem b){
    uint8_t correct_sign_sqrt;
    uint8_t flipped_sign_sqrt;
@@ -402,7 +402,7 @@ static uint8_t inv_sqrt(field_elem out,const field_elem a, const field_elem b){
 // every line with draft specification.
 // DRAFT from 2023-09-18:
 // https://datatracker.ietf.org/doc/draft-irtf-cfrg-ristretto255-decaf448/
-// *** STACKSIZE: 356B ***
+// *** STACKSIZE: 379B ***
 static void MAP(ristretto255_point* ristretto_out, const field_elem t){ 
     field_elem tmp1, tmp2, tmp3, tmp4, tmp5;
     uint32_t was_square, wasnt_square;
@@ -586,7 +586,7 @@ static u32 is_Canonical(const u32 in[FIELED_ELEM_SIZE]){
 // every line with draft specification.
 // DRAFT from 2023-09-18:
 // https://datatracker.ietf.org/doc/draft-irtf-cfrg-ristretto255-decaf448/
-// *** STACKSIZE: 420B ***
+// *** STACKSIZE: 415B ***
 uint32_t ristretto255_decode(ristretto255_point *ristretto_out, const u8 bytes_in[BYTES_ELEM_SIZE]){
   
   uint32_t was_square, is_canonical, is_negative;
@@ -706,7 +706,7 @@ uint32_t ristretto255_decode(ristretto255_point *ristretto_out, const u8 bytes_i
 // every line with draft specification.
 // DRAFT from 2023-09-18:
 // https://datatracker.ietf.org/doc/draft-irtf-cfrg-ristretto255-decaf448/
-// *** STACKSIZE: 420B ***
+// *** STACKSIZE: 435B ***
 uint32_t ristretto255_encode(u8 bytes_out[BYTES_ELEM_SIZE], const ristretto255_point* ristretto_in){
 
   
@@ -812,7 +812,7 @@ uint32_t ristretto255_encode(u8 bytes_out[BYTES_ELEM_SIZE], const ristretto255_p
 // 3) perform addition of 2 edward's point, note that
 // we need to add 2 edwards points so fe25519 arithmetics won't 
 // fit there we need to use function that adds 2 edwards points
-// *** STACKSIZE: 804B***
+// *** STACKSIZE: 947B***
 uint32_t hash_to_group(u8 bytes_out[BYTES_ELEM_SIZE], const u8 bytes_in[HASH_BYTES_SIZE]){
   ristretto255_point a_point;
   ristretto255_point *a = &a_point;

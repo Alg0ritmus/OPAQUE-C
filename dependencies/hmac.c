@@ -57,7 +57,7 @@
  *
  */
 
-//STACKSIZE:  ~1138B
+//STACKSIZE:  ~1075B
 int32_t hmac(
     const uint8_t *message_array, int32_t  length,
     const uint8_t *key, int32_t key_len,
@@ -91,7 +91,7 @@ int32_t hmac(
  *      sha Error Code.
  *
  */
-//STACKSIZE:  ~950B
+//STACKSIZE:  ~1095B
 int32_t hmacReset(HMACContext *context,
     const uint8_t *key, int32_t key_len)
 {
@@ -236,7 +236,7 @@ int32_t hmacFinalBits(HMACContext *context,
  * Returns:
  *   sha Error Code.
  * 
- * STACKSIZE: ~746B
+ * STACKSIZE: ~887B
  */
 int32_t hmacResult(HMACContext *context, uint8_t digest[USHAMaxHashSize])
 {

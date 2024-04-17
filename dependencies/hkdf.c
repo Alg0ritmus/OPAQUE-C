@@ -109,7 +109,7 @@ uint32_t hkdf(
  *      sha Error Code.
  *
  */
-//STACKSIZE: 1206B
+//STACKSIZE: 1139B
 uint32_t hkdfExtract(
     const uint8_t *salt, int32_t salt_len,
     const uint8_t *ikm, uint32_t ikm_len,
@@ -160,7 +160,7 @@ uint32_t hkdfExtract(
  *
  */
 
-// STACKSIZE: ~1034B
+// STACKSIZE: ~1266B
 uint32_t hkdfExpand(
     const uint8_t prk[ ], uint32_t prk_len,
     const uint8_t *info, int32_t info_len,

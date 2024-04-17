@@ -134,7 +134,7 @@ uint32_t USHAFinalBits(USHAContext *context,
  *
  */
 
-//STACKSIZE: ~742B
+//STACKSIZE: ~887B
 uint32_t USHAResult(USHAContext *context,
                uint8_t Message_Digest[USHAMaxHashSize])
 {

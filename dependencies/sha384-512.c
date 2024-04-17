@@ -247,7 +247,7 @@ uint32_t SHA512FinalBits(SHA512Context *context,
  *
  * Returns:
  *   sha Error Code.
- *
+ * STACKSIZE: 887B
  */
 uint32_t SHA512Result(SHA512Context *context,
     uint8_t Message_Digest[SHA512HashSize])
@@ -314,7 +314,7 @@ static uint32_t SHA384_512Reset(SHA512Context *context,
  *   single character names, were used because those were the
  *   names used in the Secure Hash Standard.
  *
- *
+ *  STACKSIZE: 880B
  */
 static void SHA384_512ProcessMessageBlock(SHA512Context *context)
 {
@@ -446,7 +446,7 @@ static void SHA384_512ProcessMessageBlock(SHA512Context *context)
  *
  * Returns:
  *   sha Error Code.
- *
+ *  STACKSIZE: 882B
  */
 static void SHA384_512Finalize(SHA512Context *context,
     uint8_t Pad_Byte)
@@ -485,7 +485,7 @@ static void SHA384_512Finalize(SHA512Context *context,
  *
  * Returns:
  *   Nothing.
- *
+ * stacksize: 880B
  */
 static void SHA384_512PadMessage(SHA512Context *context,
     uint8_t Pad_Byte)
@@ -554,7 +554,7 @@ static void SHA384_512PadMessage(SHA512Context *context,
  *
  * Returns:
  *   sha Error Code.
- *
+ * STACKSIZE: 886B
  */
 static uint32_t SHA384_512ResultN(SHA512Context *context,
     uint8_t Message_Digest[ ], uint32_t HashSize)

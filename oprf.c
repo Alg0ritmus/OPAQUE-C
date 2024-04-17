@@ -172,7 +172,7 @@ static uint32_t createContextString(
 // https://github.com/aldenml/ecc/blob/fedffd5624db6d90c659864c21be0c530484c925/test/data/h2c/expand_message_xmd_sha512.json
 
 // STACKSIZE: ~1345B
-// STACKSIZE after 27.2 update: 1032B
+// STACKSIZE after 16.4 update: 1011B
 static uint32_t expand_message_xmd_sha512(
     uint8_t *out,
     uint8_t *msg, uint32_t msgLen,
@@ -318,7 +318,7 @@ static uint32_t expand_message_xmd_sha512(
 
 
 // STACKSIZE: 1357B
-// STACKSIZE after 27.2 update: 1096B
+// STACKSIZE after 16.4 update: 1075B
 static void ecc_voprf_ristretto255_sha512_HashToGroupWithDST(
     uint8_t *out,
     const uint8_t *input, const uint32_t inputLen,
@@ -335,7 +335,7 @@ static void ecc_voprf_ristretto255_sha512_HashToGroupWithDST(
 }
 
 // STACKSIZE: 1469B
-// STACKSIZE after 27.2 update: 1148B
+// STACKSIZE after 16.4 update: 1127B
 static void ecc_voprf_ristretto255_sha512_HashToGroup(
     uint8_t *out,
     const uint8_t *input, const uint32_t inputLen
@@ -352,7 +352,7 @@ static void ecc_voprf_ristretto255_sha512_HashToGroup(
 }
 
 
-// STACKSIZE after 27.2 update: 1096B
+// STACKSIZE after 27.2 update: 1075B
 static void ecc_voprf_ristretto255_sha512_HashToScalarWithDST(
     uint8_t *out,
     const uint8_t *input, const uint32_t inputLen,
@@ -371,7 +371,7 @@ static void ecc_voprf_ristretto255_sha512_HashToScalarWithDST(
 
 // https://www.ietf.org/archive/id/draft-irtf-cfrg-voprf-21.html#section-3.2.1
 // STACKSIZE: 1664B
-// STACKSIZE after 27.2 update: 1225B
+// STACKSIZE after 16.4 update: 1201B
 uint32_t DeterministicDeriveKeyPair(
     uint8_t skS[Nsk], uint8_t pkS[Npk],
     uint8_t seed[Nseed], uint8_t *info, uint32_t infoLen
@@ -452,7 +452,7 @@ uint32_t DeterministicDeriveKeyPair(
 
 // https://www.ietf.org/archive/id/draft-irtf-cfrg-voprf-21.html#name-oprf-protocol
 // STACKSIZE: 1501B
-// STACKSIZE after 27.2 update: 1180B
+// STACKSIZE after 27.2 update: 1159B
 int32_t ecc_voprf_ristretto255_sha512_BlindWithScalar(
     uint8_t *blindedElement,
     const  uint8_t *input, const uint32_t inputLen,
@@ -474,7 +474,7 @@ int32_t ecc_voprf_ristretto255_sha512_BlindWithScalar(
 
 // input/output elem are ristretto255 elems in 32 byte form
 
-// STACKSIZE: ~680B
+// STACKSIZE: ~691B
 void ScalarMult_(uint8_t outputElement[32], const uint8_t scalar[32], const uint8_t inputElement[32]){
   ristretto255_point output_ristretto_point;
   ristretto255_point *out_rist = &output_ristretto_point;
@@ -486,7 +486,7 @@ void ScalarMult_(uint8_t outputElement[32], const uint8_t scalar[32], const uint
   ristretto255_encode(outputElement,out_rist2);
 }
 
-//SATCKSIE: ~970B 
+//SATCKSIE: ~767B 
 void Finalize(
     uint8_t output[Nh],
     const uint8_t* input, const uint32_t inputLen,

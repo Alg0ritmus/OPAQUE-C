@@ -315,6 +315,7 @@ int main(){
   //  REGISTRATION
   //////
   measure_start(1);
+  printf("whole registration phase\n");
   RegistrationRequest request;
   CreateRegistrationRequestWithBlind( 
     blind_registration, 
@@ -357,6 +358,7 @@ measure_end(1);
   //  LOGIN
   //////
 measure_start(2);
+printf("whole login phase\n");
   KE1 ke1;
   ClientState state;
 
@@ -424,6 +426,7 @@ measure_start(2);
   //////
   RegistrationRequest request_t;
   measure_start(3);
+  printf("CreateRegistrationRequestWithBlind\n");
   CreateRegistrationRequestWithBlind( 
     blind_registration, 
     &request_t, 
@@ -435,6 +438,7 @@ measure_start(2);
   RegistrationRecord record_t;
   uint8_t export_key_reg_t[64];
   measure_start(4);
+  printf("FinalizeRegistrationRequest\n");
   FinalizeRegistrationRequest(
    &record_t,
    export_key_reg_t,
@@ -454,6 +458,7 @@ measure_start(2);
   KE1 ke1_t;
   ClientState state_t;
   measure_start(5);
+  printf("GenerateKE1\n");
   GenerateKE1(
     &ke1_t, &state_t,
     password, password_len,
@@ -468,6 +473,7 @@ measure_start(2);
   uint8_t client_session_key_t[64];
   uint8_t export_key_t[64];
   measure_start(6);
+  printf("GenerateKE3\n");
   ecc_opaque_ristretto255_sha512_GenerateKE3(
     &ke3_t,
     client_session_key_t,
